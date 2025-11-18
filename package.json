@@ -1,0 +1,40 @@
+{
+  "name": "taskcalendar",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Monorepo for the TaskCalendar Areabook-style platform",
+  "engines": {
+    "node": ">=18.18"
+  },
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm run build:packages && pnpm --filter web build",
+    "build:packages": "pnpm --filter \"./packages/*\" build",
+    "preview": "pnpm --filter web preview",
+    "preview:full": "pnpm --filter web build && pnpm seed:preview && pnpm firebase:emulators",
+    "lint": "pnpm lint:web && pnpm lint:packages",
+    "lint:web": "pnpm --filter web lint",
+    "lint:packages": "pnpm --filter \"./packages/*\" lint",
+    "test": "pnpm --recursive test",
+    "storybook": "pnpm --filter web storybook",
+    "storybook:build": "pnpm --filter web build-storybook",
+    "seed:preview": "pnpm tsx infra/firebase/seed.ts",
+    "seed:push": "pnpm tsx infra/firebase/push-seed.ts",
+    "firebase:emulators": "firebase emulators:start --config infra/firebase/firebase.json --project preview --only firestore,auth,hosting"
+  },
+  "keywords": [
+    "areabook",
+    "calendar",
+    "firebase",
+    "react",
+    "vite"
+  ],
+  "author": "",
+  "license": "MIT",
+  "packageManager": "pnpm@10.22.0",
+  "devDependencies": {
+    "firebase-admin": "^12.5.0",
+    "firebase-tools": "^14.25.0",
+    "tsx": "^4.20.6"
+  }
+}

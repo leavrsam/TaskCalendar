@@ -1,0 +1,234 @@
+{
+  "owner": {
+    "id": "demo-owner",
+    "email": "demo@taskcalendar.dev",
+    "displayName": "Jordan Lead",
+    "createdAt": "2025-11-18T23:43:40.852Z"
+  },
+  "contacts": [
+    {
+      "id": "contact-maria",
+      "ownerUid": "demo-owner",
+      "name": "Maria Santos",
+      "stage": "teaching",
+      "phone": "+1-555-123-4444",
+      "email": "maria@example.com",
+      "address": "123 Elm St",
+      "tags": [
+        "family",
+        "spanish"
+      ],
+      "notes": "Loves service opportunities and prefers weeknight visits.",
+      "lastContactedAt": "2025-11-16T23:43:40.852Z",
+      "nextVisitAt": "2025-11-20T23:43:40.852Z",
+      "sharedWith": [
+        "avery-demo"
+      ],
+      "createdAt": "2025-10-29T23:43:40.852Z",
+      "updatedAt": "2025-11-18T23:43:40.852Z"
+    },
+    {
+      "id": "contact-devon",
+      "ownerUid": "demo-owner",
+      "name": "Devon Price",
+      "stage": "progressing",
+      "phone": "+1-555-555-8888",
+      "address": "456 Lake Rd",
+      "tags": [
+        "young adult"
+      ],
+      "notes": "Prefers afternoon lessons. Working through commitments.",
+      "lastContactedAt": "2025-11-14T23:43:40.852Z",
+      "nextVisitAt": "2025-11-23T23:43:40.852Z",
+      "sharedWith": [],
+      "createdAt": "2025-11-08T23:43:40.852Z",
+      "updatedAt": "2025-11-18T23:43:40.852Z"
+    },
+    {
+      "id": "contact-nguyen",
+      "ownerUid": "demo-owner",
+      "name": "Nguyen Family",
+      "stage": "new",
+      "phone": "+1-555-234-1888",
+      "address": "224 Campus Ave",
+      "tags": [
+        "family",
+        "referral"
+      ],
+      "notes": "Referred by ward member. Kids love Primary.",
+      "lastContactedAt": null,
+      "nextVisitAt": "2025-11-25T23:43:40.852Z",
+      "sharedWith": [
+        "luis-demo"
+      ],
+      "createdAt": "2025-11-15T23:43:40.852Z",
+      "updatedAt": "2025-11-18T23:43:40.852Z"
+    }
+  ],
+  "lessons": [
+    {
+      "id": "lesson-001",
+      "ownerUid": "demo-owner",
+      "contactId": "contact-maria",
+      "taughtAt": "2025-11-17T23:43:40.852Z",
+      "type": "plan",
+      "commitments": [
+        "Read Alma 32",
+        "Attend sacrament"
+      ],
+      "notes": "Great questions about Plan of Salvation.",
+      "taughtBy": [
+        "Jordan Lead",
+        "Avery North"
+      ],
+      "followUpAt": "2025-11-20T23:43:40.852Z",
+      "sharedWith": [
+        "avery-demo"
+      ],
+      "createdAt": "2025-11-17T23:43:40.852Z",
+      "updatedAt": "2025-11-18T23:43:40.852Z"
+    },
+    {
+      "id": "lesson-002",
+      "ownerUid": "demo-owner",
+      "contactId": "contact-devon",
+      "taughtAt": "2025-11-15T23:43:40.852Z",
+      "type": "gospel",
+      "commitments": [
+        "Pray morning and night",
+        "Invite friend to activity"
+      ],
+      "notes": "Devon opened up about testimony. Needs fellowship.",
+      "taughtBy": [
+        "Jordan Lead"
+      ],
+      "followUpAt": "2025-11-22T23:43:40.852Z",
+      "sharedWith": [],
+      "createdAt": "2025-11-15T23:43:40.852Z",
+      "updatedAt": "2025-11-16T23:43:40.852Z"
+    },
+    {
+      "id": "lesson-003",
+      "ownerUid": "demo-owner",
+      "contactId": "contact-nguyen",
+      "taughtAt": "2025-11-13T23:43:40.852Z",
+      "type": "restoration",
+      "commitments": [
+        "Read 1 Nephi 1",
+        "Pray as a family"
+      ],
+      "notes": "Kids loved the Restoration movie clip.",
+      "taughtBy": [
+        "Luis Ortega"
+      ],
+      "followUpAt": "2025-11-16T23:43:40.852Z",
+      "sharedWith": [
+        "luis-demo"
+      ],
+      "createdAt": "2025-11-13T23:43:40.852Z",
+      "updatedAt": "2025-11-13T23:43:40.852Z"
+    }
+  ],
+  "contactNotes": [
+    {
+      "id": "note-maria-1",
+      "ownerUid": "demo-owner",
+      "contactId": "contact-maria",
+      "content": "Member present Rachel joined and committed to weekly texts.",
+      "createdAt": "2025-11-17T23:43:40.852Z",
+      "updatedAt": "2025-11-17T23:43:40.852Z"
+    },
+    {
+      "id": "note-devon-1",
+      "ownerUid": "demo-owner",
+      "contactId": "contact-devon",
+      "content": "Still nervous about baptismal date; schedule chapel tour.",
+      "createdAt": "2025-11-16T23:43:40.852Z",
+      "updatedAt": "2025-11-16T23:43:40.852Z"
+    },
+    {
+      "id": "note-nguyen-1",
+      "ownerUid": "demo-owner",
+      "contactId": "contact-nguyen",
+      "content": "Need Vietnamese Book of Mormon for parents before Friday visit.",
+      "createdAt": "2025-11-14T23:43:40.852Z",
+      "updatedAt": "2025-11-14T23:43:40.852Z"
+    }
+  ],
+  "goals": [
+    {
+      "id": "goal-lessons",
+      "ownerUid": "demo-owner",
+      "metric": "lessons",
+      "target": 8,
+      "progress": 6,
+      "periodStart": "2025-11-11T23:43:40.852Z",
+      "periodEnd": "2025-11-25T23:43:40.852Z",
+      "sharedWith": [],
+      "createdAt": "2025-11-11T23:43:40.852Z",
+      "updatedAt": "2025-11-18T23:43:40.852Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task-follow-up",
+      "ownerUid": "demo-owner",
+      "contactId": "contact-devon",
+      "title": "Confirm member present for Devon",
+      "status": "todo",
+      "priority": "high",
+      "dueAt": "2025-11-19T23:43:40.852Z",
+      "assignedTo": [
+        "demo-owner"
+      ],
+      "notes": "Coordinate with ward mission leader.",
+      "scheduledStart": "2025-11-19T19:43:40.852Z",
+      "scheduledEnd": "2025-11-19T20:43:40.852Z",
+      "sharedWith": [
+        "avery-demo"
+      ],
+      "createdAt": "2025-11-16T23:43:40.852Z",
+      "updatedAt": "2025-11-18T23:43:40.852Z"
+    },
+    {
+      "id": "task-planning",
+      "ownerUid": "demo-owner",
+      "title": "Weekly planning with Avery",
+      "status": "inProgress",
+      "priority": "medium",
+      "dueAt": "2025-11-20T23:43:40.852Z",
+      "assignedTo": [
+        "demo-owner",
+        "avery-demo"
+      ],
+      "notes": "Focus on campus referrals.",
+      "scheduledStart": "2025-11-19T23:43:40.852Z",
+      "scheduledEnd": "2025-11-20T00:43:40.852Z",
+      "sharedWith": [
+        "avery-demo"
+      ],
+      "createdAt": "2025-11-17T23:43:40.852Z",
+      "updatedAt": "2025-11-18T23:43:40.852Z"
+    },
+    {
+      "id": "task-service",
+      "ownerUid": "demo-owner",
+      "title": "Campus service project",
+      "status": "todo",
+      "priority": "low",
+      "dueAt": "2025-11-23T23:43:40.852Z",
+      "assignedTo": [
+        "demo-owner",
+        "luis-demo"
+      ],
+      "notes": "Coordinate with institute council.",
+      "scheduledStart": null,
+      "scheduledEnd": null,
+      "sharedWith": [
+        "luis-demo"
+      ],
+      "createdAt": "2025-11-15T23:43:40.852Z",
+      "updatedAt": "2025-11-16T23:43:40.852Z"
+    }
+  ]
+}

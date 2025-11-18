@@ -1,0 +1,42 @@
+{
+  "functions": {
+    "source": "functions",
+    "ignore": ["node_modules", ".git", "firebase-debug.log"]
+  },
+  "hosting": {
+    "public": "../../apps/web/dist",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "cleanUrls": true,
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  },
+  "emulators": {
+    "auth": {
+      "port": 9499
+    },
+    "firestore": {
+      "port": 8499
+    },
+    "functions": {
+      "port": 5202
+    },
+    "hosting": {
+      "port": 5273
+    },
+    "hub": {
+      "port": 6611
+    },
+    "ui": {
+      "enabled": true,
+      "port": 6002
+    },
+    "logging": {
+      "port": 6711
+    }
+  }
+}
+

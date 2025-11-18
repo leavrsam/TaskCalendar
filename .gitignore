@@ -1,0 +1,31 @@
+# Node/PNPM
+node_modules
+.pnpm-store
+pnpm-debug.log*
+
+# Build outputs
+dist
+coverage
+
+# Vite
+.vite
+
+# Storybook
+storybook-static
+
+# Firebase
+.firebase
+firebase-debug.log
+firestore-debug.log
+logs/
+.preview-*.pid
+
+# Env files
+.env*
+
+# IDE
+.idea
+.vscode
+*.swp
+*.pid
+

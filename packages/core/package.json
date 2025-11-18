@@ -1,0 +1,25 @@
+{
+  "name": "@taskcalendar/core",
+  "version": "0.1.0",
+  "description": "Shared schemas, DTOs, and helpers reused across TaskCalendar apps.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3"
+  }
+}
+

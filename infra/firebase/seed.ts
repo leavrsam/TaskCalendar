@@ -1,0 +1,208 @@
+import { mkdirSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import { previewSeed } from '@taskcalendar/core'
+
+const now = new Date()
+const iso = (date: Date) => date.toISOString()
+
+const ownerUid = 'demo-owner'
+
+const data = previewSeed.parse({
+  owner: {
+    id: ownerUid,
+    email: 'demo@taskcalendar.dev',
+    displayName: 'Jordan Lead',
+    createdAt: iso(now),
+  },
+  contacts: [
+    {
+      id: 'contact-maria',
+      ownerUid,
+      name: 'Maria Santos',
+      stage: 'teaching',
+      phone: '+1-555-123-4444',
+      email: 'maria@example.com',
+      address: '123 Elm St',
+      tags: ['family', 'spanish'],
+      notes: 'Loves service opportunities and prefers weeknight visits.',
+      lastContactedAt: iso(new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000)),
+      nextVisitAt: iso(new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000)),
+      sharedWith: ['avery-demo'],
+      createdAt: iso(new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000)),
+      updatedAt: iso(now),
+    },
+    {
+      id: 'contact-devon',
+      ownerUid,
+      name: 'Devon Price',
+      stage: 'progressing',
+      phone: '+1-555-555-8888',
+      address: '456 Lake Rd',
+      tags: ['young adult'],
+      notes: 'Prefers afternoon lessons. Working through commitments.',
+      lastContactedAt: iso(new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000)),
+      nextVisitAt: iso(new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000)),
+      sharedWith: [],
+      createdAt: iso(new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000)),
+      updatedAt: iso(now),
+    },
+    {
+      id: 'contact-nguyen',
+      ownerUid,
+      name: 'Nguyen Family',
+      stage: 'new',
+      phone: '+1-555-234-1888',
+      address: '224 Campus Ave',
+      tags: ['family', 'referral'],
+      notes: 'Referred by ward member. Kids love Primary.',
+      lastContactedAt: null,
+      nextVisitAt: iso(new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)),
+      sharedWith: ['luis-demo'],
+      createdAt: iso(new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)),
+      updatedAt: iso(now),
+    },
+  ],
+  lessons: [
+    {
+      id: 'lesson-001',
+      ownerUid,
+      contactId: 'contact-maria',
+      taughtAt: iso(new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000)),
+      type: 'plan',
+      commitments: ['Read Alma 32', 'Attend sacrament'],
+      notes: 'Great questions about Plan of Salvation.',
+      taughtBy: ['Jordan Lead', 'Avery North'],
+      followUpAt: iso(new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000)),
+      sharedWith: ['avery-demo'],
+      createdAt: iso(new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000)),
+      updatedAt: iso(now),
+    },
+    {
+      id: 'lesson-002',
+      ownerUid,
+      contactId: 'contact-devon',
+      taughtAt: iso(new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)),
+      type: 'gospel',
+      commitments: ['Pray morning and night', 'Invite friend to activity'],
+      notes: 'Devon opened up about testimony. Needs fellowship.',
+      taughtBy: ['Jordan Lead'],
+      followUpAt: iso(new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000)),
+      sharedWith: [],
+      createdAt: iso(new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)),
+      updatedAt: iso(new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000)),
+    },
+    {
+      id: 'lesson-003',
+      ownerUid,
+      contactId: 'contact-nguyen',
+      taughtAt: iso(new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000)),
+      type: 'restoration',
+      commitments: ['Read 1 Nephi 1', 'Pray as a family'],
+      notes: 'Kids loved the Restoration movie clip.',
+      taughtBy: ['Luis Ortega'],
+      followUpAt: iso(new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000)),
+      sharedWith: ['luis-demo'],
+      createdAt: iso(new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000)),
+      updatedAt: iso(new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000)),
+    },
+  ],
+  contactNotes: [
+    {
+      id: 'note-maria-1',
+      ownerUid,
+      contactId: 'contact-maria',
+      content: 'Member present Rachel joined and committed to weekly texts.',
+      createdAt: iso(new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000)),
+      updatedAt: iso(new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000)),
+    },
+    {
+      id: 'note-devon-1',
+      ownerUid,
+      contactId: 'contact-devon',
+      content: 'Still nervous about baptismal date; schedule chapel tour.',
+      createdAt: iso(new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000)),
+      updatedAt: iso(new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000)),
+    },
+    {
+      id: 'note-nguyen-1',
+      ownerUid,
+      contactId: 'contact-nguyen',
+      content: 'Need Vietnamese Book of Mormon for parents before Friday visit.',
+      createdAt: iso(new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000)),
+      updatedAt: iso(new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000)),
+    },
+  ],
+  goals: [
+    {
+      id: 'goal-lessons',
+      ownerUid,
+      metric: 'lessons',
+      target: 8,
+      progress: 6,
+      periodStart: iso(new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)),
+      periodEnd: iso(new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)),
+      sharedWith: [],
+      createdAt: iso(new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)),
+      updatedAt: iso(now),
+    },
+  ],
+  tasks: [
+    {
+      id: 'task-follow-up',
+      ownerUid,
+      contactId: 'contact-devon',
+      title: 'Confirm member present for Devon',
+      status: 'todo',
+      priority: 'high',
+      dueAt: iso(new Date(now.getTime() + 24 * 60 * 60 * 1000)),
+      scheduledStart: iso(new Date(now.getTime() + 20 * 60 * 60 * 1000)),
+      scheduledEnd: iso(new Date(now.getTime() + 21 * 60 * 60 * 1000)),
+      assignedTo: [ownerUid],
+      notes: 'Coordinate with ward mission leader.',
+      sharedWith: ['avery-demo'],
+      createdAt: iso(new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000)),
+      updatedAt: iso(now),
+    },
+    {
+      id: 'task-planning',
+      ownerUid,
+      title: 'Weekly planning with Avery',
+      status: 'inProgress',
+      priority: 'medium',
+      dueAt: iso(new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000)),
+      scheduledStart: iso(new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000)),
+      scheduledEnd: iso(new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000)),
+      assignedTo: [ownerUid, 'avery-demo'],
+      notes: 'Focus on campus referrals.',
+      sharedWith: ['avery-demo'],
+      createdAt: iso(new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000)),
+      updatedAt: iso(now),
+    },
+    {
+      id: 'task-service',
+      ownerUid,
+      title: 'Campus service project',
+      status: 'todo',
+      priority: 'low',
+      dueAt: iso(new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000)),
+      scheduledStart: null,
+      scheduledEnd: null,
+      assignedTo: [ownerUid, 'luis-demo'],
+      notes: 'Coordinate with institute council.',
+      sharedWith: ['luis-demo'],
+      createdAt: iso(new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)),
+      updatedAt: iso(new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000)),
+    },
+  ],
+})
+
+const targetDir = dirname(fileURLToPath(import.meta.url))
+const seedFile = join(targetDir, 'seed-data.json')
+
+mkdirSync(targetDir, { recursive: true })
+writeFileSync(seedFile, JSON.stringify(data, null, 2))
+
+console.log(`Preview seed written to ${seedFile}`)
+
