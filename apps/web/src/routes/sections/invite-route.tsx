@@ -1,4 +1,5 @@
-import { useSearchParams, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { useNavigate, useSearchParams, Navigate } from 'react-router-dom'
 
 import { useAuth } from '@/hooks/use-auth'
 import {
@@ -7,12 +8,15 @@ import {
   useInviteDetails,
   useOwnerProfile,
 } from '@/features/sharing/api'
+import { useToast } from '@/hooks/use-toast'
 
 export function InviteRoute() {
   const { user, loading } = useAuth()
   const [params] = useSearchParams()
   const inviteId = params.get('invite')
   const ownerUid = params.get('owner')
+  const navigate = useNavigate()
+  const { success: showSuccessToast, error: showErrorToast } = useToast()
 
   const acceptInvite = useAcceptInvite()
   const declineInvite = useDeclineInvite()
@@ -60,6 +64,44 @@ export function InviteRoute() {
   const acceptedByCurrentUser =
     invite.status === 'accepted' && invite.acceptedBy && invite.acceptedBy === user?.uid
 
+  useEffect(() => {
+    if (acceptInvite.isSuccess) {
+      showSuccessToast({
+        title: 'Invite accepted',
+        description: 'You now have access to this workspace.',
+      })
+      navigate('/', { replace: true })
+    }
+  }, [acceptInvite.isSuccess, navigate, showSuccessToast])
+
+  useEffect(() => {
+    if (declineInvite.isSuccess) {
+      showSuccessToast({
+        title: 'Invite declined',
+        description: 'The workspace owner has been notified.',
+      })
+      navigate('/', { replace: true })
+    }
+  }, [declineInvite.isSuccess, navigate, showSuccessToast])
+
+  useEffect(() => {
+    if (acceptInvite.isError) {
+      showErrorToast({
+        title: 'Unable to accept invite',
+        description: acceptInvite.error instanceof Error ? acceptInvite.error.message : undefined,
+      })
+    }
+  }, [acceptInvite.error, acceptInvite.isError, showErrorToast])
+
+  useEffect(() => {
+    if (declineInvite.isError) {
+      showErrorToast({
+        title: 'Unable to decline invite',
+        description: declineInvite.error instanceof Error ? declineInvite.error.message : undefined,
+      })
+    }
+  }, [declineInvite.error, declineInvite.isError, showErrorToast])
+
   if (invite.status === 'revoked') {
     return (
       <InviteError
@@ -104,12 +146,17 @@ export function InviteRoute() {
     )
   }
 
-  if (
-    acceptedByCurrentUser ||
-    acceptInvite.isSuccess ||
-    declineInvite.isSuccess ||
-    (invite.status === 'accepted' && invite.acceptedBy && invite.acceptedBy !== user.uid)
-  ) {
+  if (acceptInvite.isSuccess || declineInvite.isSuccess) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <div className="rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm text-slate-500 shadow-sm">
+          Redirecting to your workspace…
+        </div>
+      </div>
+    )
+  }
+
+  if (acceptedByCurrentUser || (invite.status === 'accepted' && invite.acceptedBy && invite.acceptedBy !== user.uid)) {
     return <Navigate to="/" replace />
   }
 
