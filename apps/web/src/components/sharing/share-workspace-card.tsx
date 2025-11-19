@@ -8,6 +8,7 @@ import {
   useInvitesQuery,
   useRevokeInvite,
 } from '@/features/sharing/api'
+import { CollaboratorAvatar } from '@/components/collaborators/collaborator-avatar'
 
 const roleLabels: Record<WorkspaceInvite['role'], string> = {
   viewer: 'Viewer',
@@ -36,9 +37,14 @@ export function ShareWorkspaceCard() {
     [invites],
   )
   const activeCollaborators = useMemo(
-    () => invites.filter((invite) => invite.status === 'accepted'),
+    () =>
+      invites.filter(
+        (invite) => invite.status === 'accepted' && Boolean(invite.acceptedBy),
+      ),
     [invites],
   )
+
+  const avatarCollaborators = activeCollaborators.slice(0, 6)
 
   const onSubmit = async () => {
     setError(null)
@@ -59,6 +65,26 @@ export function ShareWorkspaceCard() {
           Invite collaborators to help plan lessons, contacts, and tasks. Pending invites can be revoked at any time.
         </p>
       </div>
+      {avatarCollaborators.length > 0 && (
+        <div className="flex items-center gap-2">
+          <div className="-space-x-2 flex">
+            {avatarCollaborators.map((invite) => (
+              <CollaboratorAvatar
+                key={invite.acceptedBy}
+                collaborator={{
+                  uid: invite.acceptedBy as string,
+                  email: invite.email,
+                  label: invite.email,
+                }}
+                size="sm"
+              />
+            ))}
+          </div>
+          <p className="text-xs font-semibold text-slate-500">
+            {activeCollaborators.length} collaborator{activeCollaborators.length > 1 ? 's' : ''}
+          </p>
+        </div>
+      )}
 
       <div className="space-y-3 rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm">
         <div>
@@ -99,6 +125,7 @@ export function ShareWorkspaceCard() {
         title="Active collaborators"
         emptyText="No collaborators yet."
         invites={activeCollaborators}
+        showAvatars
       />
       <InviteList
         title="Pending invites"
@@ -125,9 +152,10 @@ type InviteListProps = {
   emptyText: string
   invites: WorkspaceInvite[]
   onRevoke?: (id: string) => void
+  showAvatars?: boolean
 }
 
-function InviteList({ title, emptyText, invites, onRevoke }: InviteListProps) {
+function InviteList({ title, emptyText, invites, onRevoke, showAvatars }: InviteListProps) {
   return (
     <div>
       <div className="flex items-center justify-between">
@@ -148,7 +176,19 @@ function InviteList({ title, emptyText, invites, onRevoke }: InviteListProps) {
             className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
           >
             <div>
-              <p className="font-semibold text-slate-900">{invite.email}</p>
+              <div className="flex items-center gap-2">
+                {showAvatars && invite.acceptedBy && (
+                  <CollaboratorAvatar
+                    collaborator={{
+                      uid: invite.acceptedBy,
+                      email: invite.email,
+                      label: invite.email,
+                    }}
+                    size="sm"
+                  />
+                )}
+                <p className="font-semibold text-slate-900">{invite.email}</p>
+              </div>
               <p className="text-xs text-slate-500">
                 {roleLabels[invite.role]} •{' '}
                 <span className={clsx('rounded-full px-2 py-0.5 text-[11px] font-semibold', statusTone[invite.status])}>

@@ -10,6 +10,7 @@ import {
   query,
   updateDoc,
 } from 'firebase/firestore'
+import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
@@ -187,5 +188,33 @@ export const useOwnerProfile = (ownerUid?: string | null) => {
       return userProfileSchema.parse(snapshot.data())
     },
   })
+}
+
+export type CollaboratorProfile = {
+  uid: string
+  email: string
+  label: string
+}
+
+export const useCollaborators = () => {
+  const invitesQuery = useInvitesQuery()
+  const collaborators = useMemo(() => {
+    if (!invitesQuery.data) return {}
+    const record: Record<string, CollaboratorProfile> = {}
+    invitesQuery.data.forEach((invite) => {
+      if (invite.status === 'accepted' && invite.acceptedBy) {
+        record[invite.acceptedBy] = {
+          uid: invite.acceptedBy,
+          email: invite.email,
+          label: invite.email,
+        }
+      }
+    })
+    return record
+  }, [invitesQuery.data])
+  return {
+    collaborators,
+    isLoading: invitesQuery.isLoading,
+  }
 }
 

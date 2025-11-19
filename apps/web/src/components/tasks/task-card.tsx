@@ -2,6 +2,8 @@ import clsx from 'clsx'
 
 import type { Task } from '@taskcalendar/core'
 
+import { CollaboratorStack } from '@/components/collaborators/collaborator-stack'
+
 type TaskCardProps = {
   task: Task
   onStatusChange?: (status: Task['status']) => void
@@ -43,9 +45,12 @@ export function TaskCard({ task, onStatusChange, onSchedule }: TaskCardProps) {
         <p className="mt-2 text-sm text-slate-600 line-clamp-3">{task.notes}</p>
       )}
       {task.sharedWith && task.sharedWith.length > 0 && (
-        <p className="mt-2 text-xs font-semibold text-slate-500">
-          Shared with {task.sharedWith.length} collaborator{task.sharedWith.length > 1 ? 's' : ''}
-        </p>
+        <div className="mt-2 flex items-center gap-2">
+          <CollaboratorStack uids={task.sharedWith} />
+          <p className="text-xs font-semibold text-slate-500">
+            {task.sharedWith.length} collaborator{task.sharedWith.length > 1 ? 's' : ''}
+          </p>
+        </div>
       )}
 
       <div className="mt-3 flex flex-wrap gap-2 text-xs">

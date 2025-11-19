@@ -2,6 +2,8 @@ import { format } from 'date-fns'
 
 import type { Contact } from '@taskcalendar/core'
 
+import { CollaboratorStack } from '@/components/collaborators/collaborator-stack'
+
 type ContactCardProps = {
   contact: Contact
 }
@@ -20,9 +22,12 @@ export function ContactCard({ contact }: ContactCardProps) {
       </div>
       {contact.notes && <p className="mt-2 text-sm text-slate-600">{contact.notes}</p>}
       {contact.sharedWith && contact.sharedWith.length > 0 && (
-        <p className="mt-2 text-xs font-semibold text-slate-500">
-          Shared with {contact.sharedWith.length} collaborator{contact.sharedWith.length > 1 ? 's' : ''}
-        </p>
+        <div className="mt-2 flex items-center gap-2">
+          <CollaboratorStack uids={contact.sharedWith} />
+          <p className="text-xs font-semibold text-slate-500">
+            {contact.sharedWith.length} collaborator{contact.sharedWith.length > 1 ? 's' : ''}
+          </p>
+        </div>
       )}
       <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-slate-500">
         {contact.lastContactedAt && (
