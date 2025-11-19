@@ -282,10 +282,10 @@ export function CalendarEvent({ event }: { event: TaskEvent }) {
 
   return (
     <div className="flex h-full flex-col gap-1 text-xs text-white">
-      <p className="text-[11px] text-white/80">
+      <p className="truncate text-base font-semibold leading-5">{event.title}</p>
+      <p className="text-[12px] font-medium text-white/85">
         {startLabel} – {endLabel}
       </p>
-      <p className="truncate text-base font-semibold leading-5">{event.title}</p>
       <div className="mt-auto flex items-center justify-between text-[11px]">
         <button
           type="button"
