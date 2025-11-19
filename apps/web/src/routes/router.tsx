@@ -11,6 +11,7 @@ import { SignInRoute } from '@/routes/sections/sign-in-route'
 import { CreateAccountRoute } from '@/routes/sections/create-account-route'
 import { InviteRoute } from '@/routes/sections/invite-route'
 import { ProfileRoute } from '@/routes/sections/profile-route'
+import { SettingsRoute } from '@/routes/sections/settings-route'
 import { ComingSoon } from '@/components/status/coming-soon'
 
 export const router = createBrowserRouter([
@@ -53,6 +54,10 @@ export const router = createBrowserRouter([
           {
             path: 'profile',
             element: <ProfileRoute />,
+          },
+          {
+            path: 'settings',
+            element: <SettingsRoute />,
           },
           {
             path: 'goals',
