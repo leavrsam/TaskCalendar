@@ -222,6 +222,9 @@ function AgendaBoard({
           components={{
             event: CalendarEvent,
           }}
+          eventPropGetter={(calendarEvent) =>
+            getCalendarEventStyles(calendarEvent as TaskEvent)
+          }
           dragFromOutsideItem={
             dragPreviewEvent ? (() => dragPreviewEvent) : undefined
           }
@@ -312,6 +315,18 @@ export function CalendarEvent({ event }: { event: TaskEvent }) {
       )}
     </div>
   )
+}
+
+const getCalendarEventStyles = (_event: TaskEvent) => {
+  return {
+    className: '',
+    style: {
+      backgroundColor: 'transparent',
+      border: 'none',
+      padding: 0,
+      boxShadow: 'none',
+    },
+  }
 }
 
 const getNextStatus = (status: Task['status']): Task['status'] => {
