@@ -39,6 +39,7 @@ export function ScheduleRoute() {
   const [creationSlot, setCreationSlot] = useState<{ start: Date; end: Date } | null>(null)
   const [dragTaskId, setDragTaskId] = useState<string | null>(null)
   const [weekAnchor, setWeekAnchor] = useState(new Date())
+  const [selectedEvent, setSelectedEvent] = useState<TaskEvent | null>(null)
 
   const filteredTasks =
     filter === 'all' ? tasks : tasks.filter((task) => task.status === filter)
@@ -116,19 +117,7 @@ export function ScheduleRoute() {
               },
             })
           }}
-          onEventSelect={(event) => {
-            void updateTask.mutateAsync({
-              id: event.id,
-              data: {
-                status:
-                  event.resource.status === 'done'
-                    ? 'todo'
-                    : event.resource.status === 'todo'
-                      ? 'inProgress'
-                      : 'done',
-              },
-            })
-          }}
+          onEventClick={setSelectedEvent}
         />
         <TaskBoard
           tasks={filteredTasks}
@@ -154,6 +143,10 @@ export function ScheduleRoute() {
           setCreationSlot(null)
         }}
       />
+      <EventActionSheet
+        event={selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+      />
       </div>
     </DndProvider>
   )
@@ -164,7 +157,7 @@ type AgendaBoardProps = {
   isLoading: boolean
   onSlotSelect: (slot: { start: Date; end: Date }) => void
   onEventMove: (event: { id: string; start: Date; end: Date }) => void
-  onEventSelect: (event: TaskEvent) => void
+  onEventClick: (event: TaskEvent) => void
   draggingTask: Task | null
   onOutsideDropComplete: () => void
   anchorDate: Date
@@ -176,7 +169,7 @@ function AgendaBoard({
   isLoading,
   onSlotSelect,
   onEventMove,
-  onEventSelect,
+  onEventClick,
   draggingTask,
   onOutsideDropComplete,
   anchorDate,
@@ -246,7 +239,7 @@ function AgendaBoard({
               end: slotInfo.end as Date,
             })
           }
-          onSelectEvent={(event) => onEventSelect(event as TaskEvent)}
+          onSelectEvent={(event) => onEventClick(event as TaskEvent)}
           onEventDrop={({ event, start, end }) =>
             onEventMove({
               id: (event as TaskEvent).id,
@@ -278,7 +271,9 @@ export function CalendarEvent({ event }: { event: TaskEvent }) {
 
   const nextStatus = getNextStatus(event.resource.status)
 
-  const handleToggleStatus = () => {
+  const handleToggleStatus = (clickEvent: React.MouseEvent<HTMLButtonElement>) => {
+    clickEvent.stopPropagation()
+    clickEvent.preventDefault()
     updateTask.mutate({
       id: event.resource.id,
       data: { status: nextStatus },
@@ -352,6 +347,108 @@ const getStatusIcon = (status: Task['status']) => {
     return <CheckCircle2 className="h-4 w-4 text-emerald-500" />
   }
   return <Circle className="h-4 w-4 text-slate-400" />
+}
+
+type EventActionSheetProps = {
+  event: TaskEvent | null
+  onClose: () => void
+}
+
+function EventActionSheet({ event, onClose }: EventActionSheetProps) {
+  const updateTask = useUpdateTask()
+
+  if (!event) return null
+
+  const task = event.resource
+  const startLabel = format(event.start as Date, 'MMM d • h:mm a')
+  const endLabel = format(event.end as Date, 'MMM d • h:mm a')
+
+  const handleStatusChange = (status: Task['status']) => {
+    updateTask.mutate({
+      id: task.id,
+      data: { status },
+    })
+  }
+
+  const toggleBackup = () => {
+    const hasTag = task.notes?.includes('[backup]')
+    const nextNotes = hasTag
+      ? task.notes?.replace('[backup]', '').trim()
+      : `[backup] ${task.notes ?? ''}`.trim()
+    updateTask.mutate({
+      id: task.id,
+      data: { notes: nextNotes },
+    })
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 px-4 py-6 md:items-center"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-slate-500">Event</p>
+            <h3 className="text-lg font-semibold text-slate-900">{task.title}</h3>
+            <p className="text-sm text-slate-600">
+              {startLabel} – {endLabel}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full border border-slate-200 px-2 py-1 text-xs text-slate-500 hover:border-slate-300"
+          >
+            Close
+          </button>
+        </div>
+        <div className="mt-4 space-y-4">
+          <div>
+            <p className="text-xs font-semibold uppercase text-slate-500">Status</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {(['todo', 'inProgress', 'done'] as Task['status'][]).map((status) => (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => handleStatusChange(status)}
+                  className={clsx(
+                    'rounded-full px-3 py-1 text-sm font-semibold',
+                    task.status === status
+                      ? 'bg-brand-600 text-white'
+                      : 'bg-slate-100 text-slate-600',
+                  )}
+                >
+                  {status}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase text-slate-500">Backup</p>
+            <button
+              type="button"
+              onClick={toggleBackup}
+              className="mt-2 rounded-full border border-slate-200 px-3 py-1 text-sm font-semibold text-slate-600 hover:border-brand-200"
+            >
+              {isBackupEvent(task) ? 'Remove backup label' : 'Mark as backup block'}
+            </button>
+          </div>
+          {task.notes && (
+            <div>
+              <p className="text-xs font-semibold uppercase text-slate-500">Notes</p>
+              <p className="mt-1 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                {task.notes}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 type TaskBoardProps = {
