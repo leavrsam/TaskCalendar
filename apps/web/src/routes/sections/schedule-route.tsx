@@ -286,21 +286,16 @@ export function CalendarEvent({ event }: { event: TaskEvent }) {
   }
 
   return (
-    <div
-      className={clsx(
-        'flex h-full flex-col rounded-md bg-slate-900/70 px-2 py-1 text-xs text-white',
-        backup && 'opacity-60',
-      )}
-    >
-      <p className="truncate text-[13px] font-semibold">{event.title}</p>
-      <p className="text-[11px] font-medium text-slate-100">
+    <div className="flex h-full flex-col gap-1 text-xs text-white">
+      <p className="truncate text-sm font-semibold">{event.title}</p>
+      <p className="text-[11px] text-white/90">
         {startLabel} – {endLabel}
       </p>
-      <div className="mt-2 flex items-center justify-between text-[11px]">
+      <div className="mt-auto flex items-center justify-between text-[11px]">
         <button
           type="button"
           onClick={handleToggleStatus}
-          className="inline-flex items-center gap-1 rounded-full border border-white/30 px-2 py-1 text-white hover:border-white/60"
+          className="inline-flex items-center gap-1 rounded-full border border-white/30 bg-white/5 px-2 py-1 text-white hover:border-white/60"
           aria-label="Toggle task status"
         >
           {getStatusIcon(event.resource.status)}
@@ -309,22 +304,31 @@ export function CalendarEvent({ event }: { event: TaskEvent }) {
         {overdue && <span className="font-semibold text-rose-300">Overdue</span>}
       </div>
       {backup && (
-        <span className="mt-1 text-[10px] font-semibold text-rose-600">
-          Backup block
-        </span>
+        <span className="text-[10px] font-semibold text-white">Backup block</span>
       )}
     </div>
   )
 }
 
-const getCalendarEventStyles = (_event: TaskEvent) => {
+const statusColors: Record<Task['status'], string> = {
+  todo: '#1f2937',
+  inProgress: '#b45309',
+  done: '#15803d',
+}
+
+const getCalendarEventStyles = (event: TaskEvent) => {
+  const color = statusColors[event.resource.status] ?? '#1f2937'
   return {
-    className: '',
     style: {
-      backgroundColor: 'transparent',
+      backgroundColor: color,
       border: 'none',
-      padding: 0,
-      boxShadow: 'none',
+      borderRadius: '12px',
+      color: '#fff',
+      padding: '6px 8px',
+      display: 'flex',
+      flexDirection: 'column' as const,
+      boxShadow: '0 10px 25px rgba(15,23,42,0.3)',
+      opacity: isBackupEvent(event.resource) ? 0.6 : 1,
     },
   }
 }
