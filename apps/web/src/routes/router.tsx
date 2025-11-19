@@ -10,6 +10,7 @@ import { NotFoundRoute } from '@/routes/sections/not-found-route'
 import { SignInRoute } from '@/routes/sections/sign-in-route'
 import { CreateAccountRoute } from '@/routes/sections/create-account-route'
 import { InviteRoute } from '@/routes/sections/invite-route'
+import { ProfileRoute } from '@/routes/sections/profile-route'
 import { ComingSoon } from '@/components/status/coming-soon'
 
 export const router = createBrowserRouter([
@@ -48,6 +49,10 @@ export const router = createBrowserRouter([
           {
             path: 'schedule',
             element: <ScheduleRoute />,
+          },
+          {
+            path: 'profile',
+            element: <ProfileRoute />,
           },
           {
             path: 'goals',
