@@ -14,6 +14,7 @@ const data = previewSeed.parse({
     id: ownerUid,
     email: 'demo@taskcalendar.dev',
     displayName: 'Jordan Lead',
+    avatarUrl: 'https://i.pravatar.cc/150?u=jordan',
     createdAt: iso(now),
   },
   contacts: [

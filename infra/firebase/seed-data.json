@@ -3,7 +3,8 @@
     "id": "demo-owner",
     "email": "demo@taskcalendar.dev",
     "displayName": "Jordan Lead",
-    "createdAt": "2025-11-19T19:32:51.562Z"
+    "avatarUrl": "https://i.pravatar.cc/150?u=jordan",
+    "createdAt": "2025-11-19T20:59:09.452Z"
   },
   "contacts": [
     {
@@ -19,13 +20,13 @@
         "spanish"
       ],
       "notes": "Loves service opportunities and prefers weeknight visits.",
-      "lastContactedAt": "2025-11-17T19:32:51.562Z",
-      "nextVisitAt": "2025-11-21T19:32:51.562Z",
+      "lastContactedAt": "2025-11-17T20:59:09.452Z",
+      "nextVisitAt": "2025-11-21T20:59:09.452Z",
       "sharedWith": [
         "avery-demo"
       ],
-      "createdAt": "2025-10-30T19:32:51.562Z",
-      "updatedAt": "2025-11-19T19:32:51.562Z"
+      "createdAt": "2025-10-30T20:59:09.452Z",
+      "updatedAt": "2025-11-19T20:59:09.452Z"
     },
     {
       "id": "contact-devon",
@@ -38,11 +39,11 @@
         "young adult"
       ],
       "notes": "Prefers afternoon lessons. Working through commitments.",
-      "lastContactedAt": "2025-11-15T19:32:51.562Z",
-      "nextVisitAt": "2025-11-24T19:32:51.562Z",
+      "lastContactedAt": "2025-11-15T20:59:09.452Z",
+      "nextVisitAt": "2025-11-24T20:59:09.452Z",
       "sharedWith": [],
-      "createdAt": "2025-11-09T19:32:51.562Z",
-      "updatedAt": "2025-11-19T19:32:51.562Z"
+      "createdAt": "2025-11-09T20:59:09.452Z",
+      "updatedAt": "2025-11-19T20:59:09.452Z"
     },
     {
       "id": "contact-nguyen",
@@ -57,12 +58,12 @@
       ],
       "notes": "Referred by ward member. Kids love Primary.",
       "lastContactedAt": null,
-      "nextVisitAt": "2025-11-26T19:32:51.562Z",
+      "nextVisitAt": "2025-11-26T20:59:09.452Z",
       "sharedWith": [
         "luis-demo"
       ],
-      "createdAt": "2025-11-16T19:32:51.562Z",
-      "updatedAt": "2025-11-19T19:32:51.562Z"
+      "createdAt": "2025-11-16T20:59:09.452Z",
+      "updatedAt": "2025-11-19T20:59:09.452Z"
     }
   ],
   "lessons": [
@@ -70,7 +71,7 @@
       "id": "lesson-001",
       "ownerUid": "demo-owner",
       "contactId": "contact-maria",
-      "taughtAt": "2025-11-18T19:32:51.562Z",
+      "taughtAt": "2025-11-18T20:59:09.452Z",
       "type": "plan",
       "commitments": [
         "Read Alma 32",
@@ -81,18 +82,18 @@
         "Jordan Lead",
         "Avery North"
       ],
-      "followUpAt": "2025-11-21T19:32:51.562Z",
+      "followUpAt": "2025-11-21T20:59:09.452Z",
       "sharedWith": [
         "avery-demo"
       ],
-      "createdAt": "2025-11-18T19:32:51.562Z",
-      "updatedAt": "2025-11-19T19:32:51.562Z"
+      "createdAt": "2025-11-18T20:59:09.452Z",
+      "updatedAt": "2025-11-19T20:59:09.452Z"
     },
     {
       "id": "lesson-002",
       "ownerUid": "demo-owner",
       "contactId": "contact-devon",
-      "taughtAt": "2025-11-16T19:32:51.562Z",
+      "taughtAt": "2025-11-16T20:59:09.452Z",
       "type": "gospel",
       "commitments": [
         "Pray morning and night",
@@ -102,16 +103,16 @@
       "taughtBy": [
         "Jordan Lead"
       ],
-      "followUpAt": "2025-11-23T19:32:51.562Z",
+      "followUpAt": "2025-11-23T20:59:09.452Z",
       "sharedWith": [],
-      "createdAt": "2025-11-16T19:32:51.562Z",
-      "updatedAt": "2025-11-17T19:32:51.562Z"
+      "createdAt": "2025-11-16T20:59:09.452Z",
+      "updatedAt": "2025-11-17T20:59:09.452Z"
     },
     {
       "id": "lesson-003",
       "ownerUid": "demo-owner",
       "contactId": "contact-nguyen",
-      "taughtAt": "2025-11-14T19:32:51.562Z",
+      "taughtAt": "2025-11-14T20:59:09.452Z",
       "type": "restoration",
       "commitments": [
         "Read 1 Nephi 1",
@@ -121,12 +122,12 @@
       "taughtBy": [
         "Luis Ortega"
       ],
-      "followUpAt": "2025-11-17T19:32:51.562Z",
+      "followUpAt": "2025-11-17T20:59:09.452Z",
       "sharedWith": [
         "luis-demo"
       ],
-      "createdAt": "2025-11-14T19:32:51.562Z",
-      "updatedAt": "2025-11-14T19:32:51.562Z"
+      "createdAt": "2025-11-14T20:59:09.452Z",
+      "updatedAt": "2025-11-14T20:59:09.452Z"
     }
   ],
   "contactNotes": [
@@ -138,8 +139,8 @@
       "sharedWith": [
         "avery-demo"
       ],
-      "createdAt": "2025-11-18T19:32:51.562Z",
-      "updatedAt": "2025-11-18T19:32:51.562Z"
+      "createdAt": "2025-11-18T20:59:09.452Z",
+      "updatedAt": "2025-11-18T20:59:09.452Z"
     },
     {
       "id": "note-devon-1",
@@ -147,8 +148,8 @@
       "contactId": "contact-devon",
       "content": "Still nervous about baptismal date; schedule chapel tour.",
       "sharedWith": [],
-      "createdAt": "2025-11-17T19:32:51.562Z",
-      "updatedAt": "2025-11-17T19:32:51.562Z"
+      "createdAt": "2025-11-17T20:59:09.452Z",
+      "updatedAt": "2025-11-17T20:59:09.452Z"
     },
     {
       "id": "note-nguyen-1",
@@ -158,8 +159,8 @@
       "sharedWith": [
         "luis-demo"
       ],
-      "createdAt": "2025-11-15T19:32:51.562Z",
-      "updatedAt": "2025-11-15T19:32:51.562Z"
+      "createdAt": "2025-11-15T20:59:09.452Z",
+      "updatedAt": "2025-11-15T20:59:09.452Z"
     }
   ],
   "goals": [
@@ -169,11 +170,11 @@
       "metric": "lessons",
       "target": 8,
       "progress": 6,
-      "periodStart": "2025-11-12T19:32:51.562Z",
-      "periodEnd": "2025-11-26T19:32:51.562Z",
+      "periodStart": "2025-11-12T20:59:09.452Z",
+      "periodEnd": "2025-11-26T20:59:09.452Z",
       "sharedWith": [],
-      "createdAt": "2025-11-12T19:32:51.562Z",
-      "updatedAt": "2025-11-19T19:32:51.562Z"
+      "createdAt": "2025-11-12T20:59:09.452Z",
+      "updatedAt": "2025-11-19T20:59:09.452Z"
     }
   ],
   "tasks": [
@@ -184,18 +185,18 @@
       "title": "Confirm member present for Devon",
       "status": "todo",
       "priority": "high",
-      "dueAt": "2025-11-20T19:32:51.562Z",
+      "dueAt": "2025-11-20T20:59:09.452Z",
       "assignedTo": [
         "demo-owner"
       ],
       "notes": "Coordinate with ward mission leader.",
-      "scheduledStart": "2025-11-20T15:32:51.562Z",
-      "scheduledEnd": "2025-11-20T16:32:51.562Z",
+      "scheduledStart": "2025-11-20T16:59:09.452Z",
+      "scheduledEnd": "2025-11-20T17:59:09.452Z",
       "sharedWith": [
         "avery-demo"
       ],
-      "createdAt": "2025-11-17T19:32:51.562Z",
-      "updatedAt": "2025-11-19T19:32:51.562Z"
+      "createdAt": "2025-11-17T20:59:09.452Z",
+      "updatedAt": "2025-11-19T20:59:09.452Z"
     },
     {
       "id": "task-planning",
@@ -203,19 +204,19 @@
       "title": "Weekly planning with Avery",
       "status": "inProgress",
       "priority": "medium",
-      "dueAt": "2025-11-21T19:32:51.562Z",
+      "dueAt": "2025-11-21T20:59:09.452Z",
       "assignedTo": [
         "demo-owner",
         "avery-demo"
       ],
       "notes": "Focus on campus referrals.",
-      "scheduledStart": "2025-11-20T19:32:51.562Z",
-      "scheduledEnd": "2025-11-20T20:32:51.562Z",
+      "scheduledStart": "2025-11-20T20:59:09.452Z",
+      "scheduledEnd": "2025-11-20T21:59:09.452Z",
       "sharedWith": [
         "avery-demo"
       ],
-      "createdAt": "2025-11-18T19:32:51.562Z",
-      "updatedAt": "2025-11-19T19:32:51.562Z"
+      "createdAt": "2025-11-18T20:59:09.452Z",
+      "updatedAt": "2025-11-19T20:59:09.452Z"
     },
     {
       "id": "task-service",
@@ -223,7 +224,7 @@
       "title": "Campus service project",
       "status": "todo",
       "priority": "low",
-      "dueAt": "2025-11-24T19:32:51.562Z",
+      "dueAt": "2025-11-24T20:59:09.452Z",
       "assignedTo": [
         "demo-owner",
         "luis-demo"
@@ -234,8 +235,8 @@
       "sharedWith": [
         "luis-demo"
       ],
-      "createdAt": "2025-11-16T19:32:51.562Z",
-      "updatedAt": "2025-11-17T19:32:51.562Z"
+      "createdAt": "2025-11-16T20:59:09.452Z",
+      "updatedAt": "2025-11-17T20:59:09.452Z"
     }
   ],
   "invites": [
@@ -245,8 +246,8 @@
       "email": "avery@example.com",
       "role": "editor",
       "status": "accepted",
-      "createdAt": "2025-11-13T19:32:51.562Z",
-      "respondedAt": "2025-11-14T19:32:51.562Z",
+      "createdAt": "2025-11-13T20:59:09.452Z",
+      "respondedAt": "2025-11-14T20:59:09.452Z",
       "acceptedBy": "avery-demo"
     },
     {
@@ -255,7 +256,7 @@
       "email": "luis@example.com",
       "role": "viewer",
       "status": "pending",
-      "createdAt": "2025-11-17T19:32:51.562Z"
+      "createdAt": "2025-11-17T20:59:09.452Z"
     }
   ]
 }

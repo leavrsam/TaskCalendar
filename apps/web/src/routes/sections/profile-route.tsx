@@ -2,11 +2,13 @@ import { useState } from 'react'
 
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
+import { CollaboratorAvatar } from '@/components/collaborators/collaborator-avatar'
 
 export function ProfileRoute() {
   const { user } = useAuth()
   const { success: showSuccessToast } = useToast()
   const [displayName, setDisplayName] = useState(user?.displayName ?? '')
+  const [avatarUrl, setAvatarUrl] = useState(user?.photoURL ?? '')
   const [email] = useState(user?.email ?? '')
 
   const handleSave = () => {
@@ -29,6 +31,26 @@ export function ProfileRoute() {
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900">Basic info</h2>
           <div className="mt-4 space-y-4">
+            <div className="flex items-center gap-4">
+              <CollaboratorAvatar
+                collaborator={{
+                  uid: user?.uid ?? 'me',
+                  email: user?.email ?? '',
+                  label: displayName || user?.email || 'You',
+                }}
+                size="md"
+              />
+              <div className="flex-1">
+                <label className="text-xs font-semibold uppercase text-slate-500">Avatar URL</label>
+                <input
+                  type="url"
+                  value={avatarUrl}
+                  onChange={(e) => setAvatarUrl(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  placeholder="https://example.com/avatar.jpg"
+                />
+              </div>
+            </div>
             <div>
               <label className="text-xs font-semibold uppercase text-slate-500">
                 Display name

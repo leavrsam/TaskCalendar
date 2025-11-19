@@ -138,6 +138,7 @@ export const userProfileSchema = z.object({
   id: uid,
   email: z.string().email(),
   displayName: z.string().optional(),
+  avatarUrl: z.string().url().optional(),
   createdAt: timestampString,
 })
 
