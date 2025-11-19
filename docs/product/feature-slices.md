@@ -36,9 +36,9 @@ Each slice should end with a deployable preview channel + Storybook snapshot so 
 
 ## Slice 6 – Goals & Dashboard
 
-- Goal creation wizard (metric, target, timeframe).
+- Goal creation wizard for personal focus areas (physical, intellectual, spiritual, etc.).
 - Dashboard widgets for KPIs, follow-up alerts, workspace summary.
-- Cloud Functions to roll up weekly stats.
+- Cloud Functions to roll up weekly stats (future enhancement).
 
 ## Slice 7 – Maps & Reporting
 

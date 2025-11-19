@@ -24,7 +24,7 @@ users/{uid}/invites/{inviteId}
 
 - `UserProfile`: `{ email, displayName?, createdAt }`
 - `WorkspaceInvite`: `{ ownerUid, email, role (viewer/editor), status (pending/accepted/declined/revoked), createdAt, respondedAt?, acceptedBy? }`
-- Mission data (contacts, lessons, goals, tasks) live under the authenticated user’s namespace and include `sharedWith: string[]` for future collaborators.
+- Mission data (contacts, lessons, goals, tasks) live under the authenticated user’s namespace and include `sharedWith: string[]` for future collaborators. Goals support focus areas such as physical, intellectual, social, financial, spiritual, emotional, career, and personal.
 
 ## Security Rules Highlights
 

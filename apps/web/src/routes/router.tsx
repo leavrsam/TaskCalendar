@@ -6,6 +6,7 @@ import { DashboardRoute } from '@/routes/sections/dashboard-route'
 import { ContactsRoute } from '@/routes/sections/contacts-route'
 import { LessonsRoute } from '@/routes/sections/lessons-route'
 import { ScheduleRoute } from '@/routes/sections/schedule-route'
+import { GoalsRoute } from '@/routes/sections/goals-route'
 import { NotFoundRoute } from '@/routes/sections/not-found-route'
 import { SignInRoute } from '@/routes/sections/sign-in-route'
 import { CreateAccountRoute } from '@/routes/sections/create-account-route'
@@ -61,12 +62,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'goals',
-            element: (
-              <ComingSoon
-                title="Goal tracking"
-                description="Slice 6 will unlock KPIs and progress alerts for your personal focus areas."
-              />
-            ),
+            element: <GoalsRoute />,
           },
           {
             path: 'map',

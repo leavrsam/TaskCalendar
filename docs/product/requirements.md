@@ -26,7 +26,7 @@ Modern planning for small teams is fragmented across spreadsheets, calendars, an
    - Calendar-style agenda with drag/drop tasks, recurring appointments, Google Calendar optional sync.
    - Task list filtered by priority, due date, status.
 4. **Goals & Analytics**
-   - Weekly/monthly goals per workspace (lessons, contacts, service hours).
+   - Track short-term goals across focus areas (physical, intellectual, financial, spiritual, etc.).
    - Dashboard widgets summarizing progress and surfacing follow-ups.
 5. **Maps View**
    - Mapbox-integrated map of contacts/tasks with filters (stage, priority) and clustering.
