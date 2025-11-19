@@ -107,7 +107,7 @@ export const taskSchema = z.object({
 export type Task = z.infer<typeof taskSchema>
 
 const inviteRoleSchema = z.enum(['viewer', 'editor'])
-const inviteStatusSchema = z.enum(['pending', 'accepted', 'revoked'])
+const inviteStatusSchema = z.enum(['pending', 'accepted', 'declined', 'revoked'])
 
 export const inviteSchema = z.object({
   id: inviteId,
@@ -117,6 +117,7 @@ export const inviteSchema = z.object({
   status: inviteStatusSchema,
   createdAt: timestampString,
   respondedAt: timestampString.optional(),
+  acceptedBy: uid.optional(),
 })
 
 export type WorkspaceInvite = z.infer<typeof inviteSchema>
@@ -126,6 +127,7 @@ export const contactNoteSchema = z.object({
   ownerUid: uid,
   contactId,
   content: z.string().min(2),
+  sharedWith: z.array(uid).default([]),
   createdAt: timestampString,
   updatedAt: timestampString,
 })

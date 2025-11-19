@@ -9,6 +9,7 @@ import { ScheduleRoute } from '@/routes/sections/schedule-route'
 import { NotFoundRoute } from '@/routes/sections/not-found-route'
 import { SignInRoute } from '@/routes/sections/sign-in-route'
 import { CreateAccountRoute } from '@/routes/sections/create-account-route'
+import { InviteRoute } from '@/routes/sections/invite-route'
 import { ComingSoon } from '@/components/status/coming-soon'
 
 export const router = createBrowserRouter([
@@ -23,6 +24,10 @@ export const router = createBrowserRouter([
   {
     path: '/auth/create',
     element: <CreateAccountRoute />,
+  },
+  {
+    path: '/invite',
+    element: <InviteRoute />,
   },
   {
     path: '/',

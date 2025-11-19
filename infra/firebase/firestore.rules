@@ -15,6 +15,12 @@ service cloud.firestore {
         && invite.data.email == request.auth.token.email;
     }
 
+    function hasSharedAccess(doc) {
+      return isSignedIn()
+        && doc.data.keys().hasAny(['sharedWith'])
+        && request.auth.uid in doc.data.sharedWith;
+    }
+
     match /users/{userId} {
       allow read, write: if isOwner(userId);
     }
@@ -33,15 +39,22 @@ service cloud.firestore {
           && request.resource.data.email == resource.data.email
           && request.resource.data.role == resource.data.role
           && request.resource.data.createdAt == resource.data.createdAt
-          && request.resource.data.status in ['pending', 'accepted']
+          && request.resource.data.status in ['accepted', 'declined']
           && request.resource.data.respondedAt != null
+          && (
+            (request.resource.data.status == 'accepted'
+              && request.resource.data.acceptedBy == request.auth.uid)
+            || (request.resource.data.status == 'declined'
+              && !request.resource.data.keys().hasAny(['acceptedBy']))
+          )
         );
 
       allow delete: if isOwner(userId);
     }
 
     match /users/{userId}/{document=**} {
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId) || hasSharedAccess(resource);
+      allow write: if isOwner(userId);
     }
 
     match /{document=**} {

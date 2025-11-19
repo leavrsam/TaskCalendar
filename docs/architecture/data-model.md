@@ -23,7 +23,7 @@ users/{uid}/invites/{inviteId}
 ### Key Document Shapes (Zod schemas in `packages/core`)
 
 - `UserProfile`: `{ email, displayName?, createdAt }`
-- `WorkspaceInvite`: `{ ownerUid, email, role (viewer/editor), status (pending/accepted/revoked), createdAt, respondedAt? }`
+- `WorkspaceInvite`: `{ ownerUid, email, role (viewer/editor), status (pending/accepted/declined/revoked), createdAt, respondedAt?, acceptedBy? }`
 - Mission data (contacts, lessons, goals, tasks) live under the authenticated user’s namespace and include `sharedWith: string[]` for future collaborators.
 
 ## Security Rules Highlights

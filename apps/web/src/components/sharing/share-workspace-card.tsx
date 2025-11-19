@@ -17,6 +17,7 @@ const roleLabels: Record<WorkspaceInvite['role'], string> = {
 const statusTone: Record<WorkspaceInvite['status'], string> = {
   pending: 'bg-amber-50 text-amber-700',
   accepted: 'bg-emerald-50 text-emerald-700',
+  declined: 'bg-rose-50 text-rose-700',
   revoked: 'bg-slate-100 text-slate-600',
 }
 
@@ -32,6 +33,10 @@ export function ShareWorkspaceCard() {
   const invites = invitesQuery.data ?? []
   const pendingInvites = useMemo(
     () => invites.filter((invite) => invite.status === 'pending'),
+    [invites],
+  )
+  const activeCollaborators = useMemo(
+    () => invites.filter((invite) => invite.status === 'accepted'),
     [invites],
   )
 
@@ -90,6 +95,11 @@ export function ShareWorkspaceCard() {
         </button>
       </div>
 
+      <InviteList
+        title="Active collaborators"
+        emptyText="No collaborators yet."
+        invites={activeCollaborators}
+      />
       <InviteList
         title="Pending invites"
         emptyText="No pending invites."
