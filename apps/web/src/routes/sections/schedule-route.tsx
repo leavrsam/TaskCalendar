@@ -282,10 +282,10 @@ export function CalendarEvent({ event }: { event: TaskEvent }) {
 
   return (
     <div className="flex h-full flex-col gap-1 text-xs text-white">
-      <p className="truncate text-sm font-semibold">{event.title}</p>
-      <p className="text-[11px] text-white/90">
+      <p className="text-[11px] text-white/80">
         {startLabel} – {endLabel}
       </p>
+      <p className="truncate text-base font-semibold leading-5">{event.title}</p>
       <div className="mt-auto flex items-center justify-between text-[11px]">
         <button
           type="button"
@@ -324,6 +324,9 @@ const getCalendarEventStyles = (event: TaskEvent) => {
       flexDirection: 'column' as const,
       boxShadow: '0 10px 25px rgba(15,23,42,0.3)',
       opacity: isBackupEvent(event.resource) ? 0.6 : 1,
+      fontWeight: 600,
+      fontSize: '13px',
+      alignItems: 'flex-start',
     },
   }
 }
