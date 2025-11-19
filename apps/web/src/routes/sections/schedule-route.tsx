@@ -14,12 +14,9 @@ const DnDCalendar = withDragAndDrop<TaskEvent, TaskEvent>(Calendar)
 import type { Task } from '@taskcalendar/core'
 
 import { TaskCard } from '@/components/tasks/task-card'
-import { CalendarEventBadge } from '@/components/calendar/event-badge'
-import { EventMenu } from '@/components/calendar/event-menu'
-import {
-  isBackupEvent,
-  isOverdueEvent,
-} from '@/components/calendar/event-badge.utils'
+import { Circle, Clock3, CheckCircle2 } from 'lucide-react'
+
+import { isBackupEvent, isOverdueEvent } from '@/components/calendar/event-badge.utils'
 import {
   useCreateTask,
   useTaskEvents,
@@ -271,27 +268,42 @@ function AgendaBoard({
 export function CalendarEvent({ event }: { event: TaskEvent }) {
   const overdue = isOverdueEvent(event.resource)
   const backup = isBackupEvent(event.resource)
+  const updateTask = useUpdateTask()
+
+  const startLabel = format(event.start as Date, 'h:mm a')
+  const endLabel = format(event.end as Date, 'h:mm a')
+
+  const nextStatus = getNextStatus(event.resource.status)
+
+  const handleToggleStatus = () => {
+    updateTask.mutate({
+      id: event.resource.id,
+      data: { status: nextStatus },
+    })
+  }
+
   return (
     <div
       className={clsx(
-        'flex h-full flex-col justify-between rounded-md px-2 py-1 text-xs',
+        'flex h-full flex-col rounded-md border border-slate-200 bg-white/90 px-2 py-1 text-xs shadow-sm',
         backup && 'opacity-60',
       )}
     >
-      <div className="flex items-center justify-between gap-2">
-        <p className="truncate font-semibold">{event.title}</p>
-        <CalendarEventBadge task={event.resource} />
-      </div>
-      <div className="mt-1 flex items-center justify-between text-[10px] text-slate-500">
-        <EventMenu
-          task={event.resource}
-          onChange={() => {
-            // handled via parent context
-          }}
-        />
-        {overdue && (
-          <span className="font-semibold text-rose-600">Not completed</span>
-        )}
+      <p className="truncate text-[13px] font-semibold text-slate-900">{event.title}</p>
+      <p className="text-[11px] font-medium text-slate-600">
+        {startLabel} – {endLabel}
+      </p>
+      <div className="mt-2 flex items-center justify-between text-[11px]">
+        <button
+          type="button"
+          onClick={handleToggleStatus}
+          className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2 py-1 text-slate-600 hover:border-brand-300 hover:text-brand-700"
+          aria-label="Toggle task status"
+        >
+          {getStatusIcon(event.resource.status)}
+          <span className="capitalize">{event.resource.status}</span>
+        </button>
+        {overdue && <span className="font-semibold text-rose-600">Overdue</span>}
       </div>
       {backup && (
         <span className="mt-1 text-[10px] font-semibold text-rose-600">
@@ -300,6 +312,27 @@ export function CalendarEvent({ event }: { event: TaskEvent }) {
       )}
     </div>
   )
+}
+
+const getNextStatus = (status: Task['status']): Task['status'] => {
+  switch (status) {
+    case 'todo':
+      return 'inProgress'
+    case 'inProgress':
+      return 'done'
+    default:
+      return 'todo'
+  }
+}
+
+const getStatusIcon = (status: Task['status']) => {
+  if (status === 'inProgress') {
+    return <Clock3 className="h-4 w-4 text-amber-500" />
+  }
+  if (status === 'done') {
+    return <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+  }
+  return <Circle className="h-4 w-4 text-slate-400" />
 }
 
 type TaskBoardProps = {
