@@ -285,25 +285,25 @@ export function CalendarEvent({ event }: { event: TaskEvent }) {
   return (
     <div
       className={clsx(
-        'flex h-full flex-col rounded-md border border-slate-200 bg-white/90 px-2 py-1 text-xs shadow-sm',
+        'flex h-full flex-col rounded-md bg-slate-900/70 px-2 py-1 text-xs text-white',
         backup && 'opacity-60',
       )}
     >
-      <p className="truncate text-[13px] font-semibold text-slate-900">{event.title}</p>
-      <p className="text-[11px] font-medium text-slate-600">
+      <p className="truncate text-[13px] font-semibold">{event.title}</p>
+      <p className="text-[11px] font-medium text-slate-100">
         {startLabel} – {endLabel}
       </p>
       <div className="mt-2 flex items-center justify-between text-[11px]">
         <button
           type="button"
           onClick={handleToggleStatus}
-          className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2 py-1 text-slate-600 hover:border-brand-300 hover:text-brand-700"
+          className="inline-flex items-center gap-1 rounded-full border border-white/30 px-2 py-1 text-white hover:border-white/60"
           aria-label="Toggle task status"
         >
           {getStatusIcon(event.resource.status)}
           <span className="capitalize">{event.resource.status}</span>
         </button>
-        {overdue && <span className="font-semibold text-rose-600">Overdue</span>}
+        {overdue && <span className="font-semibold text-rose-300">Overdue</span>}
       </div>
       {backup && (
         <span className="mt-1 text-[10px] font-semibold text-rose-600">
@@ -351,6 +351,7 @@ function TaskBoard({
   onDragTaskChange,
 }: TaskBoardProps) {
   const createTask = useCreateTask()
+  const [collapsed, setCollapsed] = useState(false)
 
   const handleNewTask = async () => {
     await createTask.mutateAsync({
@@ -361,54 +362,68 @@ function TaskBoard({
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between">
+    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="flex items-center justify-between px-4 py-3">
         <div>
           <p className="text-xs uppercase tracking-wide text-slate-500">
             Tasks
           </p>
           <h2 className="text-lg font-semibold text-slate-900">Backlog</h2>
         </div>
-        <button
-          type="button"
-          onClick={handleNewTask}
-          className="rounded-full border border-slate-200 px-3 py-1 text-sm font-semibold text-slate-600 hover:border-brand-200"
-        >
-          Quick add
-        </button>
-      </div>
-
-      <div className="mt-3 flex flex-wrap gap-2">
-        {['all', 'todo', 'inProgress', 'done'].map((status) => (
+        <div className="flex items-center gap-2">
           <button
-            key={status}
             type="button"
-            onClick={() => onFilterChange(status as Task['status'] | 'all')}
-            className={clsx(
-              'rounded-full px-3 py-1 text-xs font-semibold',
-              filter === status
-                ? 'bg-brand-600 text-white'
-                : 'bg-slate-100 text-slate-600',
-            )}
+            onClick={handleNewTask}
+            className="rounded-full border border-slate-200 px-3 py-1 text-sm font-semibold text-slate-600 hover:border-brand-200"
           >
-            {status}
+            Quick add
           </button>
-        ))}
+          <button
+            type="button"
+            onClick={() => setCollapsed((prev) => !prev)}
+            className="rounded-full border border-slate-200 px-3 py-1 text-sm font-semibold text-slate-600 hover:border-brand-200"
+          >
+            {collapsed ? 'Show' : 'Hide'}
+          </button>
+        </div>
       </div>
-      <div className="mt-4 rounded-lg border border-dashed border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
-        Drag tasks from here onto the calendar to schedule them.
-      </div>
-      <div className="mt-4 space-y-3">
-        {loading && <p className="text-sm text-slate-500">Loading tasks…</p>}
-        {!loading && tasks.length === 0 && (
-          <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
-            No tasks in this column yet. Quick add one to begin planning.
-          </p>
-        )}
-        {tasks.map((task) => (
-          <DraggableTaskCard key={task.id} task={task} onDragTaskChange={onDragTaskChange} />
-        ))}
-      </div>
+      {!collapsed && (
+        <>
+          <div className="px-4">
+            <div className="flex flex-wrap gap-2">
+              {['all', 'todo', 'inProgress', 'done'].map((status) => (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => onFilterChange(status as Task['status'] | 'all')}
+                  className={clsx(
+                    'rounded-full px-3 py-1 text-xs font-semibold',
+                    filter === status
+                      ? 'bg-brand-600 text-white'
+                      : 'bg-slate-100 text-slate-600',
+                  )}
+                >
+                  {status}
+                </button>
+              ))}
+            </div>
+            <div className="mt-4 rounded-lg border border-dashed border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+              Drag tasks from here onto the calendar to schedule them.
+            </div>
+          </div>
+          <div className="mt-4 space-y-3 px-4 pb-4">
+            {loading && <p className="text-sm text-slate-500">Loading tasks…</p>}
+            {!loading && tasks.length === 0 && (
+              <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                No tasks in this column yet. Quick add one to begin planning.
+              </p>
+            )}
+            {tasks.map((task) => (
+              <DraggableTaskCard key={task.id} task={task} onDragTaskChange={onDragTaskChange} />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   )
 }
