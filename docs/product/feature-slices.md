@@ -18,7 +18,7 @@ Each slice should end with a deployable preview channel + Storybook snapshot so 
 ## Slice 3 – Contacts & Sharing
 
 - Contacts board grouped by stage with personal notes/history.
-- Workspace sharing sidecar (invite placeholders, collaborator status).
+- Workspace sharing sidecar (email invites with role selection, revoke/accept flows, collaborator status).
 - Firestore hooks via TanStack Query; optimistic updates + validation from `packages/core`.
 
 ## Slice 4 – Lessons & Notes

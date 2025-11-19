@@ -196,6 +196,25 @@ const data = previewSeed.parse({
       updatedAt: iso(new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000)),
     },
   ],
+  invites: [
+    {
+      id: 'invite-avery',
+      ownerUid,
+      email: 'avery@example.com',
+      role: 'editor',
+      status: 'accepted',
+      createdAt: iso(new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000)),
+      respondedAt: iso(new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000)),
+    },
+    {
+      id: 'invite-luis',
+      ownerUid,
+      email: 'luis@example.com',
+      role: 'viewer',
+      status: 'pending',
+      createdAt: iso(new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000)),
+    },
+  ],
 })
 
 const targetDir = dirname(fileURLToPath(import.meta.url))

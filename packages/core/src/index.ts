@@ -6,6 +6,7 @@ export const taskId = z.string().min(4)
 export const goalId = z.string().min(4)
 export const lessonId = z.string().min(4)
 export const noteId = z.string().min(4)
+export const inviteId = z.string().min(6)
 
 const timestampString = z.string()
 
@@ -105,6 +106,21 @@ export const taskSchema = z.object({
 
 export type Task = z.infer<typeof taskSchema>
 
+const inviteRoleSchema = z.enum(['viewer', 'editor'])
+const inviteStatusSchema = z.enum(['pending', 'accepted', 'revoked'])
+
+export const inviteSchema = z.object({
+  id: inviteId,
+  ownerUid: uid,
+  email: z.string().email(),
+  role: inviteRoleSchema,
+  status: inviteStatusSchema,
+  createdAt: timestampString,
+  respondedAt: timestampString.optional(),
+})
+
+export type WorkspaceInvite = z.infer<typeof inviteSchema>
+
 export const contactNoteSchema = z.object({
   id: noteId,
   ownerUid: uid,
@@ -132,6 +148,7 @@ export const previewSeed = z.object({
   contactNotes: z.array(contactNoteSchema),
   goals: z.array(goalSchema),
   tasks: z.array(taskSchema),
+  invites: z.array(inviteSchema),
 })
 
 export type PreviewSeed = z.infer<typeof previewSeed>

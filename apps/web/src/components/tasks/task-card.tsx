@@ -42,6 +42,11 @@ export function TaskCard({ task, onStatusChange, onSchedule }: TaskCardProps) {
       {task.notes && (
         <p className="mt-2 text-sm text-slate-600 line-clamp-3">{task.notes}</p>
       )}
+      {task.sharedWith && task.sharedWith.length > 0 && (
+        <p className="mt-2 text-xs font-semibold text-slate-500">
+          Shared with {task.sharedWith.length} collaborator{task.sharedWith.length > 1 ? 's' : ''}
+        </p>
+      )}
 
       <div className="mt-3 flex flex-wrap gap-2 text-xs">
         {['todo', 'inProgress', 'done'].map((status) => (

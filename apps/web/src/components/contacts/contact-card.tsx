@@ -19,6 +19,11 @@ export function ContactCard({ contact }: ContactCardProps) {
         </span>
       </div>
       {contact.notes && <p className="mt-2 text-sm text-slate-600">{contact.notes}</p>}
+      {contact.sharedWith && contact.sharedWith.length > 0 && (
+        <p className="mt-2 text-xs font-semibold text-slate-500">
+          Shared with {contact.sharedWith.length} collaborator{contact.sharedWith.length > 1 ? 's' : ''}
+        </p>
+      )}
       <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-slate-500">
         {contact.lastContactedAt && (
           <div>

@@ -17,17 +17,20 @@ users/{uid}
 users/{uid}/contacts/{contactId}
 users/{uid}/lessons/{lessonId}
 users/{uid}/tasks/{taskId}
+users/{uid}/invites/{inviteId}
 ```
 
 ### Key Document Shapes (Zod schemas in `packages/core`)
 
 - `UserProfile`: `{ email, displayName?, createdAt }`
+- `WorkspaceInvite`: `{ ownerUid, email, role (viewer/editor), status (pending/accepted/revoked), createdAt, respondedAt? }`
 - Mission data (contacts, lessons, goals, tasks) live under the authenticated user’s namespace and include `sharedWith: string[]` for future collaborators.
 
 ## Security Rules Highlights
 
 - `users/{uid}`: only the authenticated owner can read/write.
 - `users/{uid}` subcollections: owner can read/write; collaborators listed in `sharedWith` can be granted read/write as slices mature.
+- `users/{uid}/invites/{inviteId}`: owner can manage; invitee (matching email) can read and mark accepted (status/response timestamp).
 - Shared subcollections (future slices) will reference both UIDs and enforce that either side of the link can read/write according to their role.
 
 ## Indexing & Performance

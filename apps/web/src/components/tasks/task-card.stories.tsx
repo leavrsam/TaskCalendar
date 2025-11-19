@@ -13,7 +13,7 @@ const baseTask: Task = {
   dueAt: new Date().toISOString(),
   assignedTo: ['demo-owner'],
   notes: 'Coordinate with fellowship.',
-  sharedWith: [],
+  sharedWith: ['avery-demo'],
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   contactId: 'contact-maria',

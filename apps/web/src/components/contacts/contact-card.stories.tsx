@@ -18,7 +18,7 @@ const meta: Meta<typeof ContactCard> = {
       notes: 'Prefers weeknight lessons with a member present.',
       lastContactedAt: new Date().toISOString(),
       nextVisitAt: new Date(Date.now() + 86400000).toISOString(),
-      sharedWith: [],
+      sharedWith: ['avery-demo'],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     },

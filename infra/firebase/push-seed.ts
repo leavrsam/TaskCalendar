@@ -40,6 +40,7 @@ async function seedUser() {
   await write('contactNotes', seed.contactNotes)
   await write('goals', seed.goals)
   await write('tasks', seed.tasks)
+  await write('invites', seed.invites)
 
   console.log(`Seeded Firestore emulator at ${FIRESTORE_HOST}`)
 }
