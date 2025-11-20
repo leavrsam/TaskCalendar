@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState, useRef } from 'react'
 import clsx from 'clsx'
 import { DndProvider, useDrag } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
-import { addMonths, subMonths, format } from 'date-fns'
+import { addMonths, subMonths, format, startOfWeek } from 'date-fns'
 import { Calendar } from 'react-big-calendar'
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop'
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css'
@@ -14,14 +14,15 @@ const DnDCalendar = withDragAndDrop<TaskEvent, TaskEvent>(Calendar)
 import type { Task } from '@taskcalendar/core'
 
 import { TaskCard } from '@/components/tasks/task-card'
-import { Circle, Clock3, CheckCircle2 } from 'lucide-react'
+import { Circle, Clock3, CheckCircle2, Ban, Trash2 } from 'lucide-react'
 
-import { isBackupEvent, isOverdueEvent } from '@/components/calendar/event-badge.utils'
+import { isOverdueEvent } from '@/components/calendar/event-badge.utils'
 import {
   useCreateTask,
   useTaskEvents,
   useTasksQuery,
   useUpdateTask,
+  useDeleteTask,
   type TaskEvent,
 } from '@/features/tasks/api'
 import { calendarLocalizer } from '@/lib/calendar'
@@ -35,120 +36,136 @@ export function ScheduleRoute() {
   const createTask = useCreateTask()
   const tasks = useMemo(() => tasksQuery.data ?? [], [tasksQuery.data])
   const [filter, setFilter] = useState<Task['status'] | 'all'>('all')
+  const [collapsed, setCollapsed] = useState(false)
 
   const [creationSlot, setCreationSlot] = useState<{ start: Date; end: Date } | null>(null)
   const [dragTaskId, setDragTaskId] = useState<string | null>(null)
-  const [weekAnchor, setWeekAnchor] = useState(new Date())
-  const [selectedEvent, setSelectedEvent] = useState<TaskEvent | null>(null)
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
 
-  const filteredTasks =
-    filter === 'all' ? tasks : tasks.filter((task) => task.status === filter)
+  const filteredTasks = useMemo(() => {
+    if (filter === 'all') return tasks
+    return tasks.filter((task) => task.status === filter)
+  }, [tasks, filter])
+
+  const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 })
+  const [weekAnchor, setWeekAnchor] = useState(weekStart)
+
+  const selectedEvent = useMemo(
+    () => eventsQuery.events.find((e) => e.id === selectedEventId) ?? null,
+    [eventsQuery.events, selectedEventId],
+  )
 
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="space-y-6">
-      <header className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:flex-row lg:items-center lg:justify-between">
-        <div className="space-y-1">
-          <p className="text-xs uppercase tracking-wide text-slate-500">
-            Slice 5 preview
-          </p>
-          <h1 className="text-2xl font-semibold text-slate-900">
-            Tasks & Calendar
-          </h1>
-          <p className="text-sm text-slate-600">
-            Google Calendar-inspired week view with drag-and-drop scheduling.
-          </p>
-        </div>
-        <div className="flex flex-col gap-2 text-sm text-slate-600 md:flex-row md:items-center">
-          <div className="flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5">
+        <header className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-1">
+            <p className="text-xs uppercase tracking-wide text-slate-500">
+              Slice 5 preview
+            </p>
+            <h1 className="text-2xl font-semibold text-slate-900">
+              Tasks & Calendar
+            </h1>
+            <p className="text-sm text-slate-600">
+              Google Calendar-inspired week view with drag-and-drop scheduling.
+            </p>
+          </div>
+          <div className="flex flex-col gap-2 text-sm text-slate-600 md:flex-row md:items-center">
+            <div className="flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5">
+              <button
+                type="button"
+                className="text-sm text-slate-600 hover:text-slate-900"
+                onClick={() => setWeekAnchor(subMonths(weekAnchor, 1))}
+              >
+                ‹
+              </button>
+              <span className="text-sm font-semibold text-slate-900">
+                {format(weekAnchor, 'MMMM yyyy')}
+              </span>
+              <button
+                type="button"
+                className="text-sm text-slate-600 hover:text-slate-900"
+                onClick={() => setWeekAnchor(addMonths(weekAnchor, 1))}
+              >
+                ›
+              </button>
+            </div>
             <button
               type="button"
-              className="text-sm text-slate-600 hover:text-slate-900"
-              onClick={() => setWeekAnchor(subMonths(weekAnchor, 1))}
+              className="rounded-full border border-slate-200 px-3 py-1 text-sm font-semibold text-slate-600 hover:border-brand-200"
+              onClick={() => setWeekAnchor(new Date())}
             >
-              ‹
+              Today
             </button>
-            <span className="text-sm font-semibold text-slate-900">
-              {format(weekAnchor, 'MMMM yyyy')}
-            </span>
-            <button
-              type="button"
-              className="text-sm text-slate-600 hover:text-slate-900"
-              onClick={() => setWeekAnchor(addMonths(weekAnchor, 1))}
-            >
-              ›
-            </button>
+            <div className="rounded-full border border-slate-100 bg-slate-50 px-4 py-1 text-sm">
+              Signed in as{' '}
+              <span className="font-semibold text-slate-900">
+                {user?.email ?? 'anonymous'}
+              </span>
+            </div>
           </div>
-          <button
-            type="button"
-            className="rounded-full border border-slate-200 px-3 py-1 text-sm font-semibold text-slate-600 hover:border-brand-200"
-            onClick={() => setWeekAnchor(new Date())}
-          >
-            Today
-          </button>
-          <div className="rounded-full border border-slate-100 bg-slate-50 px-4 py-1 text-sm">
-            Signed in as{' '}
-            <span className="font-semibold text-slate-900">
-              {user?.email ?? 'anonymous'}
-            </span>
-          </div>
-        </div>
-      </header>
+        </header >
 
-      <section className="grid gap-6 lg:grid-cols-[2fr,1fr]">
-        <AgendaBoard
-          events={eventsQuery.events}
-          isLoading={eventsQuery.isLoading}
-          onSlotSelect={(slot) => {
-            setCreationSlot(slot)
-          }}
-          draggingTask={
-            dragTaskId ? tasks.find((task) => task.id === dragTaskId) ?? null : null
-          }
-          onOutsideDropComplete={() => setDragTaskId(null)}
-          anchorDate={weekAnchor}
-          onAnchorChange={setWeekAnchor}
-          onEventMove={({ id, start, end }) => {
-            void updateTask.mutateAsync({
-              id,
-              data: {
-                scheduledStart: start.toISOString(),
-                scheduledEnd: end.toISOString(),
-              },
+        <section
+          className={clsx(
+            'grid gap-6 transition-all duration-300 ease-in-out',
+            collapsed ? 'lg:grid-cols-[1fr,auto]' : 'lg:grid-cols-[2fr,1fr]',
+          )}
+        >
+          <AgendaBoard
+            events={eventsQuery.events}
+            isLoading={eventsQuery.isLoading}
+            onSlotSelect={(slot) => {
+              setCreationSlot(slot)
+            }}
+            draggingTask={
+              dragTaskId ? tasks.find((task) => task.id === dragTaskId) ?? null : null
+            }
+            onOutsideDropComplete={() => setDragTaskId(null)}
+            anchorDate={weekAnchor}
+            onAnchorChange={setWeekAnchor}
+            onEventMove={({ id, start, end }) => {
+              void updateTask.mutateAsync({
+                id,
+                data: {
+                  scheduledStart: start.toISOString(),
+                  scheduledEnd: end.toISOString(),
+                },
+              })
+            }}
+            onEventClick={(event) => setSelectedEventId(event.id)}
+          />
+          <TaskBoard
+            tasks={filteredTasks}
+            filter={filter}
+            onFilterChange={setFilter}
+            loading={tasksQuery.isLoading}
+            onDragTaskChange={setDragTaskId}
+            collapsed={collapsed}
+            onToggleCollapse={() => setCollapsed((prev) => !prev)}
+          />
+        </section>
+        <CreationModal
+          slot={creationSlot}
+          onClose={() => setCreationSlot(null)}
+          onSave={async (values) => {
+            if (!creationSlot) return
+            await createTask.mutateAsync({
+              ...values,
+              ...(values.contactId ? { contactId: values.contactId } : {}),
+              scheduledStart: creationSlot.start.toISOString(),
+              scheduledEnd: creationSlot.end.toISOString(),
+              dueAt: creationSlot.end.toISOString(),
             })
+            setCreationSlot(null)
           }}
-          onEventClick={setSelectedEvent}
         />
-        <TaskBoard
-          tasks={filteredTasks}
-          filter={filter}
-          onFilterChange={setFilter}
-          loading={tasksQuery.isLoading}
-          onDragTaskChange={setDragTaskId}
+        <EventActionSheet
+          event={selectedEvent}
+          onClose={() => setSelectedEventId(null)}
         />
-      </section>
-      <CreationModal
-        slot={creationSlot}
-        onClose={() => setCreationSlot(null)}
-        onSave={async (values) => {
-          if (!creationSlot) return
-          await createTask.mutateAsync({
-            ...values,
-            ...(values.contactId ? { contactId: values.contactId } : {}),
-            scheduledStart: creationSlot.start.toISOString(),
-            scheduledEnd: creationSlot.end.toISOString(),
-            dueAt: creationSlot.end.toISOString(),
-          })
-          await eventsQuery.refetch()
-          setCreationSlot(null)
-        }}
-      />
-      <EventActionSheet
-        event={selectedEvent}
-        onClose={() => setSelectedEvent(null)}
-      />
-      </div>
-    </DndProvider>
+      </div >
+    </DndProvider >
   )
 }
 
@@ -212,6 +229,9 @@ function AgendaBoard({
           timeslots={2}
           popup
           style={{ height: '100%' }}
+          formats={{
+            eventTimeRangeFormat: () => '',
+          }}
           components={{
             event: CalendarEvent,
           }}
@@ -224,13 +244,13 @@ function AgendaBoard({
           onDropFromOutside={
             draggingTask
               ? ({ start: dropStart, end: dropEnd }) => {
-                  onEventMove({
-                    id: draggingTask.id,
-                    start: dropStart as Date,
-                    end: dropEnd as Date,
-                  })
-                  onOutsideDropComplete()
-                }
+                onEventMove({
+                  id: draggingTask.id,
+                  start: dropStart as Date,
+                  end: dropEnd as Date,
+                })
+                onOutsideDropComplete()
+              }
               : undefined
           }
           onSelectSlot={(slotInfo) =>
@@ -263,11 +283,8 @@ function AgendaBoard({
 
 export function CalendarEvent({ event }: { event: TaskEvent }) {
   const overdue = isOverdueEvent(event.resource)
-  const backup = isBackupEvent(event.resource)
+  const backup = event.resource.isBackup
   const updateTask = useUpdateTask()
-
-  const startLabel = format(event.start as Date, 'h:mm a')
-  const endLabel = format(event.end as Date, 'h:mm a')
 
   const nextStatus = getNextStatus(event.resource.status)
 
@@ -280,17 +297,58 @@ export function CalendarEvent({ event }: { event: TaskEvent }) {
     })
   }
 
-  return (
-    <div className="flex h-full flex-col gap-1 text-xs text-white">
-      <p className="truncate text-base font-semibold leading-5">{event.title}</p>
-      <p className="text-[12px] font-medium text-white/85">
-        {startLabel} – {endLabel}
-      </p>
-      <div className="mt-auto flex items-center justify-between text-[11px]">
+  // Calculate event duration in minutes
+  const durationMinutes =
+    ((event.end as Date).getTime() - (event.start as Date).getTime()) / (1000 * 60)
+  const isSmallEvent = durationMinutes < 60 // Less than 1 hour
+
+  // Get status-specific styling for the pill/circle button
+  const getStatusPillStyle = (status: Task['status']) => {
+    switch (status) {
+      case 'todo':
+        return 'bg-slate-500/90 border-slate-400'
+      case 'inProgress':
+        return 'bg-amber-500/90 border-amber-400'
+      case 'done':
+        return 'bg-emerald-500/90 border-emerald-400'
+      default:
+        return 'bg-slate-500/90 border-slate-400'
+    }
+  }
+
+  // Compact layout for small events
+  if (isSmallEvent) {
+    return (
+      <div className="flex h-full items-center justify-between gap-2 text-xs text-white">
+        <p className="truncate text-xs font-semibold leading-tight">{event.title}</p>
         <button
           type="button"
           onClick={handleToggleStatus}
-          className="inline-flex items-center gap-1 rounded-full border border-white/30 bg-white/5 px-2 py-1 text-white hover:border-white/60"
+          className={clsx(
+            'flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border transition-colors',
+            getStatusPillStyle(event.resource.status)
+          )}
+          aria-label="Toggle task status"
+          title={event.resource.status}
+        >
+          {getStatusIcon(event.resource.status, true)}
+        </button>
+      </div>
+    )
+  }
+
+  // Full layout for larger events
+  return (
+    <div className="flex h-full flex-col gap-1.5 text-xs text-white">
+      <p className="truncate text-xs font-semibold leading-tight">{event.title}</p>
+      <div className="flex items-center gap-2 text-[11px]">
+        <button
+          type="button"
+          onClick={handleToggleStatus}
+          className={clsx(
+            'inline-flex items-center gap-1 rounded-full border px-2 py-1 text-white transition-colors',
+            getStatusPillStyle(event.resource.status)
+          )}
           aria-label="Toggle task status"
         >
           {getStatusIcon(event.resource.status)}
@@ -305,14 +363,9 @@ export function CalendarEvent({ event }: { event: TaskEvent }) {
   )
 }
 
-const statusColors: Record<Task['status'], string> = {
-  todo: '#1f2937',
-  inProgress: '#b45309',
-  done: '#15803d',
-}
-
 const getCalendarEventStyles = (event: TaskEvent) => {
-  const color = statusColors[event.resource.status] ?? '#1f2937'
+  // Use custom color if available, otherwise use a default color
+  const color = event.resource.color ?? '#3b82f6'
   return {
     style: {
       backgroundColor: color,
@@ -323,7 +376,7 @@ const getCalendarEventStyles = (event: TaskEvent) => {
       display: 'flex',
       flexDirection: 'column' as const,
       boxShadow: '0 10px 25px rgba(15,23,42,0.3)',
-      opacity: isBackupEvent(event.resource) ? 0.6 : 1,
+      opacity: event.resource.isBackup ? 0.6 : 1,
       fontWeight: 600,
       fontSize: '13px',
       alignItems: 'flex-start',
@@ -342,14 +395,15 @@ const getNextStatus = (status: Task['status']): Task['status'] => {
   }
 }
 
-const getStatusIcon = (status: Task['status']) => {
+const getStatusIcon = (status: Task['status'], small = false) => {
+  const sizeClass = small ? 'h-3 w-3' : 'h-4 w-4'
   if (status === 'inProgress') {
-    return <Clock3 className="h-4 w-4 text-amber-500" />
+    return <Clock3 className={clsx(sizeClass, 'text-amber-500')} />
   }
   if (status === 'done') {
-    return <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+    return <CheckCircle2 className={clsx(sizeClass, 'text-emerald-500')} />
   }
-  return <Circle className="h-4 w-4 text-slate-400" />
+  return <Ban className={clsx(sizeClass, 'text-slate-400')} />
 }
 
 type EventActionSheetProps = {
@@ -359,28 +413,77 @@ type EventActionSheetProps = {
 
 function EventActionSheet({ event, onClose }: EventActionSheetProps) {
   const updateTask = useUpdateTask()
+  const deleteTask = useDeleteTask()
 
   if (!event) return null
 
   const task = event.resource
-  const startLabel = format(event.start as Date, 'MMM d • h:mm a')
-  const endLabel = format(event.end as Date, 'MMM d • h:mm a')
 
-  const handleStatusChange = (status: Task['status']) => {
+  // Format dates for input (YYYY-MM-DDThh:mm or YYYY-MM-DD)
+  const formatDateForInput = (dateStr: string | null | undefined, isDateOnly: boolean) => {
+    if (!dateStr) return ''
+    const date = new Date(dateStr)
+    if (isDateOnly) {
+      return date.toISOString().slice(0, 10)
+    }
+    return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+      .toISOString()
+      .slice(0, 16)
+  }
+
+  const handleStatusChange = (e: React.MouseEvent, status: Task['status']) => {
+    e.stopPropagation()
     updateTask.mutate({
       id: task.id,
       data: { status },
     })
   }
 
-  const toggleBackup = () => {
-    const hasTag = task.notes?.includes('[backup]')
-    const nextNotes = hasTag
-      ? task.notes?.replace('[backup]', '').trim()
-      : `[backup] ${task.notes ?? ''}`.trim()
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (confirm('Are you sure you want to delete this event?')) {
+      await deleteTask.mutateAsync(task.id)
+      onClose()
+    }
+  }
+
+  const handleTimeChange = (field: 'scheduledStart' | 'scheduledEnd', value: string) => {
+    let dateStr = value
+    if (task.isAllDay) {
+      // If all day, append time to ensure correct date is saved
+      // Start of day for start, end of day for end
+      if (field === 'scheduledStart') dateStr = `${value}T00:00:00.000Z`
+      if (field === 'scheduledEnd') dateStr = `${value}T23:59:59.999Z`
+    } else {
+      const date = new Date(value)
+      dateStr = date.toISOString()
+    }
+
     updateTask.mutate({
       id: task.id,
-      data: { notes: nextNotes },
+      data: { [field]: dateStr },
+    })
+  }
+
+  const handleColorChange = (color: string) => {
+    updateTask.mutate({
+      id: task.id,
+      data: { color },
+    })
+  }
+
+  const toggleAllDay = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation()
+    updateTask.mutate({
+      id: task.id,
+      data: { isAllDay: e.target.checked },
+    })
+  }
+
+  const toggleBackup = () => {
+    updateTask.mutate({
+      id: task.id,
+      data: { isBackup: !task.isBackup },
     })
   }
 
@@ -397,60 +500,136 @@ function EventActionSheet({ event, onClose }: EventActionSheetProps) {
           <div>
             <p className="text-xs uppercase tracking-wide text-slate-500">Event</p>
             <h3 className="text-lg font-semibold text-slate-900">{task.title}</h3>
-            <p className="text-sm text-slate-600">
-              {startLabel} – {endLabel}
-            </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full border border-slate-200 px-2 py-1 text-xs text-slate-500 hover:border-slate-300"
-          >
-            Close
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="rounded-full p-2 text-rose-500 hover:bg-rose-50"
+              title="Delete event"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full border border-slate-200 px-2 py-1 text-xs text-slate-500 hover:border-slate-300"
+            >
+              Close
+            </button>
+          </div>
         </div>
+
         <div className="mt-4 space-y-4">
-          <div>
+          {/* Time Controls */}
+          <div className="grid gap-3">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold uppercase text-slate-500">
+                Time
+              </label>
+              <label className="flex items-center gap-2 text-sm text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={task.isAllDay}
+                  onChange={toggleAllDay}
+                  className="rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                />
+                All day
+              </label>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[10px] text-slate-400">Start</label>
+                <input
+                  type={task.isAllDay ? 'date' : 'datetime-local'}
+                  value={formatDateForInput(task.scheduledStart, task.isAllDay)}
+                  onChange={(e) => handleTimeChange('scheduledStart', e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 px-2 py-1 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-400">End</label>
+                <input
+                  type={task.isAllDay ? 'date' : 'datetime-local'}
+                  value={formatDateForInput(task.scheduledEnd, task.isAllDay)}
+                  onChange={(e) => handleTimeChange('scheduledEnd', e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 px-2 py-1 text-sm"
+                />
+              </div>
+            </div >
+          </div >
+
+          {/* Status Controls */}
+          < div >
             <p className="text-xs font-semibold uppercase text-slate-500">Status</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {(['todo', 'inProgress', 'done'] as Task['status'][]).map((status) => (
                 <button
                   key={status}
                   type="button"
-                  onClick={() => handleStatusChange(status)}
+                  onClick={(e) => handleStatusChange(e, status)}
                   className={clsx(
-                    'rounded-full px-3 py-1 text-sm font-semibold',
+                    'rounded-full px-3 py-1 text-sm font-semibold transition-colors',
                     task.status === status
                       ? 'bg-brand-600 text-white'
-                      : 'bg-slate-100 text-slate-600',
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
                   )}
                 >
                   {status}
                 </button>
               ))}
             </div>
-          </div>
-          <div>
+          </div >
+
+          {/* Color Controls */}
+          < div >
+            <p className="text-xs font-semibold uppercase text-slate-500">Color</p>
+            <div className="mt-2 grid grid-cols-5 gap-2">
+              {PRESET_COLORS.map((presetColor) => (
+                <button
+                  key={presetColor.value}
+                  type="button"
+                  onClick={() => handleColorChange(presetColor.value)}
+                  className="group relative h-8 w-full rounded-lg transition-all hover:scale-110"
+                  style={{ backgroundColor: presetColor.value }}
+                  title={presetColor.name}
+                >
+                  {(task.color === presetColor.value || (!task.color && presetColor.value === '#3b82f6')) && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="h-2 w-2 rounded-full border-2 border-white bg-white/30" />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div >
+
+          {/* Backup Toggle */}
+          < div >
             <p className="text-xs font-semibold uppercase text-slate-500">Backup</p>
             <button
               type="button"
               onClick={toggleBackup}
               className="mt-2 rounded-full border border-slate-200 px-3 py-1 text-sm font-semibold text-slate-600 hover:border-brand-200"
             >
-              {isBackupEvent(task) ? 'Remove backup label' : 'Mark as backup block'}
+              {task.isBackup ? 'Remove backup label' : 'Mark as backup block'}
             </button>
-          </div>
-          {task.notes && (
-            <div>
-              <p className="text-xs font-semibold uppercase text-slate-500">Notes</p>
-              <p className="mt-1 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-600">
-                {task.notes}
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+          </div >
+
+          {/* Notes */}
+          {
+            task.notes && (
+              <div>
+                <p className="text-xs font-semibold uppercase text-slate-500">Notes</p>
+                <p className="mt-1 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                  {task.notes}
+                </p>
+              </div>
+            )
+          }
+        </div >
+      </div >
+    </div >
   )
 }
 
@@ -460,6 +639,8 @@ type TaskBoardProps = {
   onFilterChange: (status: Task['status'] | 'all') => void
   loading: boolean
   onDragTaskChange: (taskId: string | null) => void
+  collapsed: boolean
+  onToggleCollapse: () => void
 }
 
 function TaskBoard({
@@ -468,9 +649,10 @@ function TaskBoard({
   onFilterChange,
   loading,
   onDragTaskChange,
+  collapsed,
+  onToggleCollapse,
 }: TaskBoardProps) {
   const createTask = useCreateTask()
-  const [collapsed, setCollapsed] = useState(false)
 
   const handleNewTask = async () => {
     await createTask.mutateAsync({
@@ -478,6 +660,25 @@ function TaskBoard({
       status: 'todo',
       notes: 'Tap to edit details in Firestore console.',
     })
+  }
+
+  if (collapsed) {
+    return (
+      <div className="flex h-full flex-col items-center rounded-2xl border border-slate-200 bg-white py-4 shadow-sm">
+        <button
+          type="button"
+          onClick={onToggleCollapse}
+          className="mb-4 rounded-full border border-slate-200 p-2 text-slate-600 hover:border-brand-200 hover:text-brand-600"
+          title="Show tasks"
+        >
+          <span className="sr-only">Show tasks</span>
+          <span className="block h-4 w-4 rotate-180 text-xs font-bold">‹</span>
+        </button>
+        <div className="[writing-mode:vertical-lr] flex flex-1 items-center gap-4 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <span>Tasks</span>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -499,50 +700,46 @@ function TaskBoard({
           </button>
           <button
             type="button"
-            onClick={() => setCollapsed((prev) => !prev)}
+            onClick={onToggleCollapse}
             className="rounded-full border border-slate-200 px-3 py-1 text-sm font-semibold text-slate-600 hover:border-brand-200"
           >
-            {collapsed ? 'Show' : 'Hide'}
+            Hide
           </button>
         </div>
       </div>
-      {!collapsed && (
-        <>
-          <div className="px-4">
-            <div className="flex flex-wrap gap-2">
-              {['all', 'todo', 'inProgress', 'done'].map((status) => (
-                <button
-                  key={status}
-                  type="button"
-                  onClick={() => onFilterChange(status as Task['status'] | 'all')}
-                  className={clsx(
-                    'rounded-full px-3 py-1 text-xs font-semibold',
-                    filter === status
-                      ? 'bg-brand-600 text-white'
-                      : 'bg-slate-100 text-slate-600',
-                  )}
-                >
-                  {status}
-                </button>
-              ))}
-            </div>
-            <div className="mt-4 rounded-lg border border-dashed border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
-              Drag tasks from here onto the calendar to schedule them.
-            </div>
-          </div>
-          <div className="mt-4 space-y-3 px-4 pb-4">
-            {loading && <p className="text-sm text-slate-500">Loading tasks…</p>}
-            {!loading && tasks.length === 0 && (
-              <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
-                No tasks in this column yet. Quick add one to begin planning.
-              </p>
-            )}
-            {tasks.map((task) => (
-              <DraggableTaskCard key={task.id} task={task} onDragTaskChange={onDragTaskChange} />
-            ))}
-          </div>
-        </>
-      )}
+      <div className="px-4">
+        <div className="flex flex-wrap gap-2">
+          {['all', 'todo', 'inProgress', 'done'].map((status) => (
+            <button
+              key={status}
+              type="button"
+              onClick={() => onFilterChange(status as Task['status'] | 'all')}
+              className={clsx(
+                'rounded-full px-3 py-1 text-xs font-semibold',
+                filter === status
+                  ? 'bg-brand-600 text-white'
+                  : 'bg-slate-100 text-slate-600',
+              )}
+            >
+              {status}
+            </button>
+          ))}
+        </div>
+        <div className="mt-4 rounded-lg border border-dashed border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+          Drag tasks from here onto the calendar to schedule them.
+        </div>
+      </div>
+      <div className="mt-4 space-y-3 px-4 pb-4">
+        {loading && <p className="text-sm text-slate-500">Loading tasks…</p>}
+        {!loading && tasks.length === 0 && (
+          <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+            No tasks in this column yet. Quick add one to begin planning.
+          </p>
+        )}
+        {tasks.map((task) => (
+          <DraggableTaskCard key={task.id} task={task} onDragTaskChange={onDragTaskChange} />
+        ))}
+      </div>
     </div>
   )
 }
@@ -580,7 +777,7 @@ function DraggableTaskCard({
     if (cardRef.current) {
       dragRef(cardRef.current)
     }
-  }, [dragRef]) 
+  }, [dragRef])
   return (
     <div ref={cardRef} className={isDragging ? 'opacity-60' : undefined}>
       <TaskCard
@@ -614,14 +811,29 @@ type CreationModalProps = {
     notes?: string
     contactId?: string
     priority: Task['priority']
+    color?: string | null
   }) => Promise<void>
 }
+
+const PRESET_COLORS = [
+  { name: 'Blue', value: '#3b82f6' },
+  { name: 'Purple', value: '#8b5cf6' },
+  { name: 'Pink', value: '#ec4899' },
+  { name: 'Red', value: '#ef4444' },
+  { name: 'Orange', value: '#f97316' },
+  { name: 'Yellow', value: '#eab308' },
+  { name: 'Green', value: '#22c55e' },
+  { name: 'Teal', value: '#14b8a6' },
+  { name: 'Cyan', value: '#06b6d4' },
+  { name: 'Indigo', value: '#6366f1' },
+]
 
 function CreationModal({ slot, onClose, onSave }: CreationModalProps) {
   const [title, setTitle] = useState('Lesson planning')
   const [status, setStatus] = useState<Task['status']>('todo')
   const [priority, setPriority] = useState<Task['priority']>('medium')
   const [notes, setNotes] = useState('')
+  const [color, setColor] = useState<string>('#3b82f6')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -677,6 +889,29 @@ function CreationModal({ slot, onClose, onSave }: CreationModalProps) {
           </div>
           <div>
             <label className="text-xs font-semibold uppercase text-slate-500">
+              Block Color
+            </label>
+            <div className="mt-2 grid grid-cols-5 gap-2">
+              {PRESET_COLORS.map((presetColor) => (
+                <button
+                  key={presetColor.value}
+                  type="button"
+                  onClick={() => setColor(presetColor.value)}
+                  className="group relative h-10 w-full rounded-lg transition-all hover:scale-110"
+                  style={{ backgroundColor: presetColor.value }}
+                  title={presetColor.name}
+                >
+                  {color === presetColor.value && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="h-3 w-3 rounded-full border-2 border-white bg-white/30" />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-semibold uppercase text-slate-500">
               Notes
             </label>
             <textarea
@@ -708,6 +943,7 @@ function CreationModal({ slot, onClose, onSave }: CreationModalProps) {
                   status,
                   notes,
                   priority,
+                  color,
                 })
               } catch (err) {
                 setError(
@@ -730,4 +966,3 @@ function CreationModal({ slot, onClose, onSave }: CreationModalProps) {
     </div>
   )
 }
-

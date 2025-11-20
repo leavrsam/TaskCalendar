@@ -23,6 +23,7 @@ export type TaskEvent = {
   title: string
   start: Date
   end: Date
+  allDay?: boolean
   resource: Task
 }
 
@@ -50,10 +51,10 @@ export const useTasksQuery = (filter?: { status?: Task['status'] | 'all' }) => {
       const baseQuery =
         filter?.status && filter.status !== 'all'
           ? query(
-              tasksCollection(uid),
-              where('status', '==', filter.status),
-              orderBy('dueAt', 'asc'),
-            )
+            tasksCollection(uid),
+            where('status', '==', filter.status),
+            orderBy('dueAt', 'asc'),
+          )
           : query(tasksCollection(uid), orderBy('dueAt', 'asc'))
       const snapshot = await getDocs(baseQuery)
       return snapshot.docs.map((docSnap) =>
@@ -75,6 +76,7 @@ export const useTaskEvents = () => {
         title: task.title,
         start: new Date(task.scheduledStart as string),
         end: new Date(task.scheduledEnd as string),
+        allDay: task.isAllDay,
         resource: task,
       })) ?? []
   return { ...tasks, events }
@@ -89,6 +91,9 @@ type CreateTaskInput = {
   notes?: string
   scheduledStart?: string | null
   scheduledEnd?: string | null
+  isAllDay?: boolean
+  isBackup?: boolean
+  color?: string | null
   sharedWith?: string[]
 }
 
@@ -110,6 +115,9 @@ export const useCreateTask = () => {
           dueAt: payload.dueAt ?? null,
           scheduledStart: payload.scheduledStart ?? null,
           scheduledEnd: payload.scheduledEnd ?? null,
+          isAllDay: payload.isAllDay ?? false,
+          isBackup: payload.isBackup ?? false,
+          color: payload.color ?? null,
           assignedTo: [user.uid],
           sharedWith: payload.sharedWith ?? [],
           notes: payload.notes,
@@ -134,6 +142,9 @@ type UpdateTaskInput = {
       | 'dueAt'
       | 'scheduledStart'
       | 'scheduledEnd'
+      | 'isAllDay'
+      | 'isBackup'
+      | 'color'
       | 'notes'
       | 'sharedWith'
     >
@@ -151,7 +162,28 @@ export const useUpdateTask = () => {
         updatedAt: nowIso(),
       })
     },
-    onSuccess: () => {
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: key(user?.uid) })
+      const previousTasks = queryClient.getQueriesData({
+        queryKey: key(user?.uid),
+      })
+      queryClient.setQueriesData(
+        { queryKey: key(user?.uid) },
+        (old: Task[] | undefined) => {
+          if (!old) return []
+          return old.map((t) => (t.id === id ? { ...t, ...data } : t))
+        },
+      )
+      return { previousTasks }
+    },
+    onError: (_err, _newTodo, context) => {
+      if (context?.previousTasks) {
+        context.previousTasks.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data)
+        })
+      }
+    },
+    onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: key(user?.uid) })
     },
   })
@@ -165,7 +197,28 @@ export const useDeleteTask = () => {
       if (!user) throw new Error('You must be signed in to delete tasks')
       await deleteDoc(taskDoc(user.uid, taskId))
     },
-    onSuccess: () => {
+    onMutate: async (taskId) => {
+      await queryClient.cancelQueries({ queryKey: key(user?.uid) })
+      const previousTasks = queryClient.getQueriesData({
+        queryKey: key(user?.uid),
+      })
+      queryClient.setQueriesData(
+        { queryKey: key(user?.uid) },
+        (old: Task[] | undefined) => {
+          if (!old) return []
+          return old.filter((t) => t.id !== taskId)
+        },
+      )
+      return { previousTasks }
+    },
+    onError: (_err, _taskId, context) => {
+      if (context?.previousTasks) {
+        context.previousTasks.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data)
+        })
+      }
+    },
+    onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: key(user?.uid) })
     },
   })
