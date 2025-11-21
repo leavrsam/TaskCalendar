@@ -223,6 +223,8 @@ function AgendaBoard({
   anchorDate,
   onAnchorChange,
 }: AgendaBoardProps) {
+  const scrollToTime = useMemo(() => new Date(), [])
+
   const dragPreviewEvent = useMemo(() => {
     if (!draggingTask) return null
     const now = new Date()
@@ -306,6 +308,7 @@ function AgendaBoard({
               end: end as Date,
             })
           }
+          scrollToTime={scrollToTime}
         />
       </div>
       {isLoading && <p className="mt-4 text-sm text-slate-500">Syncing schedule…</p>}
@@ -337,7 +340,7 @@ export function CalendarEvent({ event }: { event: TaskEvent }) {
   // Calculate event duration in minutes
   const durationMinutes =
     ((event.end as Date).getTime() - (event.start as Date).getTime()) / (1000 * 60)
-  const isSmallEvent = durationMinutes < 60 // Less than 1 hour
+  const isSmallEvent = durationMinutes < 90 // Less than 1.5 hours
 
   // Get status-specific styling for the pill/circle button
   const getStatusPillStyle = (status: Task['status']) => {
@@ -411,10 +414,11 @@ export function CalendarEvent({ event }: { event: TaskEvent }) {
 const getCalendarEventStyles = (event: TaskEvent) => {
   // Use custom color if available, otherwise use a default color
   const color = event.resource.color ?? '#3b82f6'
+  const overdue = isOverdueEvent(event.resource)
   return {
     style: {
       backgroundColor: color,
-      border: 'none',
+      border: overdue ? '2px solid #ef4444' : 'none',
       borderRadius: '12px',
       color: '#fff',
       padding: '6px 8px',
@@ -673,16 +677,25 @@ function EventActionSheet({ event, onClose }: EventActionSheetProps) {
           </div >
 
           {/* Notes */}
-          {
-            task.notes && (
-              <div>
-                <p className="text-xs font-semibold uppercase text-slate-500">Notes</p>
-                <p className="mt-1 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-600">
-                  {task.notes}
-                </p>
-              </div>
-            )
-          }
+          <div>
+            <p className="text-xs font-semibold uppercase text-slate-500">Notes</p>
+            <textarea
+              defaultValue={task.notes || ''}
+              onBlur={(e) => updateTask.mutate({ id: task.id, data: { notes: e.target.value } })}
+              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+              rows={3}
+              placeholder="Add notes..."
+            />
+          </div>
+          <div className="mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full rounded-xl bg-slate-900 py-3 text-sm font-semibold text-white hover:bg-slate-800"
+            >
+              Done
+            </button>
+          </div>
         </div >
       </div >
     </div >

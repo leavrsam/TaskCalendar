@@ -57,7 +57,7 @@ export function ContactsRoute() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-start justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <header className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:flex-row md:items-start md:justify-between">
         <div>
           <p className="text-xs uppercase tracking-wide text-slate-500">Slice 3</p>
           <h1 className="text-2xl font-semibold text-slate-900">People & Relationships</h1>
@@ -65,24 +65,24 @@ export function ContactsRoute() {
             Manage your contacts, track their progress, and build meaningful relationships.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
           <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-1">
             <button
               onClick={() => setView('list')}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${view === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors sm:flex-none ${view === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                 }`}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <List className="h-4 w-4" />
                 List
               </div>
             </button>
             <button
               onClick={() => setView('map')}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${view === 'map' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors sm:flex-none ${view === 'map' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                 }`}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <MapIcon className="h-4 w-4" />
                 Map
               </div>
@@ -90,7 +90,7 @@ export function ContactsRoute() {
           </div>
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+            className="flex items-center justify-center gap-2 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
           >
             <Plus className="h-4 w-4" />
             Add Person
@@ -101,7 +101,7 @@ export function ContactsRoute() {
       {view === 'map' ? (
         <ContactsMap contacts={contacts} />
       ) : (
-        <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 lg:grid-cols-[3fr,1fr]">
+        <section className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
           {/* Render columns based on stages */}
           {Object.entries(STAGE_LABELS).map(([stageKey, label]) => {
             const stageContacts = contacts.filter((c) => c.stage === stageKey)
