@@ -4,6 +4,7 @@ import clsx from 'clsx'
 import { DndProvider, useDrag } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import { addMonths, subMonths, format, startOfWeek } from 'date-fns'
+import type { View } from 'react-big-calendar'
 import { Calendar } from 'react-big-calendar'
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop'
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css'
@@ -25,8 +26,10 @@ import {
   useDeleteTask,
   type TaskEvent,
 } from '@/features/tasks/api'
+import { useContactsQuery } from '@/features/contacts/api'
 import { calendarLocalizer } from '@/lib/calendar'
 import { useAuth } from '@/hooks/use-auth'
+import { CreationModal } from '@/components/calendar/creation-modal'
 
 export function ScheduleRoute() {
   const { user } = useAuth()
@@ -37,6 +40,7 @@ export function ScheduleRoute() {
   const tasks = useMemo(() => tasksQuery.data ?? [], [tasksQuery.data])
   const [filter, setFilter] = useState<Task['status'] | 'all'>('all')
   const [collapsed, setCollapsed] = useState(false)
+  const [view, setView] = useState<View>('week')
 
   const [creationSlot, setCreationSlot] = useState<{ start: Date; end: Date } | null>(null)
   const [dragTaskId, setDragTaskId] = useState<string | null>(null)
@@ -97,6 +101,23 @@ export function ScheduleRoute() {
             >
               Today
             </button>
+            <div className="flex items-center gap-1 rounded-full border border-slate-200 p-1">
+              {(['month', 'week', 'day', 'agenda'] as View[]).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setView(v)}
+                  className={clsx(
+                    'rounded-full px-3 py-1 text-xs font-semibold capitalize transition-colors',
+                    view === v
+                      ? 'bg-brand-600 text-white'
+                      : 'text-slate-600 hover:bg-slate-100',
+                  )}
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
             <div className="rounded-full border border-slate-100 bg-slate-50 px-4 py-1 text-sm">
               Signed in as{' '}
               <span className="font-semibold text-slate-900">
@@ -115,6 +136,8 @@ export function ScheduleRoute() {
           <AgendaBoard
             events={eventsQuery.events}
             isLoading={eventsQuery.isLoading}
+            view={view}
+            onView={setView}
             onSlotSelect={(slot) => {
               setCreationSlot(slot)
             }}
@@ -145,21 +168,25 @@ export function ScheduleRoute() {
             onToggleCollapse={() => setCollapsed((prev) => !prev)}
           />
         </section>
-        <CreationModal
-          slot={creationSlot}
-          onClose={() => setCreationSlot(null)}
-          onSave={async (values) => {
-            if (!creationSlot) return
-            await createTask.mutateAsync({
-              ...values,
-              ...(values.contactId ? { contactId: values.contactId } : {}),
-              scheduledStart: creationSlot.start.toISOString(),
-              scheduledEnd: creationSlot.end.toISOString(),
-              dueAt: creationSlot.end.toISOString(),
-            })
-            setCreationSlot(null)
-          }}
-        />
+        {creationSlot && (
+          <CreationModal
+            slot={creationSlot}
+            onClose={() => {
+              setCreationSlot(null)
+            }}
+            onSave={async (values) => {
+              if (!creationSlot) return
+              await createTask.mutateAsync({
+                ...values,
+                ...(values.contactId ? { contactId: values.contactId } : {}),
+                scheduledStart: creationSlot.start.toISOString(),
+                scheduledEnd: creationSlot.end.toISOString(),
+                dueAt: creationSlot.end.toISOString(),
+              })
+              setCreationSlot(null)
+            }}
+          />
+        )}
         <EventActionSheet
           event={selectedEvent}
           onClose={() => setSelectedEventId(null)}
@@ -172,6 +199,8 @@ export function ScheduleRoute() {
 type AgendaBoardProps = {
   events: ReturnType<typeof useTaskEvents>['events']
   isLoading: boolean
+  view: View
+  onView: (view: View) => void
   onSlotSelect: (slot: { start: Date; end: Date }) => void
   onEventMove: (event: { id: string; start: Date; end: Date }) => void
   onEventClick: (event: TaskEvent) => void
@@ -184,6 +213,8 @@ type AgendaBoardProps = {
 function AgendaBoard({
   events,
   isLoading,
+  view,
+  onView,
   onSlotSelect,
   onEventMove,
   onEventClick,
@@ -220,7 +251,8 @@ function AgendaBoard({
         <DnDCalendar
           localizer={calendarLocalizer}
           events={events}
-          defaultView="week"
+          view={view}
+          onView={onView}
           date={anchorDate}
           onNavigate={onAnchorChange}
           culture="en-US"
@@ -282,11 +314,16 @@ function AgendaBoard({
 }
 
 export function CalendarEvent({ event }: { event: TaskEvent }) {
+  const contactsQuery = useContactsQuery()
   const overdue = isOverdueEvent(event.resource)
   const backup = event.resource.isBackup
   const updateTask = useUpdateTask()
 
   const nextStatus = getNextStatus(event.resource.status)
+  const contacts = contactsQuery.data ?? []
+  const contact = event.resource.contactId
+    ? contacts.find((c) => c.id === event.resource.contactId)
+    : null
 
   const handleToggleStatus = (clickEvent: React.MouseEvent<HTMLButtonElement>) => {
     clickEvent.stopPropagation()
@@ -320,7 +357,12 @@ export function CalendarEvent({ event }: { event: TaskEvent }) {
   if (isSmallEvent) {
     return (
       <div className="flex h-full items-center justify-between gap-2 text-xs text-white">
-        <p className="truncate text-xs font-semibold leading-tight">{event.title}</p>
+        <div className="flex-1 truncate">
+          <p className="truncate text-xs font-semibold leading-tight">{event.title}</p>
+          {contact && (
+            <p className="truncate text-[10px] opacity-90">{contact.name}</p>
+          )}
+        </div>
         <button
           type="button"
           onClick={handleToggleStatus}
@@ -341,6 +383,9 @@ export function CalendarEvent({ event }: { event: TaskEvent }) {
   return (
     <div className="flex h-full flex-col gap-1.5 text-xs text-white">
       <p className="truncate text-xs font-semibold leading-tight">{event.title}</p>
+      {contact && (
+        <p className="truncate text-[10px] opacity-90">👤 {contact.name}</p>
+      )}
       <div className="flex items-center gap-2 text-[11px]">
         <button
           type="button"
@@ -406,6 +451,19 @@ const getStatusIcon = (status: Task['status'], small = false) => {
   return <Ban className={clsx(sizeClass, 'text-slate-400')} />
 }
 
+const PRESET_COLORS = [
+  { name: 'Blue', value: '#3b82f6' },
+  { name: 'Purple', value: '#8b5cf6' },
+  { name: 'Pink', value: '#ec4899' },
+  { name: 'Red', value: '#ef4444' },
+  { name: 'Orange', value: '#f97316' },
+  { name: 'Yellow', value: '#eab308' },
+  { name: 'Green', value: '#22c55e' },
+  { name: 'Teal', value: '#14b8a6' },
+  { name: 'Cyan', value: '#06b6d4' },
+  { name: 'Indigo', value: '#6366f1' },
+]
+
 type EventActionSheetProps = {
   event: TaskEvent | null
   onClose: () => void
@@ -441,10 +499,8 @@ function EventActionSheet({ event, onClose }: EventActionSheetProps) {
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation()
-    if (confirm('Are you sure you want to delete this event?')) {
-      await deleteTask.mutateAsync(task.id)
-      onClose()
-    }
+    await deleteTask.mutateAsync(task.id)
+    onClose()
   }
 
   const handleTimeChange = (field: 'scheduledStart' | 'scheduledEnd', value: string) => {
@@ -802,167 +858,4 @@ function DraggableTaskCard({
   )
 }
 
-type CreationModalProps = {
-  slot: { start: Date; end: Date } | null
-  onClose: () => void
-  onSave: (values: {
-    title: string
-    status: Task['status']
-    notes?: string
-    contactId?: string
-    priority: Task['priority']
-    color?: string | null
-  }) => Promise<void>
-}
 
-const PRESET_COLORS = [
-  { name: 'Blue', value: '#3b82f6' },
-  { name: 'Purple', value: '#8b5cf6' },
-  { name: 'Pink', value: '#ec4899' },
-  { name: 'Red', value: '#ef4444' },
-  { name: 'Orange', value: '#f97316' },
-  { name: 'Yellow', value: '#eab308' },
-  { name: 'Green', value: '#22c55e' },
-  { name: 'Teal', value: '#14b8a6' },
-  { name: 'Cyan', value: '#06b6d4' },
-  { name: 'Indigo', value: '#6366f1' },
-]
-
-function CreationModal({ slot, onClose, onSave }: CreationModalProps) {
-  const [title, setTitle] = useState('Lesson planning')
-  const [status, setStatus] = useState<Task['status']>('todo')
-  const [priority, setPriority] = useState<Task['priority']>('medium')
-  const [notes, setNotes] = useState('')
-  const [color, setColor] = useState<string>('#3b82f6')
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  if (!slot) return null
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
-        <h3 className="text-lg font-semibold text-slate-900">New calendar block</h3>
-        <p className="text-xs text-slate-500">
-          {slot.start.toLocaleString()} → {slot.end.toLocaleString()}
-        </p>
-        <div className="mt-4 space-y-3">
-          <div>
-            <label className="text-xs font-semibold uppercase text-slate-500">
-              Title
-            </label>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            />
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            <div>
-              <label className="text-xs font-semibold uppercase text-slate-500">
-                Status
-              </label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as Task['status'])}
-                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-              >
-                <option value="todo">To-do</option>
-                <option value="inProgress">In progress</option>
-                <option value="done">Done</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-semibold uppercase text-slate-500">
-                Priority
-              </label>
-              <select
-                value={priority}
-                onChange={(e) => setPriority(e.target.value as Task['priority'])}
-                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
-            </div>
-          </div>
-          <div>
-            <label className="text-xs font-semibold uppercase text-slate-500">
-              Block Color
-            </label>
-            <div className="mt-2 grid grid-cols-5 gap-2">
-              {PRESET_COLORS.map((presetColor) => (
-                <button
-                  key={presetColor.value}
-                  type="button"
-                  onClick={() => setColor(presetColor.value)}
-                  className="group relative h-10 w-full rounded-lg transition-all hover:scale-110"
-                  style={{ backgroundColor: presetColor.value }}
-                  title={presetColor.name}
-                >
-                  {color === presetColor.value && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="h-3 w-3 rounded-full border-2 border-white bg-white/30" />
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <label className="text-xs font-semibold uppercase text-slate-500">
-              Notes
-            </label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            />
-          </div>
-        </div>
-        <div className="mt-4 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            className="text-sm font-semibold text-slate-500 hover:text-slate-900"
-            onClick={onClose}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-            disabled={saving}
-            onClick={async () => {
-              setSaving(true)
-              setError(null)
-              try {
-                await onSave({
-                  title,
-                  status,
-                  notes,
-                  priority,
-                  color,
-                })
-              } catch (err) {
-                setError(
-                  err instanceof Error
-                    ? err.message
-                    : 'Unable to save calendar block',
-                )
-              } finally {
-                setSaving(false)
-              }
-            }}
-          >
-            {saving ? 'Saving…' : 'Save'}
-          </button>
-        </div>
-        {error && (
-          <p className="mt-2 text-sm font-semibold text-rose-600">{error}</p>
-        )}
-      </div>
-    </div>
-  )
-}

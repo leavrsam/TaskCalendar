@@ -1,12 +1,17 @@
 import { formatDistanceToNow } from 'date-fns'
 import { useMemo } from 'react'
 
+import { QuickActions } from '@/components/dashboard/quick-actions'
+import { RecentVisitsWidget } from '@/components/dashboard/recent-visits-widget'
+import { CollaboratorAvatar } from '@/components/collaborators/collaborator-avatar'
 import { useContactsQuery } from '@/features/contacts/api'
 import { useLessonsQuery } from '@/features/lessons/api'
 import { useTasksQuery } from '@/features/tasks/api'
 import { useGoalsQuery } from '@/features/goals/api'
+import { useAuth } from '@/hooks/use-auth'
 
 export function DashboardRoute() {
+  const { user } = useAuth()
   const tasksQuery = useTasksQuery()
   const contactsQuery = useContactsQuery()
   const lessonsQuery = useLessonsQuery()
@@ -16,15 +21,15 @@ export function DashboardRoute() {
 
   const sharedCount = useMemo(() => {
     const shared = new Set<string>()
-    ;(tasksQuery.data ?? []).forEach((task) =>
-      task.sharedWith?.forEach((uid) => shared.add(uid)),
-    )
-    ;(contactsQuery.data ?? []).forEach((contact) =>
-      contact.sharedWith?.forEach((uid) => shared.add(uid)),
-    )
-    ;(lessonsQuery.data ?? []).forEach((lesson) =>
-      lesson.sharedWith?.forEach((uid) => shared.add(uid)),
-    )
+      ; (tasksQuery.data ?? []).forEach((task) =>
+        task.sharedWith?.forEach((uid) => shared.add(uid)),
+      )
+      ; (contactsQuery.data ?? []).forEach((contact) =>
+        contact.sharedWith?.forEach((uid) => shared.add(uid)),
+      )
+      ; (lessonsQuery.data ?? []).forEach((lesson) =>
+        lesson.sharedWith?.forEach((uid) => shared.add(uid)),
+      )
     return shared.size
   }, [tasksQuery.data, contactsQuery.data, lessonsQuery.data])
 
@@ -43,73 +48,81 @@ export function DashboardRoute() {
     }
   }, [goalsQuery.data])
 
+  const contacts = contactsQuery.data?.map((c) => ({ id: c.id, name: c.name })) ?? []
+
   return (
     <div className="space-y-6">
       <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p className="text-xs uppercase tracking-wide text-slate-500">Slice overview</p>
-        <h1 className="text-2xl font-semibold text-slate-900">Workspace snapshot</h1>
-        <p className="text-sm text-slate-600">
-          Track personal contacts, lessons, and tasks—then loop in collaborators when you're ready
-          to share.
-        </p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <CollaboratorAvatar
+              collaborator={{
+                uid: user?.uid ?? 'me',
+                email: user?.email ?? '',
+                label: user?.displayName || user?.email || 'You',
+              }}
+              size="lg"
+              photoURL={user?.photoURL ?? undefined}
+            />
+            <div>
+              <p className="text-xs uppercase tracking-wide text-slate-500">Command Center</p>
+              <h1 className="text-2xl font-semibold text-slate-900">
+                Welcome back{user?.displayName ? `, ${user.displayName.split(' ')[0]}` : ''}
+              </h1>
+              <p className="text-sm text-slate-600">
+                Here's what's happening in your natural life today.
+              </p>
+            </div>
+          </div>
+        </div>
       </header>
-      <section className="grid gap-4 md:grid-cols-3">
+
+      <QuickActions />
+
+      <section className="grid gap-4 md:grid-cols-4">
         <StatCard
           label="Active contacts"
           value={contactsQuery.data?.length ?? 0}
           hint="Across all stages"
         />
         <StatCard
-          label="Lessons logged this week"
+          label="Visits this week"
           value={lessonsQuery.data?.length ?? 0}
-          hint="Based on emulator seed"
+          hint="Interactions logged"
         />
         <StatCard label="Open tasks" value={tasksQuery.data?.length ?? 0} hint="Includes backlog" />
         <StatCard label="Active goals" value={goalStats.total} hint="Across all focus areas" />
       </section>
-      <section className="grid gap-4 lg:grid-cols-[2fr,1fr]">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Upcoming block</p>
-          {upcomingTask ? (
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900">{upcomingTask.title}</h3>
-              <p className="text-sm text-slate-500">
-                {formatDistanceToNow(new Date(upcomingTask.scheduledStart as string), {
-                  addSuffix: true,
-                })}
-              </p>
-              {upcomingTask.notes && <p className="mt-2 text-sm text-slate-600">{upcomingTask.notes}</p>}
-            </div>
-          ) : (
-            <p className="text-sm text-slate-500">No scheduled tasks. Drag one onto the calendar.</p>
-          )}
-        </div>
-        <div className="space-y-4">
+
+      <section className="grid gap-6 lg:grid-cols-[2fr,1fr]">
+        <div className="space-y-6">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Sharing status</p>
-            <p className="text-sm text-slate-600">
-              {sharedCount > 0
-                ? `You currently share this workspace with ${sharedCount} collaborator${
-                    sharedCount > 1 ? 's' : ''
-                  }.`
-                : 'Only you can view this workspace. Invite someone when you want help.'}
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                window.location.href = '/settings'
-              }}
-              className="mt-4 rounded-full border border-dashed border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 hover:border-brand-300"
-            >
-              Manage sharing
-            </button>
+            <p className="text-xs uppercase tracking-wide text-slate-500">Today's Focus</p>
+            {upcomingTask ? (
+              <div className="mt-3">
+                <h3 className="text-lg font-semibold text-slate-900">{upcomingTask.title}</h3>
+                <p className="text-sm text-slate-500">
+                  {formatDistanceToNow(new Date(upcomingTask.scheduledStart as string), {
+                    addSuffix: true,
+                  })}
+                </p>
+                {upcomingTask.notes && <p className="mt-2 text-sm text-slate-600">{upcomingTask.notes}</p>}
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-slate-500">No scheduled tasks. You're free!</p>
+            )}
           </div>
+
+          <RecentVisitsWidget visits={lessonsQuery.data ?? []} contacts={contacts} />
+        </div>
+
+        <div className="space-y-4">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-xs uppercase tracking-wide text-slate-500">Goals focus</p>
             {goalStats.total === 0 ? (
-              <p className="text-sm text-slate-500">No personal goals yet. Create one to begin.</p>
+              <p className="mt-2 text-sm text-slate-500">No personal goals yet. Create one to begin.</p>
             ) : (
-              <div>
+              <div className="mt-2">
                 <p className="text-sm text-slate-600">
                   {goalStats.onTrack} on track • {goalStats.needsAttention} need attention
                 </p>
@@ -136,13 +149,28 @@ export function DashboardRoute() {
                   <a className="hover:underline" href="/goals">
                     View all goals
                   </a>
-                  <span className="text-slate-300">•</span>
-                  <a className="hover:underline" href="/schedule">
-                    Weekly planning
-                  </a>
                 </div>
               </div>
             )}
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-xs uppercase tracking-wide text-slate-500">Sharing status</p>
+            <p className="mt-2 text-sm text-slate-600">
+              {sharedCount > 0
+                ? `You currently share this workspace with ${sharedCount} collaborator${sharedCount > 1 ? 's' : ''
+                }.`
+                : 'Only you can view this workspace. Invite someone when you want help.'}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = '/settings'
+              }}
+              className="mt-4 rounded-full border border-dashed border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 hover:border-brand-300"
+            >
+              Manage sharing
+            </button>
           </div>
         </div>
       </section>

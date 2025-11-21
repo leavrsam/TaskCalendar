@@ -5,6 +5,9 @@ import {
   NotebookText,
   Users,
   House,
+  Map,
+  UserCircle,
+  Settings,
 } from 'lucide-react'
 
 export type NavItem = {
@@ -19,5 +22,8 @@ export const mainNavigation: NavItem[] = [
   { label: 'Lessons', path: '/lessons', icon: <NotebookText className="h-4 w-4" /> },
   { label: 'Tasks & Calendar', path: '/schedule', icon: <CalendarDays className="h-4 w-4" /> },
   { label: 'Goals', path: '/goals', icon: <ClipboardList className="h-4 w-4" /> },
+  { label: 'Map', path: '/map', icon: <Map className="h-4 w-4" /> },
+  { label: 'Profile', path: '/profile', icon: <UserCircle className="h-4 w-4" /> },
+  { label: 'Settings', path: '/settings', icon: <Settings className="h-4 w-4" /> },
 ]
 

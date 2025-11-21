@@ -44,6 +44,10 @@ export const contactSchema = z.object({
   phone: z.string().optional(),
   email: z.string().email().optional(),
   address: z.string().optional(),
+  location: z.object({
+    lat: z.number(),
+    lng: z.number(),
+  }).nullable().optional(),
   tags: z.array(z.string()).default([]),
   notes: z.string().optional(),
   lastContactedAt: z.string().nullable(),
@@ -60,7 +64,7 @@ export const lessonSchema = z.object({
   ownerUid: uid,
   contactId,
   taughtAt: timestampString,
-  type: z.enum(['restoration', 'plan', 'gospel', 'commandments', 'laws']),
+  type: z.enum(['social', 'spiritual', 'service', 'casual', 'deep']),
   commitments: z.array(z.string()).default([]),
   notes: z.string().optional(),
   taughtBy: z.array(z.string()),
@@ -71,6 +75,14 @@ export const lessonSchema = z.object({
 })
 
 export type Lesson = z.infer<typeof lessonSchema>
+
+export const VISIT_TYPE_LABELS: Record<Lesson['type'], string> = {
+  social: 'Social',
+  spiritual: 'Spiritual',
+  service: 'Service',
+  casual: 'Casual',
+  deep: 'Deep',
+}
 
 export const goalSchema = z.object({
   id: goalId,

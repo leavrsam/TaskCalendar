@@ -1,8 +1,10 @@
 import clsx from 'clsx'
+import { User } from 'lucide-react'
 
 import type { Task } from '@taskcalendar/core'
 
 import { CollaboratorStack } from '@/components/collaborators/collaborator-stack'
+import { useContactsQuery } from '@/features/contacts/api'
 
 type TaskCardProps = {
   task: Task
@@ -17,13 +19,20 @@ const priorityTone: Record<Task['priority'], string> = {
 }
 
 export function TaskCard({ task, onStatusChange, onSchedule }: TaskCardProps) {
+  const contactsQuery = useContactsQuery()
+  const contacts = contactsQuery.data ?? []
+  const contact = task.contactId ? contacts.find((c) => c.id === task.contactId) : null
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-semibold text-slate-900">{task.title}</p>
-          {task.contactId && (
-            <p className="text-xs text-slate-500">Contact • {task.contactId}</p>
+          {contact && (
+            <div className="flex items-center gap-1.5 text-xs text-slate-500">
+              <User className="h-3 w-3" />
+              <span>{contact.name}</span>
+            </div>
           )}
           {task.dueAt && (
             <p className="text-xs text-slate-500">

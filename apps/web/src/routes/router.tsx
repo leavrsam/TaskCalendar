@@ -13,6 +13,7 @@ import { CreateAccountRoute } from '@/routes/sections/create-account-route'
 import { InviteRoute } from '@/routes/sections/invite-route'
 import { ProfileRoute } from '@/routes/sections/profile-route'
 import { SettingsRoute } from '@/routes/sections/settings-route'
+import { MapRoute } from '@/routes/sections/map-route'
 import { ComingSoon } from '@/components/status/coming-soon'
 
 export const router = createBrowserRouter([
@@ -66,12 +67,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'map',
-            element: (
-              <ComingSoon
-                title="Interactive map"
-                description="Slice 7 gives you a live map of contacts, tasks, and travel estimates."
-              />
-            ),
+            element: <MapRoute />,
           },
         ],
       },

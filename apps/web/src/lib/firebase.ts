@@ -10,6 +10,11 @@ import {
   getFirestore,
   type Firestore,
 } from 'firebase/firestore'
+import {
+  connectStorageEmulator,
+  getStorage,
+  type FirebaseStorage,
+} from 'firebase/storage'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -24,6 +29,7 @@ const firebaseConfig = {
 let app: FirebaseApp | undefined
 let auth: Auth | undefined
 let firestore: Firestore | undefined
+let storage: FirebaseStorage | undefined
 
 const useEmulators = import.meta.env.VITE_FIREBASE_EMULATORS === 'true'
 
@@ -52,6 +58,16 @@ export const getFirebaseFirestore = () => {
     }
   }
   return firestore
+}
+
+export const getFirebaseStorage = () => {
+  if (!storage) {
+    storage = getStorage(getFirebaseApp())
+    if (useEmulators) {
+      connectStorageEmulator(storage, '127.0.0.1', 9199)
+    }
+  }
+  return storage
 }
 
 export type AuthUser = User

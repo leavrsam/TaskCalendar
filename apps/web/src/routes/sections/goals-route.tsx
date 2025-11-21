@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { addDays, formatISO } from 'date-fns'
 
 import { GoalCard } from '@/components/goals/goal-card'
-import { useGoalsQuery, useCreateGoal, useUpdateGoal } from '@/features/goals/api'
+import { useGoalsQuery, useCreateGoal, useUpdateGoal, useDeleteGoal } from '@/features/goals/api'
 import { useToast } from '@/hooks/use-toast'
 
 const categories = [
@@ -20,6 +20,7 @@ export function GoalsRoute() {
   const goalsQuery = useGoalsQuery()
   const updateGoal = useUpdateGoal()
   const createGoal = useCreateGoal()
+  const deleteGoal = useDeleteGoal()
   const { success: showSuccessToast } = useToast()
 
   const goals = goalsQuery.data ?? []
@@ -68,6 +69,7 @@ export function GoalsRoute() {
               onProgressChange={(progress) =>
                 updateGoal.mutate({ id: goal.id, data: { progress } })
               }
+              onDelete={() => deleteGoal.mutate(goal.id)}
             />
           ))}
         </div>

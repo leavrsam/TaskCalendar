@@ -20,7 +20,7 @@
     "storybook:build": "pnpm --filter web build-storybook",
     "seed:preview": "pnpm tsx infra/firebase/seed.ts",
     "seed:push": "pnpm tsx infra/firebase/push-seed.ts",
-    "firebase:emulators": "firebase emulators:start --config infra/firebase/firebase.json --project preview --only firestore,auth,hosting"
+    "firebase:emulators": "firebase emulators:start --config infra/firebase/firebase.json --project preview --only firestore,auth,hosting,storage"
   },
   "keywords": [
     "areabook",

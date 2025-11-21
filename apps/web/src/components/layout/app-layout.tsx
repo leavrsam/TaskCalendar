@@ -3,6 +3,7 @@ import clsx from 'clsx'
 
 import { mainNavigation } from '@/config/navigation'
 import { useAuth } from '@/hooks/use-auth'
+import { CollaboratorAvatar } from '@/components/collaborators/collaborator-avatar'
 
 export function AppLayout() {
   const { user, signOut } = useAuth()
@@ -34,14 +35,27 @@ export function AppLayout() {
           ))}
         </nav>
         <div className="mt-10 rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Signed in</p>
-          <p className="text-sm font-semibold text-slate-900">{user?.email}</p>
+          <div className="flex items-center gap-3">
+            <CollaboratorAvatar
+              collaborator={{
+                uid: user?.uid ?? 'me',
+                email: user?.email ?? '',
+                label: user?.displayName || user?.email || 'You',
+              }}
+              size="md"
+              photoURL={user?.photoURL ?? undefined}
+            />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Signed in</p>
+              <p className="text-sm font-semibold text-slate-900 truncate">{user?.displayName || user?.email}</p>
+            </div>
+          </div>
           <button
             type="button"
             onClick={() => {
               void signOut()
             }}
-            className="mt-3 text-sm font-semibold text-brand-600 hover:text-brand-800"
+            className="mt-3 w-full text-sm font-semibold text-brand-600 hover:text-brand-800"
           >
             Sign out
           </button>
