@@ -45,10 +45,10 @@ export function GoalsRoute() {
 
   return (
     <div className="space-y-6">
-      <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p className="text-xs uppercase tracking-wide text-slate-500">Slice 6</p>
-        <h1 className="text-2xl font-semibold text-slate-900">Personal Goals</h1>
-        <p className="text-sm text-slate-600">
+      <header className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+        <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Slice 6</p>
+        <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">Personal Goals</h1>
+        <p className="text-sm text-slate-600 dark:text-slate-400">
           Track physical, intellectual, spiritual and financial goals in one dashboard.
         </p>
       </header>
@@ -58,7 +58,7 @@ export function GoalsRoute() {
             <p className="text-sm text-slate-500">Loading goals...</p>
           )}
           {!goalsQuery.isLoading && goals.length === 0 && (
-            <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+            <p className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50 px-4 py-3 text-sm text-slate-500">
               No goals yet. Create one to start building momentum.
             </p>
           )}
@@ -73,13 +73,13 @@ export function GoalsRoute() {
             />
           ))}
         </div>
-        <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Add a goal</h2>
+        <div className="space-y-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Add a goal</h2>
           <div className="space-y-3 text-sm">
             <div>
-              <label className="text-xs font-semibold uppercase text-slate-500">Category</label>
+              <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Category</label>
               <select
-                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
+                className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-50"
                 value={form.metric}
                 onChange={(e) =>
                   setForm((prev) => ({
@@ -96,51 +96,51 @@ export function GoalsRoute() {
               </select>
             </div>
             <div>
-              <label className="text-xs font-semibold uppercase text-slate-500">Title</label>
+              <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Title</label>
               <input
                 value={form.title}
                 onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
+                className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-50"
               />
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               <div>
-                <label className="text-xs font-semibold uppercase text-slate-500">Target</label>
+                <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Target</label>
                 <input
                   type="number"
                   value={form.target}
                   onChange={(e) =>
                     setForm((prev) => ({ ...prev, target: Number(e.target.value) }))
                   }
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
+                  className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-50"
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold uppercase text-slate-500">Unit</label>
+                <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Unit</label>
                 <input
                   value={form.unit}
                   onChange={(e) => setForm((prev) => ({ ...prev, unit: e.target.value }))}
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
+                  className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-50"
                 />
               </div>
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               <div>
-                <label className="text-xs font-semibold uppercase text-slate-500">Starts</label>
+                <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Starts</label>
                 <input
                   type="date"
                   value={form.periodStart}
                   onChange={(e) => setForm((prev) => ({ ...prev, periodStart: e.target.value }))}
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
+                  className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-50"
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold uppercase text-slate-500">Ends</label>
+                <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Ends</label>
                 <input
                   type="date"
                   value={form.periodEnd}
                   onChange={(e) => setForm((prev) => ({ ...prev, periodEnd: e.target.value }))}
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
+                  className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-50"
                 />
               </div>
             </div>

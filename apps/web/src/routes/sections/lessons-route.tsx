@@ -50,7 +50,7 @@ export function LessonsRoute() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-start justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <header className="flex items-start justify-between rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
         <div>
           <p className="text-xs uppercase tracking-wide text-slate-500">Slice 4</p>
           <h1 className="text-2xl font-semibold text-slate-900">Visits & Interactions</h1>
@@ -70,12 +70,12 @@ export function LessonsRoute() {
       <section className="grid gap-6 lg:grid-cols-[2fr,1fr]">
         <div className="space-y-4">
           {lessonsQuery.isLoading && (
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-500">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 text-sm text-slate-500">
               Loading timeline…
             </div>
           )}
           {!lessonsQuery.isLoading && visits.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-500">
+            <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50 p-8 text-center text-sm text-slate-500">
               <p>No visits logged yet.</p>
               <p className="mt-1">Click "Log Visit" to record your first interaction.</p>
             </div>
@@ -93,7 +93,7 @@ export function LessonsRoute() {
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
             <p className="text-xs uppercase tracking-wide text-slate-500">Recent Activity</p>
             <div className="mt-4 space-y-4">
               {visits.slice(0, 5).map((visit) => (

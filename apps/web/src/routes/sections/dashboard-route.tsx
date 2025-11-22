@@ -52,7 +52,7 @@ export function DashboardRoute() {
 
   return (
     <div className="space-y-6">
-      <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <header className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <CollaboratorAvatar
@@ -66,10 +66,10 @@ export function DashboardRoute() {
             />
             <div>
               <p className="text-xs uppercase tracking-wide text-slate-500">Command Center</p>
-              <h1 className="text-2xl font-semibold text-slate-900">
+              <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">
                 Welcome back{user?.displayName ? `, ${user.displayName.split(' ')[0]}` : ''}
               </h1>
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
                 Here's what's happening in your natural life today.
               </p>
             </div>
@@ -96,17 +96,17 @@ export function DashboardRoute() {
 
       <section className="grid gap-6 lg:grid-cols-[2fr,1fr]">
         <div className="space-y-6">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
             <p className="text-xs uppercase tracking-wide text-slate-500">Today's Focus</p>
             {upcomingTask ? (
               <div className="mt-3">
-                <h3 className="text-lg font-semibold text-slate-900">{upcomingTask.title}</h3>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">{upcomingTask.title}</h3>
                 <p className="text-sm text-slate-500">
                   {formatDistanceToNow(new Date(upcomingTask.scheduledStart as string), {
                     addSuffix: true,
                   })}
                 </p>
-                {upcomingTask.notes && <p className="mt-2 text-sm text-slate-600">{upcomingTask.notes}</p>}
+                {upcomingTask.notes && <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{upcomingTask.notes}</p>}
               </div>
             ) : (
               <p className="mt-2 text-sm text-slate-500">No scheduled tasks. You're free!</p>
@@ -117,13 +117,13 @@ export function DashboardRoute() {
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
             <p className="text-xs uppercase tracking-wide text-slate-500">Goals focus</p>
             {goalStats.total === 0 ? (
               <p className="mt-2 text-sm text-slate-500">No personal goals yet. Create one to begin.</p>
             ) : (
               <div className="mt-2">
-                <p className="text-sm text-slate-600">
+                <p className="text-sm text-slate-600 dark:text-slate-400">
                   {goalStats.onTrack} on track • {goalStats.needsAttention} need attention
                 </p>
                 {goalStats.nextGoal && (
@@ -131,7 +131,7 @@ export function DashboardRoute() {
                     <p className="text-xs uppercase tracking-wide text-slate-500">
                       Next to focus
                     </p>
-                    <p className="text-sm font-semibold text-slate-900">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">
                       {goalStats.nextGoal.title}
                     </p>
                     <p className="text-xs text-slate-500">
@@ -154,9 +154,9 @@ export function DashboardRoute() {
             )}
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
             <p className="text-xs uppercase tracking-wide text-slate-500">Sharing status</p>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
               {sharedCount > 0
                 ? `You currently share this workspace with ${sharedCount} collaborator${sharedCount > 1 ? 's' : ''
                 }.`
@@ -167,7 +167,7 @@ export function DashboardRoute() {
               onClick={() => {
                 window.location.href = '/settings'
               }}
-              className="mt-4 rounded-full border border-dashed border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 hover:border-brand-300"
+              className="mt-4 rounded-full border border-dashed border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:border-brand-300"
             >
               Manage sharing
             </button>
@@ -186,9 +186,9 @@ type StatCardProps = {
 
 function StatCard({ label, value, hint }: StatCardProps) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
       <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-2 text-3xl font-semibold text-slate-900">{value}</p>
+      <p className="mt-2 text-3xl font-semibold text-slate-900 dark:text-slate-50">{value}</p>
       <p className="text-xs text-slate-500">{hint}</p>
     </div>
   )

@@ -17,7 +17,7 @@ export function LessonForm({ onSubmit, contacts }: LessonFormProps) {
   const form = useForm<LessonFormValues>({
     defaultValues: {
       contactId: contacts[0]?.id ?? '',
-      type: 'restoration',
+      type: 'spiritual',
       notes: '',
     },
   })
@@ -27,14 +27,14 @@ export function LessonForm({ onSubmit, contacts }: LessonFormProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+      className="space-y-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm"
     >
       <div>
-        <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
           Contact
         </label>
         <select
-          className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+          className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-50"
           {...form.register('contactId')}
         >
           {contacts.map((contact) => (
@@ -45,14 +45,14 @@ export function LessonForm({ onSubmit, contacts }: LessonFormProps) {
         </select>
       </div>
       <div>
-        <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
           Lesson type
         </label>
         <select
-          className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm capitalize"
+          className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-50 capitalize"
           {...form.register('type')}
         >
-          {['restoration', 'plan', 'gospel', 'commandments', 'laws'].map((type) => (
+          {['social', 'spiritual', 'service', 'casual', 'deep'].map((type) => (
             <option key={type} value={type}>
               {type}
             </option>
@@ -60,12 +60,12 @@ export function LessonForm({ onSubmit, contacts }: LessonFormProps) {
         </select>
       </div>
       <div>
-        <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
           Lesson notes
         </label>
         <textarea
           rows={3}
-          className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+          className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-50"
           {...form.register('notes')}
         />
       </div>

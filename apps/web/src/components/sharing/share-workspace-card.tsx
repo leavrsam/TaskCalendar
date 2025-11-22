@@ -57,11 +57,11 @@ export function ShareWorkspaceCard() {
   }
 
   return (
-    <div className="flex h-fit flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="flex h-fit flex-col gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
       <div>
-        <p className="text-xs uppercase tracking-wide text-slate-500">Sharing</p>
-        <h2 className="text-lg font-semibold text-slate-900">Workspace access</h2>
-        <p className="text-sm text-slate-600">
+        <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Sharing</p>
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Workspace access</h2>
+        <p className="text-sm text-slate-600 dark:text-slate-400">
           Invite collaborators to help plan lessons, contacts, and tasks. Pending invites can be revoked at any time.
         </p>
       </div>
@@ -80,29 +80,29 @@ export function ShareWorkspaceCard() {
               />
             ))}
           </div>
-          <p className="text-xs font-semibold text-slate-500">
+          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
             {activeCollaborators.length} collaborator{activeCollaborators.length > 1 ? 's' : ''}
           </p>
         </div>
       )}
 
-      <div className="space-y-3 rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm">
+      <div className="space-y-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 p-4 text-sm">
         <div>
-          <label className="text-xs font-semibold uppercase text-slate-500">Email</label>
+          <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Email</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="name@example.com"
-            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-50"
           />
         </div>
         <div>
-          <label className="text-xs font-semibold uppercase text-slate-500">Role</label>
+          <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Role</label>
           <select
             value={role}
             onChange={(e) => setRole(e.target.value as WorkspaceInvite['role'])}
-            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-50"
           >
             <option value="editor">Editor (can update records)</option>
             <option value="viewer">Viewer (read-only)</option>
@@ -159,21 +159,21 @@ function InviteList({ title, emptyText, invites, onRevoke, showAvatars }: Invite
   return (
     <div>
       <div className="flex items-center justify-between">
-        <p className="text-xs uppercase tracking-wide text-slate-500">{title}</p>
+        <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{title}</p>
         {invites.length > 0 && (
           <span className="text-xs font-semibold text-slate-400">{invites.length}</span>
         )}
       </div>
       <div className="mt-2 space-y-3">
         {invites.length === 0 && (
-          <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
+          <p className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50 px-3 py-2 text-xs text-slate-500">
             {emptyText}
           </p>
         )}
         {invites.map((invite) => (
           <div
             key={invite.id}
-            className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+            className="flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-sm"
           >
             <div>
               <div className="flex items-center gap-2">
@@ -187,9 +187,9 @@ function InviteList({ title, emptyText, invites, onRevoke, showAvatars }: Invite
                     size="sm"
                   />
                 )}
-                <p className="font-semibold text-slate-900">{invite.email}</p>
+                <p className="font-semibold text-slate-900 dark:text-slate-50">{invite.email}</p>
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 {roleLabels[invite.role]} •{' '}
                 <span className={clsx('rounded-full px-2 py-0.5 text-[11px] font-semibold', statusTone[invite.status])}>
                   {invite.status}

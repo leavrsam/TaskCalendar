@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet } from 'react-router-dom'
+
 import clsx from 'clsx'
 import { Menu, X } from 'lucide-react'
 
@@ -10,9 +11,8 @@ import { CollaboratorAvatar } from '@/components/collaborators/collaborator-avat
 export function AppLayout() {
   const { user, signOut } = useAuth()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const location = useLocation()
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
 
-  const primaryNav = mainNavigation.slice(0, 4) // Dashboard, Contacts, Lessons, Schedule
   // Swap Lessons with Map for mobile primary
   const mobilePrimaryNav = [
     mainNavigation.find(n => n.path === '/')!,
@@ -23,12 +23,15 @@ export function AppLayout() {
   const mobileSecondaryNav = mainNavigation.filter(n => !mobilePrimaryNav.includes(n))
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">
       {/* Desktop Sidebar */}
-      <aside className="hidden w-64 flex-shrink-0 border-r border-slate-200 bg-white px-4 py-8 lg:block">
+      <aside className={clsx(
+        "hidden w-64 flex-shrink-0 border-r border-slate-200 bg-white px-4 py-8 dark:border-slate-800 dark:bg-slate-900 transition-all duration-300 ease-in-out",
+        isSidebarOpen ? "lg:block" : "lg:hidden"
+      )}>
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500">TaskCalendar</p>
-          <p className="text-lg font-semibold text-slate-900">Area Book</p>
+          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">TaskCalendar</p>
+          <p className="text-lg font-semibold text-slate-900 dark:text-slate-50">Area Book</p>
         </div>
         <nav className="mt-8 space-y-1">
           {mainNavigation.map((item) => (
@@ -39,8 +42,8 @@ export function AppLayout() {
                 clsx(
                   'flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition',
                   isActive
-                    ? 'bg-brand-50 text-brand-700'
-                    : 'text-slate-600 hover:bg-slate-100',
+                    ? 'bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-400'
+                    : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800',
                 )
               }
             >
@@ -49,7 +52,7 @@ export function AppLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="mt-10 rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div className="mt-10 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800">
           <div className="flex items-center gap-3">
             <CollaboratorAvatar
               collaborator={{
@@ -61,8 +64,8 @@ export function AppLayout() {
               photoURL={user?.photoURL ?? undefined}
             />
             <div className="flex-1 min-w-0">
-              <p className="text-xs uppercase tracking-wide text-slate-500">Signed in</p>
-              <p className="text-sm font-semibold text-slate-900 truncate">{user?.displayName || user?.email}</p>
+              <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Signed in</p>
+              <p className="text-sm font-semibold text-slate-900 truncate dark:text-slate-50">{user?.displayName || user?.email}</p>
             </div>
           </div>
           <button
@@ -70,7 +73,7 @@ export function AppLayout() {
             onClick={() => {
               void signOut()
             }}
-            className="mt-3 w-full text-sm font-semibold text-brand-600 hover:text-brand-800"
+            className="mt-3 w-full text-sm font-semibold text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300"
           >
             Sign out
           </button>
@@ -79,8 +82,8 @@ export function AppLayout() {
 
       <div className="flex flex-1 flex-col">
         {/* Mobile Header */}
-        <header className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
-          <p className="text-sm font-semibold text-slate-900">TaskCalendar</p>
+        <header className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 lg:hidden dark:border-slate-800 dark:bg-slate-900">
+          <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">TaskCalendar</p>
           <CollaboratorAvatar
             collaborator={{
               uid: user?.uid ?? 'me',
@@ -94,11 +97,11 @@ export function AppLayout() {
 
         {/* Main Content */}
         <main className="flex-1 p-4 pb-24 lg:p-8 lg:pb-8">
-          <Outlet />
+          <Outlet context={{ isSidebarOpen, toggleSidebar: () => setIsSidebarOpen(prev => !prev) }} />
         </main>
 
         {/* Mobile Bottom Nav */}
-        <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-slate-200 bg-white px-2 py-2 pb-safe lg:hidden">
+        <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-slate-200 bg-white px-2 py-2 pb-safe lg:hidden dark:border-slate-800 dark:bg-slate-900">
           {mobilePrimaryNav.map((item) => (
             <NavLink
               key={item.path}
@@ -108,7 +111,7 @@ export function AppLayout() {
                   'flex flex-col items-center gap-1 rounded-lg p-2 text-[10px] font-medium transition',
                   isActive
                     ? 'text-brand-600'
-                    : 'text-slate-500 hover:bg-slate-50',
+                    : 'text-slate-500 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800',
                 )
               }
             >
@@ -119,7 +122,7 @@ export function AppLayout() {
           <button
             onClick={() => setIsMobileMenuOpen(true)}
             className={clsx(
-              'flex flex-col items-center gap-1 rounded-lg p-2 text-[10px] font-medium text-slate-500 transition hover:bg-slate-50',
+              'flex flex-col items-center gap-1 rounded-lg p-2 text-[10px] font-medium text-slate-500 transition hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800',
               isMobileMenuOpen && 'text-brand-600'
             )}
           >
@@ -130,12 +133,12 @@ export function AppLayout() {
 
         {/* Mobile Menu Overlay */}
         {isMobileMenuOpen && (
-          <div className="fixed inset-0 z-50 flex flex-col bg-white lg:hidden">
-            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-              <p className="text-lg font-semibold text-slate-900">Menu</p>
+          <div className="fixed inset-0 z-50 flex flex-col bg-white lg:hidden dark:bg-slate-950">
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-800">
+              <p className="text-lg font-semibold text-slate-900 dark:text-slate-50">Menu</p>
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="rounded-full p-2 text-slate-500 hover:bg-slate-100"
+                className="rounded-full p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
               >
                 <X className="h-6 w-6" />
               </button>
@@ -151,8 +154,8 @@ export function AppLayout() {
                       clsx(
                         'flex items-center gap-3 rounded-xl px-4 py-3 text-base font-medium transition',
                         isActive
-                          ? 'bg-brand-50 text-brand-700'
-                          : 'text-slate-600 hover:bg-slate-100',
+                          ? 'bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-400'
+                          : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800',
                       )
                     }
                   >
@@ -161,7 +164,7 @@ export function AppLayout() {
                   </NavLink>
                 ))}
               </div>
-              <div className="mt-8 border-t border-slate-200 pt-8">
+              <div className="mt-8 border-t border-slate-200 pt-8 dark:border-slate-700">
                 <div className="flex items-center gap-3 px-4">
                   <CollaboratorAvatar
                     collaborator={{
@@ -173,8 +176,8 @@ export function AppLayout() {
                     photoURL={user?.photoURL ?? undefined}
                   />
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">{user?.displayName || user?.email}</p>
-                    <p className="text-xs text-slate-500">{user?.email}</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">{user?.displayName || user?.email}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{user?.email}</p>
                   </div>
                 </div>
                 <button
@@ -182,7 +185,7 @@ export function AppLayout() {
                   onClick={() => {
                     void signOut()
                   }}
-                  className="mt-6 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                  className="mt-6 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
                 >
                   Sign out
                 </button>
@@ -191,7 +194,7 @@ export function AppLayout() {
           </div>
         )}
       </div>
-    </div>
+    </div >
   )
 }
 

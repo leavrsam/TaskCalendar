@@ -19,6 +19,8 @@ const baseTask: Task = {
   contactId: 'contact-maria',
   scheduledStart: null,
   scheduledEnd: null,
+  isAllDay: false,
+  isBackup: false,
 }
 
 const meta: Meta<typeof TaskCard> = {

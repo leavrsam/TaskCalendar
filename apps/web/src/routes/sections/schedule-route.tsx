@@ -1,9 +1,10 @@
 const DRAG_TYPE = 'TASK_CARD'
 import { useEffect, useMemo, useState, useRef } from 'react'
+import { useOutletContext } from 'react-router-dom'
 import clsx from 'clsx'
 import { DndProvider, useDrag } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
-import { addMonths, subMonths, format, startOfWeek } from 'date-fns'
+import { addMonths, subMonths, format, startOfWeek, addDays, subDays, addWeeks, subWeeks } from 'date-fns'
 import type { View } from 'react-big-calendar'
 import { Calendar } from 'react-big-calendar'
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop'
@@ -15,7 +16,9 @@ const DnDCalendar = withDragAndDrop<TaskEvent, TaskEvent>(Calendar)
 import type { Task } from '@taskcalendar/core'
 
 import { TaskCard } from '@/components/tasks/task-card'
-import { Circle, Clock3, CheckCircle2, Ban, Trash2 } from 'lucide-react'
+import { Clock3, CheckCircle2, Ban, Menu, CalendarDays, ChevronLeft, ChevronRight, ChevronDown, LayoutTemplate, ListTodo } from 'lucide-react'
+import { CollaboratorAvatar } from '@/components/collaborators/collaborator-avatar'
+
 
 import { isOverdueEvent } from '@/components/calendar/event-badge.utils'
 import {
@@ -23,24 +26,30 @@ import {
   useTaskEvents,
   useTasksQuery,
   useUpdateTask,
-  useDeleteTask,
   type TaskEvent,
 } from '@/features/tasks/api'
 import { useContactsQuery } from '@/features/contacts/api'
 import { calendarLocalizer } from '@/lib/calendar'
 import { useAuth } from '@/hooks/use-auth'
 import { CreationModal } from '@/components/calendar/creation-modal'
+import { EventActionSheet } from '@/routes/sections/event-action-sheet'
 
 export function ScheduleRoute() {
   const { user } = useAuth()
+  // Get sidebar toggle from AppLayout context
+  const { toggleSidebar } = useOutletContext<{ toggleSidebar: () => void }>()
+
   const tasksQuery = useTasksQuery()
   const eventsQuery = useTaskEvents()
   const updateTask = useUpdateTask()
   const createTask = useCreateTask()
   const tasks = useMemo(() => tasksQuery.data ?? [], [tasksQuery.data])
+
+  // View state
   const [filter, setFilter] = useState<Task['status'] | 'all'>('all')
-  const [collapsed, setCollapsed] = useState(false)
+  const [mode, setMode] = useState<'calendar' | 'tasks' | 'hybrid'>('hybrid')
   const [view, setView] = useState<View>('week')
+  const [isViewDropdownOpen, setIsViewDropdownOpen] = useState(false)
 
   const [creationSlot, setCreationSlot] = useState<{ start: Date; end: Date } | null>(null)
   const [dragTaskId, setDragTaskId] = useState<string | null>(null)
@@ -59,115 +68,218 @@ export function ScheduleRoute() {
     [eventsQuery.events, selectedEventId],
   )
 
+  // Handle navigation based on view
+  const handleNavigate = (direction: 'prev' | 'next') => {
+    if (direction === 'prev') {
+      if (view === 'day') setWeekAnchor(subDays(weekAnchor, 1))
+      else if (view === 'week' || view === 'agenda') setWeekAnchor(subWeeks(weekAnchor, 1))
+      else setWeekAnchor(subMonths(weekAnchor, 1))
+    } else {
+      if (view === 'day') setWeekAnchor(addDays(weekAnchor, 1))
+      else if (view === 'week' || view === 'agenda') setWeekAnchor(addWeeks(weekAnchor, 1))
+      else setWeekAnchor(addMonths(weekAnchor, 1))
+    }
+  }
+
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="space-y-6">
-        <header className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-1">
-            <p className="text-xs uppercase tracking-wide text-slate-500">
-              Slice 5 preview
-            </p>
-            <h1 className="text-2xl font-semibold text-slate-900">
-              Tasks & Calendar
-            </h1>
-            <p className="text-sm text-slate-600">
-              Google Calendar-inspired week view with drag-and-drop scheduling.
-            </p>
-          </div>
-          <div className="flex flex-col gap-2 text-sm text-slate-600 md:flex-row md:items-center">
-            <div className="flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5">
-              <button
-                type="button"
-                className="text-sm text-slate-600 hover:text-slate-900"
-                onClick={() => setWeekAnchor(subMonths(weekAnchor, 1))}
-              >
-                ‹
-              </button>
-              <span className="text-sm font-semibold text-slate-900">
-                {format(weekAnchor, 'MMMM yyyy')}
-              </span>
-              <button
-                type="button"
-                className="text-sm text-slate-600 hover:text-slate-900"
-                onClick={() => setWeekAnchor(addMonths(weekAnchor, 1))}
-              >
-                ›
-              </button>
-            </div>
+      <div className="flex h-[calc(100vh-4rem)] flex-col gap-4 lg:h-[calc(100vh-2rem)]">
+        {/* Google Calendar-style Header */}
+        <header className="flex flex-col gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+
+          {/* Left: Menu, Title, Nav, Date */}
+          <div className="flex items-center gap-4">
             <button
               type="button"
-              className="rounded-full border border-slate-200 px-3 py-1 text-sm font-semibold text-slate-600 hover:border-brand-200"
-              onClick={() => setWeekAnchor(new Date())}
+              onClick={toggleSidebar}
+              className="rounded-full p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+              title="Toggle sidebar"
             >
-              Today
+              <Menu className="h-5 w-5" />
             </button>
-            <div className="flex items-center gap-1 rounded-full border border-slate-200 p-1">
-              {(['month', 'week', 'day', 'agenda'] as View[]).map((v) => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => setView(v)}
-                  className={clsx(
-                    'rounded-full px-3 py-1 text-xs font-semibold capitalize transition-colors',
-                    view === v
-                      ? 'bg-brand-600 text-white'
-                      : 'text-slate-600 hover:bg-slate-100',
-                  )}
-                >
-                  {v}
-                </button>
-              ))}
+
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white">
+                <CalendarDays className="h-5 w-5" />
+              </div>
+              <h1 className="hidden text-xl font-semibold text-slate-900 dark:text-slate-50 sm:block">
+                TaskCalendar
+              </h1>
             </div>
-            <div className="rounded-full border border-slate-100 bg-slate-50 px-4 py-1 text-sm">
-              Signed in as{' '}
-              <span className="font-semibold text-slate-900">
-                {user?.email ?? 'anonymous'}
+
+            <div className="ml-4 flex items-center gap-2">
+              <button
+                type="button"
+                className="rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                onClick={() => setWeekAnchor(new Date())}
+              >
+                Today
+              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  className="rounded-full p-1.5 text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                  onClick={() => handleNavigate('prev')}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  className="rounded-full p-1.5 text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                  onClick={() => handleNavigate('next')}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+              <span className="ml-2 text-lg font-medium text-slate-900 dark:text-slate-50">
+                {format(weekAnchor, 'MMMM yyyy')}
               </span>
+            </div>
+          </div>
+
+          {/* Right: View, Mode, Avatar */}
+          <div className="flex items-center gap-3">
+            {/* View Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsViewDropdownOpen(!isViewDropdownOpen)}
+                className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+              >
+                <span className="capitalize">{view}</span>
+                <ChevronDown className="h-3.5 w-3.5 text-slate-500" />
+              </button>
+
+              {isViewDropdownOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setIsViewDropdownOpen(false)}
+                  />
+                  <div className="absolute right-0 z-20 mt-1 w-32 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 py-1 shadow-lg">
+                    {(['month', 'week', 'day', 'agenda'] as View[]).map((v) => (
+                      <button
+                        key={v}
+                        onClick={() => {
+                          setView(v)
+                          setIsViewDropdownOpen(false)
+                        }}
+                        className={clsx(
+                          'flex w-full items-center px-4 py-2 text-sm capitalize hover:bg-slate-50 dark:hover:bg-slate-800',
+                          view === v ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/20 dark:text-brand-400' : 'text-slate-700 dark:text-slate-300'
+                        )}
+                      >
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="h-6 w-px bg-slate-200 dark:bg-slate-700" />
+
+            {/* Mode Toggle */}
+            <div className="flex items-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-1">
+              <button
+                onClick={() => setMode('calendar')}
+                className={clsx(
+                  'rounded-md p-1.5 transition-colors',
+                  mode === 'calendar' ? 'bg-white dark:bg-slate-700 shadow-sm text-brand-600 dark:text-brand-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                )}
+                title="Calendar View"
+              >
+                <CalendarDays className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setMode('hybrid')}
+                className={clsx(
+                  'rounded-md p-1.5 transition-colors',
+                  mode === 'hybrid' ? 'bg-white dark:bg-slate-700 shadow-sm text-brand-600 dark:text-brand-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                )}
+                title="Hybrid View"
+              >
+                <LayoutTemplate className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setMode('tasks')}
+                className={clsx(
+                  'rounded-md p-1.5 transition-colors',
+                  mode === 'tasks' ? 'bg-white dark:bg-slate-700 shadow-sm text-brand-600 dark:text-brand-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                )}
+                title="Tasks View"
+              >
+                <ListTodo className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="ml-1">
+              <CollaboratorAvatar
+                collaborator={{
+                  uid: user?.uid ?? 'me',
+                  email: user?.email ?? '',
+                  label: user?.displayName || user?.email || 'You',
+                }}
+                size="md"
+                photoURL={user?.photoURL ?? undefined}
+              />
             </div>
           </div>
         </header >
 
         <section
           className={clsx(
-            'grid gap-6 transition-all duration-300 ease-in-out',
-            collapsed ? 'lg:grid-cols-[1fr,auto]' : 'lg:grid-cols-[2fr,1fr]',
+            'grid flex-1 gap-6 transition-all duration-300 ease-in-out min-h-0',
+            mode === 'calendar' && 'grid-cols-1',
+            mode === 'tasks' && 'grid-cols-1',
+            mode === 'hybrid' && 'lg:grid-cols-[2fr,1fr]'
           )}
         >
-          <AgendaBoard
-            events={eventsQuery.events}
-            isLoading={eventsQuery.isLoading}
-            view={view}
-            onView={setView}
-            onSlotSelect={(slot) => {
-              setCreationSlot(slot)
-            }}
-            draggingTask={
-              dragTaskId ? tasks.find((task) => task.id === dragTaskId) ?? null : null
-            }
-            onOutsideDropComplete={() => setDragTaskId(null)}
-            anchorDate={weekAnchor}
-            onAnchorChange={setWeekAnchor}
-            onEventMove={({ id, start, end }) => {
-              void updateTask.mutateAsync({
-                id,
-                data: {
-                  scheduledStart: start.toISOString(),
-                  scheduledEnd: end.toISOString(),
-                },
-              })
-            }}
-            onEventClick={(event) => setSelectedEventId(event.id)}
-          />
-          <TaskBoard
-            tasks={filteredTasks}
-            filter={filter}
-            onFilterChange={setFilter}
-            loading={tasksQuery.isLoading}
-            onDragTaskChange={setDragTaskId}
-            collapsed={collapsed}
-            onToggleCollapse={() => setCollapsed((prev) => !prev)}
-          />
+          {mode !== 'tasks' && (
+            <div className="h-full min-h-0 overflow-hidden">
+              <AgendaBoard
+                events={eventsQuery.events}
+                isLoading={eventsQuery.isLoading}
+                view={view}
+                onView={setView}
+                onSlotSelect={(slot) => {
+                  setCreationSlot(slot)
+                }}
+                draggingTask={
+                  dragTaskId ? tasks.find((task) => task.id === dragTaskId) ?? null : null
+                }
+                onOutsideDropComplete={() => setDragTaskId(null)}
+                anchorDate={weekAnchor}
+                onAnchorChange={setWeekAnchor}
+                onEventMove={({ id, start, end }) => {
+                  void updateTask.mutateAsync({
+                    id,
+                    data: {
+                      scheduledStart: start.toISOString(),
+                      scheduledEnd: end.toISOString(),
+                    },
+                  })
+                }}
+                onEventClick={(event) => setSelectedEventId(event.id)}
+              />
+            </div>
+          )}
+
+          {mode !== 'calendar' && (
+            <div className="h-full min-h-0 overflow-hidden">
+              <TaskBoard
+                tasks={filteredTasks}
+                filter={filter}
+                onFilterChange={setFilter}
+                loading={tasksQuery.isLoading}
+                onDragTaskChange={setDragTaskId}
+                collapsed={false} // Controlled by mode now
+                onToggleCollapse={() => { }} // No internal collapse anymore
+              />
+            </div>
+          )}
         </section>
+
         {creationSlot && (
           <CreationModal
             slot={creationSlot}
@@ -238,18 +350,8 @@ function AgendaBoard({
   }, [draggingTask])
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500">
-            Agenda
-          </p>
-          <h2 className="text-lg font-semibold text-slate-900">
-            Weekly planning board
-          </h2>
-        </div>
-      </div>
-      <div className="mt-4 h-[600px]">
+    <div className="flex h-full flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
+      <div className="h-full min-h-[600px]">
         <DnDCalendar
           localizer={calendarLocalizer}
           events={events}
@@ -257,6 +359,7 @@ function AgendaBoard({
           onView={onView}
           date={anchorDate}
           onNavigate={onAnchorChange}
+          toolbar={false}
           culture="en-US"
           selectable
           step={30}
@@ -311,7 +414,7 @@ function AgendaBoard({
           scrollToTime={scrollToTime}
         />
       </div>
-      {isLoading && <p className="mt-4 text-sm text-slate-500">Syncing schedule…</p>}
+      {isLoading && <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Syncing schedule…</p>}
     </div>
   )
 }
@@ -455,253 +558,6 @@ const getStatusIcon = (status: Task['status'], small = false) => {
   return <Ban className={clsx(sizeClass, 'text-slate-400')} />
 }
 
-const PRESET_COLORS = [
-  { name: 'Blue', value: '#3b82f6' },
-  { name: 'Purple', value: '#8b5cf6' },
-  { name: 'Pink', value: '#ec4899' },
-  { name: 'Red', value: '#ef4444' },
-  { name: 'Orange', value: '#f97316' },
-  { name: 'Yellow', value: '#eab308' },
-  { name: 'Green', value: '#22c55e' },
-  { name: 'Teal', value: '#14b8a6' },
-  { name: 'Cyan', value: '#06b6d4' },
-  { name: 'Indigo', value: '#6366f1' },
-]
-
-type EventActionSheetProps = {
-  event: TaskEvent | null
-  onClose: () => void
-}
-
-function EventActionSheet({ event, onClose }: EventActionSheetProps) {
-  const updateTask = useUpdateTask()
-  const deleteTask = useDeleteTask()
-
-  if (!event) return null
-
-  const task = event.resource
-
-  // Format dates for input (YYYY-MM-DDThh:mm or YYYY-MM-DD)
-  const formatDateForInput = (dateStr: string | null | undefined, isDateOnly: boolean) => {
-    if (!dateStr) return ''
-    const date = new Date(dateStr)
-    if (isDateOnly) {
-      return date.toISOString().slice(0, 10)
-    }
-    return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
-      .toISOString()
-      .slice(0, 16)
-  }
-
-  const handleStatusChange = (e: React.MouseEvent, status: Task['status']) => {
-    e.stopPropagation()
-    updateTask.mutate({
-      id: task.id,
-      data: { status },
-    })
-  }
-
-  const handleDelete = async (e: React.MouseEvent) => {
-    e.stopPropagation()
-    await deleteTask.mutateAsync(task.id)
-    onClose()
-  }
-
-  const handleTimeChange = (field: 'scheduledStart' | 'scheduledEnd', value: string) => {
-    let dateStr = value
-    if (task.isAllDay) {
-      // If all day, append time to ensure correct date is saved
-      // Start of day for start, end of day for end
-      if (field === 'scheduledStart') dateStr = `${value}T00:00:00.000Z`
-      if (field === 'scheduledEnd') dateStr = `${value}T23:59:59.999Z`
-    } else {
-      const date = new Date(value)
-      dateStr = date.toISOString()
-    }
-
-    updateTask.mutate({
-      id: task.id,
-      data: { [field]: dateStr },
-    })
-  }
-
-  const handleColorChange = (color: string) => {
-    updateTask.mutate({
-      id: task.id,
-      data: { color },
-    })
-  }
-
-  const toggleAllDay = (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.stopPropagation()
-    updateTask.mutate({
-      id: task.id,
-      data: { isAllDay: e.target.checked },
-    })
-  }
-
-  const toggleBackup = () => {
-    updateTask.mutate({
-      id: task.id,
-      data: { isBackup: !task.isBackup },
-    })
-  }
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 px-4 py-6 md:items-center"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-wide text-slate-500">Event</p>
-            <h3 className="text-lg font-semibold text-slate-900">{task.title}</h3>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleDelete}
-              className="rounded-full p-2 text-rose-500 hover:bg-rose-50"
-              title="Delete event"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-full border border-slate-200 px-2 py-1 text-xs text-slate-500 hover:border-slate-300"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-4 space-y-4">
-          {/* Time Controls */}
-          <div className="grid gap-3">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold uppercase text-slate-500">
-                Time
-              </label>
-              <label className="flex items-center gap-2 text-sm text-slate-600">
-                <input
-                  type="checkbox"
-                  checked={task.isAllDay}
-                  onChange={toggleAllDay}
-                  className="rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-                />
-                All day
-              </label>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-[10px] text-slate-400">Start</label>
-                <input
-                  type={task.isAllDay ? 'date' : 'datetime-local'}
-                  value={formatDateForInput(task.scheduledStart, task.isAllDay)}
-                  onChange={(e) => handleTimeChange('scheduledStart', e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-2 py-1 text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] text-slate-400">End</label>
-                <input
-                  type={task.isAllDay ? 'date' : 'datetime-local'}
-                  value={formatDateForInput(task.scheduledEnd, task.isAllDay)}
-                  onChange={(e) => handleTimeChange('scheduledEnd', e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-2 py-1 text-sm"
-                />
-              </div>
-            </div >
-          </div >
-
-          {/* Status Controls */}
-          < div >
-            <p className="text-xs font-semibold uppercase text-slate-500">Status</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {(['todo', 'inProgress', 'done'] as Task['status'][]).map((status) => (
-                <button
-                  key={status}
-                  type="button"
-                  onClick={(e) => handleStatusChange(e, status)}
-                  className={clsx(
-                    'rounded-full px-3 py-1 text-sm font-semibold transition-colors',
-                    task.status === status
-                      ? 'bg-brand-600 text-white'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
-                  )}
-                >
-                  {status}
-                </button>
-              ))}
-            </div>
-          </div >
-
-          {/* Color Controls */}
-          < div >
-            <p className="text-xs font-semibold uppercase text-slate-500">Color</p>
-            <div className="mt-2 grid grid-cols-5 gap-2">
-              {PRESET_COLORS.map((presetColor) => (
-                <button
-                  key={presetColor.value}
-                  type="button"
-                  onClick={() => handleColorChange(presetColor.value)}
-                  className="group relative h-8 w-full rounded-lg transition-all hover:scale-110"
-                  style={{ backgroundColor: presetColor.value }}
-                  title={presetColor.name}
-                >
-                  {(task.color === presetColor.value || (!task.color && presetColor.value === '#3b82f6')) && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="h-2 w-2 rounded-full border-2 border-white bg-white/30" />
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div >
-
-          {/* Backup Toggle */}
-          < div >
-            <p className="text-xs font-semibold uppercase text-slate-500">Backup</p>
-            <button
-              type="button"
-              onClick={toggleBackup}
-              className="mt-2 rounded-full border border-slate-200 px-3 py-1 text-sm font-semibold text-slate-600 hover:border-brand-200"
-            >
-              {task.isBackup ? 'Remove backup label' : 'Mark as backup block'}
-            </button>
-          </div >
-
-          {/* Notes */}
-          <div>
-            <p className="text-xs font-semibold uppercase text-slate-500">Notes</p>
-            <textarea
-              defaultValue={task.notes || ''}
-              onBlur={(e) => updateTask.mutate({ id: task.id, data: { notes: e.target.value } })}
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
-              rows={3}
-              placeholder="Add notes..."
-            />
-          </div>
-          <div className="mt-6">
-            <button
-              type="button"
-              onClick={onClose}
-              className="w-full rounded-xl bg-slate-900 py-3 text-sm font-semibold text-white hover:bg-slate-800"
-            >
-              Done
-            </button>
-          </div>
-        </div >
-      </div >
-    </div >
-  )
-}
-
 type TaskBoardProps = {
   tasks: Task[]
   filter: Task['status'] | 'all'
@@ -733,17 +589,17 @@ function TaskBoard({
 
   if (collapsed) {
     return (
-      <div className="flex h-full flex-col items-center rounded-2xl border border-slate-200 bg-white py-4 shadow-sm">
+      <div className="flex h-full flex-col items-center rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-4 shadow-sm">
         <button
           type="button"
           onClick={onToggleCollapse}
-          className="mb-4 rounded-full border border-slate-200 p-2 text-slate-600 hover:border-brand-200 hover:text-brand-600"
+          className="mb-4 rounded-full border border-slate-200 dark:border-slate-800 p-2 text-slate-600 dark:text-slate-400 hover:border-brand-200 hover:text-brand-600"
           title="Show tasks"
         >
           <span className="sr-only">Show tasks</span>
           <span className="block h-4 w-4 rotate-180 text-xs font-bold">‹</span>
         </button>
-        <div className="[writing-mode:vertical-lr] flex flex-1 items-center gap-4 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <div className="[writing-mode:vertical-lr] flex flex-1 items-center gap-4 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
           <span>Tasks</span>
         </div>
       </div>
@@ -751,26 +607,26 @@ function TaskBoard({
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <div className="flex h-full flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
       <div className="flex items-center justify-between px-4 py-3">
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500">
+          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
             Tasks
           </p>
-          <h2 className="text-lg font-semibold text-slate-900">Backlog</h2>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Backlog</h2>
         </div>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={handleNewTask}
-            className="rounded-full border border-slate-200 px-3 py-1 text-sm font-semibold text-slate-600 hover:border-brand-200"
+            className="rounded-full border border-slate-200 dark:border-slate-800 px-3 py-1 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:border-brand-200"
           >
             Quick add
           </button>
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="rounded-full border border-slate-200 px-3 py-1 text-sm font-semibold text-slate-600 hover:border-brand-200"
+            className="rounded-full border border-slate-200 dark:border-slate-800 px-3 py-1 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:border-brand-200"
           >
             Hide
           </button>
@@ -787,21 +643,21 @@ function TaskBoard({
                 'rounded-full px-3 py-1 text-xs font-semibold',
                 filter === status
                   ? 'bg-brand-600 text-white'
-                  : 'bg-slate-100 text-slate-600',
+                  : 'bg-slate-100 text-slate-600 dark:text-slate-400',
               )}
             >
               {status}
             </button>
           ))}
         </div>
-        <div className="mt-4 rounded-lg border border-dashed border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+        <div className="mt-4 rounded-lg border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50 p-3 text-xs text-slate-600 dark:text-slate-400">
           Drag tasks from here onto the calendar to schedule them.
         </div>
       </div>
       <div className="mt-4 space-y-3 px-4 pb-4">
-        {loading && <p className="text-sm text-slate-500">Loading tasks…</p>}
+        {loading && <p className="text-sm text-slate-500 dark:text-slate-400">Loading tasks…</p>}
         {!loading && tasks.length === 0 && (
-          <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+          <p className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50 px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
             No tasks in this column yet. Quick add one to begin planning.
           </p>
         )}

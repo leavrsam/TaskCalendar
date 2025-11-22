@@ -21,6 +21,8 @@ const baseEvent: TaskEvent = {
     updatedAt: new Date().toISOString(),
     contactId: 'contact-maria',
     notes: 'Bring fellowshipping family.',
+    isAllDay: false,
+    isBackup: false,
   },
 }
 

@@ -70,11 +70,11 @@ export function ContactDetail({ contact, onClose }: ContactDetailProps) {
             onClick={onClose}
         >
             <div
-                className="flex h-[90vh] w-full max-w-2xl flex-col rounded-2xl border border-slate-200 bg-white shadow-2xl"
+                className="flex h-[90vh] w-full max-w-2xl flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="flex items-start justify-between border-b border-slate-200 p-6">
+                <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-800 p-6">
                     <div className="flex items-center gap-4">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-100 text-lg font-bold text-brand-700">
                             <User className="h-6 w-6" />
@@ -87,7 +87,7 @@ export function ContactDetail({ contact, onClose }: ContactDetailProps) {
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => setIsVisitModalOpen(true)}
-                            className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50"
+                            className="flex items-center gap-2 rounded-lg bg-white dark:bg-slate-900 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50"
                         >
                             <CalendarPlus className="h-4 w-4 text-slate-500" />
                             Log Visit
@@ -113,7 +113,7 @@ export function ContactDetail({ contact, onClose }: ContactDetailProps) {
                 </div>
 
                 {/* Contact Info */}
-                <div className="border-b border-slate-200 p-6">
+                <div className="border-b border-slate-200 dark:border-slate-800 p-6">
                     <div className="grid gap-3 text-sm">
                         {contact.phone && (
                             <div>
@@ -151,7 +151,7 @@ export function ContactDetail({ contact, onClose }: ContactDetailProps) {
                     <h3 className="mb-4 text-lg font-semibold text-slate-900">Activity Timeline</h3>
 
                     {timeline.length === 0 ? (
-                        <div className="rounded-lg border border-dashed border-slate-200 p-8 text-center">
+                        <div className="rounded-lg border border-dashed border-slate-200 dark:border-slate-800 p-8 text-center">
                             <Calendar className="mx-auto h-12 w-12 text-slate-300" />
                             <p className="mt-2 text-sm text-slate-500">
                                 No activities yet. Create a task or lesson to get started.
@@ -160,7 +160,7 @@ export function ContactDetail({ contact, onClose }: ContactDetailProps) {
                     ) : (
                         <div className="space-y-4">
                             {timeline.map((item, index) => (
-                                <div key={index} className="border-l-2 border-slate-200 pl-4">
+                                <div key={index} className="border-l-2 border-slate-200 dark:border-slate-800 pl-4">
                                     {item.type === 'task' ? (
                                         <div className="space-y-2">
                                             <div className="flex items-center gap-2 text-xs text-slate-500">
@@ -173,7 +173,7 @@ export function ContactDetail({ contact, onClose }: ContactDetailProps) {
                                             <TaskCard task={item.data} />
                                         </div>
                                     ) : (
-                                        <div className="rounded-lg border border-slate-200 bg-white p-4">
+                                        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
                                             <div className="flex items-center gap-2 text-xs text-slate-500">
                                                 <Clock className="h-4 w-4" />
                                                 <span>Visit</span>

@@ -17,12 +17,12 @@ export function ContactCard({ contact, onEdit, onDelete }: ContactCardProps) {
   }
 
   return (
-    <div className="group relative flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
+    <div className="group relative flex flex-col gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm transition-all hover:shadow-md">
       <div className="flex items-start justify-between">
         <div>
-          <h3 className="font-semibold text-slate-900">{contact.name}</h3>
+          <h3 className="font-semibold text-slate-900 dark:text-slate-50">{contact.name}</h3>
           {contact.address && (
-            <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500">
+            <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
               <MapPin className="h-3.5 w-3.5 text-slate-400" />
               <span>{contact.address}</span>
             </div>
@@ -57,7 +57,7 @@ export function ContactCard({ contact, onEdit, onDelete }: ContactCardProps) {
       </div>
 
       {(contact.phone || contact.email) && (
-        <div className="flex flex-wrap gap-3 text-xs text-slate-600">
+        <div className="flex flex-wrap gap-3 text-xs text-slate-600 dark:text-slate-300">
           {contact.phone && (
             <a
               href={`tel:${contact.phone}`}
@@ -79,36 +79,36 @@ export function ContactCard({ contact, onEdit, onDelete }: ContactCardProps) {
         </div>
       )}
 
-      {contact.notes && <p className="text-sm text-slate-600">{contact.notes}</p>}
+      {contact.notes && <p className="text-sm text-slate-600 dark:text-slate-300">{contact.notes}</p>}
 
       {contact.sharedWith && contact.sharedWith.length > 0 && (
         <div className="flex items-center gap-2">
           <CollaboratorStack uids={contact.sharedWith} />
-          <p className="text-xs font-semibold text-slate-500">
+          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
             {contact.sharedWith.length} collaborator{contact.sharedWith.length > 1 ? 's' : ''}
           </p>
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3 border-t border-slate-100 pt-3 text-xs text-slate-500">
+      <div className="grid grid-cols-2 gap-3 border-t border-slate-100 dark:border-slate-800 pt-3 text-xs text-slate-500 dark:text-slate-400">
         {contact.lastContactedAt && (
           <div>
-            <p className="font-semibold text-slate-700">Last visit</p>
+            <p className="font-semibold text-slate-700 dark:text-slate-300">Last visit</p>
             <p>{format(new Date(contact.lastContactedAt), 'MMM d')}</p>
           </div>
         )}
         {contact.nextVisitAt && (
           <div>
-            <p className="font-semibold text-slate-700">Next visit</p>
+            <p className="font-semibold text-slate-700 dark:text-slate-300">Next visit</p>
             <p>{format(new Date(contact.nextVisitAt), 'MMM d, h:mm a')}</p>
           </div>
         )}
       </div>
 
       {contact.tags.length > 0 && (
-        <div className="flex flex-wrap gap-2 text-[10px] uppercase tracking-wide text-slate-500">
+        <div className="flex flex-wrap gap-2 text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
           {contact.tags.map((tag) => (
-            <span key={tag} className="rounded-full bg-slate-100 px-2 py-0.5">
+            <span key={tag} className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5">
               {tag}
             </span>
           ))}

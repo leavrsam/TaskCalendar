@@ -75,7 +75,7 @@ export function VisitForm({ initialData, contacts, onSubmit, onClose, title }: V
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-xl">
                 <div className="mb-6 flex items-center justify-between">
                     <h2 className="text-xl font-semibold text-slate-900">{title}</h2>
                     <button
@@ -93,7 +93,7 @@ export function VisitForm({ initialData, contacts, onSubmit, onClose, title }: V
                             required
                             value={form.contactId}
                             onChange={(e) => setForm({ ...form, contactId: e.target.value })}
-                            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                            className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                         >
                             <option value="" disabled>Select a person</option>
                             {contacts.map((contact) => (
@@ -112,7 +112,7 @@ export function VisitForm({ initialData, contacts, onSubmit, onClose, title }: V
                                 required
                                 value={form.taughtAt}
                                 onChange={(e) => setForm({ ...form, taughtAt: e.target.value })}
-                                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                                className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                             />
                         </div>
                         <div>
@@ -120,7 +120,7 @@ export function VisitForm({ initialData, contacts, onSubmit, onClose, title }: V
                             <select
                                 value={form.type}
                                 onChange={(e) => setForm({ ...form, type: e.target.value as Lesson['type'] })}
-                                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                                className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                             >
                                 {Object.entries(VISIT_TYPE_LABELS).map(([value, label]) => (
                                     <option key={value} value={value}>
@@ -136,7 +136,7 @@ export function VisitForm({ initialData, contacts, onSubmit, onClose, title }: V
                         <textarea
                             value={form.notes}
                             onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                            className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                             rows={3}
                             placeholder="What did you talk about?"
                         />
@@ -149,7 +149,7 @@ export function VisitForm({ initialData, contacts, onSubmit, onClose, title }: V
                                 value={newCommitment}
                                 onChange={(e) => setNewCommitment(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCommitment())}
-                                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                                className="w-full rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                                 placeholder="Add a follow-up item..."
                             />
                             <button

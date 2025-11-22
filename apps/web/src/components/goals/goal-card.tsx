@@ -28,7 +28,7 @@ const categoryColors: Record<Goal['metric'], string> = {
   financial: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   spiritual: 'bg-indigo-50 text-indigo-700 border-indigo-200',
   emotional: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200',
-  career: 'bg-slate-50 text-slate-700 border-slate-200',
+  career: 'bg-slate-50 text-slate-700 border-slate-200 dark:border-slate-800',
   personal: 'bg-teal-50 text-teal-700 border-teal-200',
 }
 
@@ -67,7 +67,7 @@ export function GoalCard({ goal, onProgressChange, onEdit, onDelete }: GoalCardP
   }
 
   return (
-    <div className="group space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
+    <div className="group space-y-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm transition-all hover:shadow-md">
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
           <div className="flex items-center gap-2">

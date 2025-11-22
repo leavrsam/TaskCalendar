@@ -11,7 +11,7 @@ export function MapRoute() {
 
     return (
         <div className="space-y-6">
-            <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <header className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-slate-500">Slice 7</p>
                 <h1 className="text-2xl font-semibold text-slate-900">Global Map</h1>
                 <p className="text-sm text-slate-600">

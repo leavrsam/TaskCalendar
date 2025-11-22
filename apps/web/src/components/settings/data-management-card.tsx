@@ -40,7 +40,7 @@ export function DataManagementCard() {
 
     return (
         <div className="space-y-6">
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
                 <h2 className="text-lg font-semibold text-slate-900">Export Data</h2>
                 <p className="mt-1 text-sm text-slate-600">
                     Download a copy of all your contacts, visits, tasks, and goals.
@@ -61,7 +61,7 @@ export function DataManagementCard() {
                     Irreversible actions for your account and data.
                 </p>
                 <button
-                    className="mt-4 flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-red-600 shadow-sm hover:bg-red-50 ring-1 ring-inset ring-red-200"
+                    className="mt-4 flex items-center gap-2 rounded-full bg-white dark:bg-slate-900 px-4 py-2 text-sm font-semibold text-red-600 shadow-sm hover:bg-red-50 ring-1 ring-inset ring-red-200"
                 >
                     <Trash2 className="h-4 w-4" />
                     Delete Account

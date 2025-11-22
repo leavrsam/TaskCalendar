@@ -14,7 +14,6 @@ import { InviteRoute } from '@/routes/sections/invite-route'
 import { ProfileRoute } from '@/routes/sections/profile-route'
 import { SettingsRoute } from '@/routes/sections/settings-route'
 import { MapRoute } from '@/routes/sections/map-route'
-import { ComingSoon } from '@/components/status/coming-soon'
 
 export const router = createBrowserRouter([
   {

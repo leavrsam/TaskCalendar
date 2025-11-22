@@ -31,7 +31,7 @@ const PRESET_COLORS = [
 
 export function CreationModal({ slot, defaultContactId, onClose, onSave }: CreationModalProps) {
     const contactsQuery = useContactsQuery()
-    const [title, setTitle] = useState('Lesson planning')
+    const [title, setTitle] = useState('')
     const [status, setStatus] = useState<Task['status']>('todo')
     const [priority, setPriority] = useState<Task['priority']>('medium')
     const [notes, setNotes] = useState('')
@@ -50,30 +50,30 @@ export function CreationModal({ slot, defaultContactId, onClose, onSave }: Creat
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-            <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
-                <h3 className="text-lg font-semibold text-slate-900">New calendar block</h3>
-                <p className="text-xs text-slate-500">
+            <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">New calendar block</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                     {displaySlot.start.toLocaleString()} → {displaySlot.end.toLocaleString()}
                 </p>
                 <div className="mt-4 space-y-3">
                     <div>
-                        <label className="text-xs font-semibold uppercase text-slate-500">
+                        <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
                             Title
                         </label>
                         <input
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                            className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-50"
                         />
                     </div>
                     <div>
-                        <label className="text-xs font-semibold uppercase text-slate-500">
+                        <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
                             Related Contact (Optional)
                         </label>
                         <select
                             value={contactId}
                             onChange={(e) => setContactId(e.target.value)}
-                            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                            className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-50"
                         >
                             <option value="">None</option>
                             {contacts.map((contact) => (
@@ -85,13 +85,13 @@ export function CreationModal({ slot, defaultContactId, onClose, onSave }: Creat
                     </div>
                     <div className="grid gap-3 md:grid-cols-2">
                         <div>
-                            <label className="text-xs font-semibold uppercase text-slate-500">
+                            <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
                                 Status
                             </label>
                             <select
                                 value={status}
                                 onChange={(e) => setStatus(e.target.value as Task['status'])}
-                                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                                className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-50"
                             >
                                 <option value="todo">To-do</option>
                                 <option value="inProgress">In progress</option>
@@ -99,13 +99,13 @@ export function CreationModal({ slot, defaultContactId, onClose, onSave }: Creat
                             </select>
                         </div>
                         <div>
-                            <label className="text-xs font-semibold uppercase text-slate-500">
+                            <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
                                 Priority
                             </label>
                             <select
                                 value={priority}
                                 onChange={(e) => setPriority(e.target.value as Task['priority'])}
-                                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                                className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-50"
                             >
                                 <option value="low">Low</option>
                                 <option value="medium">Medium</option>
@@ -114,7 +114,7 @@ export function CreationModal({ slot, defaultContactId, onClose, onSave }: Creat
                         </div>
                     </div>
                     <div>
-                        <label className="text-xs font-semibold uppercase text-slate-500">
+                        <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
                             Block Color
                         </label>
                         <div className="mt-2 grid grid-cols-5 gap-2">
@@ -129,7 +129,7 @@ export function CreationModal({ slot, defaultContactId, onClose, onSave }: Creat
                                 >
                                     {color === presetColor.value && (
                                         <div className="absolute inset-0 flex items-center justify-center">
-                                            <div className="h-3 w-3 rounded-full border-2 border-white bg-white/30" />
+                                            <div className="h-3 w-3 rounded-full border-2 border-white bg-white dark:bg-slate-900/30" />
                                         </div>
                                     )}
                                 </button>
@@ -137,21 +137,21 @@ export function CreationModal({ slot, defaultContactId, onClose, onSave }: Creat
                         </div>
                     </div>
                     <div>
-                        <label className="text-xs font-semibold uppercase text-slate-500">
+                        <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
                             Notes
                         </label>
                         <textarea
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
                             rows={3}
-                            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                            className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-50"
                         />
                     </div>
                 </div>
                 <div className="mt-4 flex items-center justify-end gap-2">
                     <button
                         type="button"
-                        className="text-sm font-semibold text-slate-500 hover:text-slate-900"
+                        className="text-sm font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
                         onClick={onClose}
                     >
                         Cancel

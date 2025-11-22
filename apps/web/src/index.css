@@ -15,12 +15,94 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+:root.dark {
+  color: #f1f5f9;
+  background-color: #020617;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
   background-color: #f8f9fb;
 }
 
+body.dark {
+  background-color: #020617;
+}
+
 #root {
   min-height: 100vh;
+}
+
+/* Dark Mode Overrides for React Big Calendar */
+.dark .rbc-calendar {
+  color: #e2e8f0;
+  /* slate-200 */
+}
+
+.dark .rbc-off-range-bg {
+  background-color: #0f172a;
+  /* slate-900 */
+}
+
+.dark .rbc-header {
+  border-bottom-color: #334155;
+  /* slate-700 */
+}
+
+.dark .rbc-header+.rbc-header {
+  border-left-color: #334155;
+  /* slate-700 */
+}
+
+.dark .rbc-time-view {
+  border-color: #334155;
+  /* slate-700 */
+  background-color: #0f172a;
+  /* slate-900 */
+}
+
+.dark .rbc-day-slot .rbc-time-slot {
+  border-top-color: #1e293b;
+  /* slate-800 - subtle grid lines */
+}
+
+.dark .rbc-time-content {
+  border-top-color: #334155;
+  /* slate-700 */
+}
+
+.dark .rbc-time-content>*+*>* {
+  border-left-color: #334155;
+  /* slate-700 */
+}
+
+.dark .rbc-timeslot-group {
+  border-bottom-color: #1e293b;
+  /* slate-800 */
+}
+
+.dark .rbc-day-bg+.rbc-day-bg {
+  border-left-color: #334155;
+  /* slate-700 */
+}
+
+.dark .rbc-today {
+  background-color: rgba(30, 41, 59, 0.5);
+  /* slate-800 with opacity */
+}
+
+.dark .rbc-time-gutter .rbc-timeslot-group {
+  border-bottom-color: #1e293b;
+  /* slate-800 */
+}
+
+.dark .rbc-label {
+  color: #94a3b8;
+  /* slate-400 */
+}
+
+/* Hide the default "today" highlight if it's too strong */
+.dark .rbc-day-slot.rbc-today {
+  background-color: rgba(30, 41, 59, 0.3);
 }

@@ -57,19 +57,19 @@ export function ContactsRoute() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:flex-row md:items-start md:justify-between">
+      <header className="flex flex-col gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm md:flex-row md:items-start md:justify-between">
         <div>
           <p className="text-xs uppercase tracking-wide text-slate-500">Slice 3</p>
-          <h1 className="text-2xl font-semibold text-slate-900">People & Relationships</h1>
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">People & Relationships</h1>
           <p className="text-sm text-slate-600">
             Manage your contacts, track their progress, and build meaningful relationships.
           </p>
         </div>
         <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
-          <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-1">
+          <div className="flex rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 p-1">
             <button
               onClick={() => setView('list')}
-              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors sm:flex-none ${view === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors sm:flex-none ${view === 'list' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                 }`}
             >
               <div className="flex items-center justify-center gap-2">
@@ -79,7 +79,7 @@ export function ContactsRoute() {
             </button>
             <button
               onClick={() => setView('map')}
-              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors sm:flex-none ${view === 'map' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors sm:flex-none ${view === 'map' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                 }`}
             >
               <div className="flex items-center justify-center gap-2">
@@ -107,7 +107,7 @@ export function ContactsRoute() {
             const stageContacts = contacts.filter((c) => c.stage === stageKey)
             return (
               <div key={stageKey} className="space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
                   <h3 className="font-semibold text-slate-700">{label}</h3>
                   <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
                     {stageContacts.length}
@@ -128,7 +128,7 @@ export function ContactsRoute() {
                     </div>
                   ))}
                   {stageContacts.length === 0 && (
-                    <div className="rounded-lg border border-dashed border-slate-200 p-4 text-center text-xs text-slate-400">
+                    <div className="rounded-lg border border-dashed border-slate-200 dark:border-slate-800 p-4 text-center text-xs text-slate-400">
                       No contacts in this stage
                     </div>
                   )}

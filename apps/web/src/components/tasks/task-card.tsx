@@ -24,7 +24,7 @@ export function TaskCard({ task, onStatusChange, onSchedule }: TaskCardProps) {
   const contact = task.contactId ? contacts.find((c) => c.id === task.contactId) : null
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-semibold text-slate-900">{task.title}</p>
@@ -72,7 +72,7 @@ export function TaskCard({ task, onStatusChange, onSchedule }: TaskCardProps) {
               'rounded-full border px-3 py-1 font-semibold transition',
               task.status === status
                 ? 'border-brand-500 bg-brand-50 text-brand-700'
-                : 'border-slate-200 text-slate-500 hover:border-brand-200',
+                : 'border-slate-200 dark:border-slate-800 text-slate-500 hover:border-brand-200',
             )}
           >
             {status}

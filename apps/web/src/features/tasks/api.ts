@@ -137,6 +137,7 @@ type UpdateTaskInput = {
   data: Partial<
     Pick<
       Task,
+      | 'title'
       | 'status'
       | 'priority'
       | 'dueAt'
