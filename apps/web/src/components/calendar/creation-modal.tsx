@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Task } from '@taskcalendar/core'
 import { useContactsQuery } from '@/features/contacts/api'
+import { RecurrenceSelector } from '@/components/calendar/recurrence-selector'
 
 type CreationModalProps = {
     slot?: { start: Date; end: Date } | null
@@ -13,6 +14,7 @@ type CreationModalProps = {
         contactId?: string
         priority: Task['priority']
         color?: string | null
+        recurrence?: Task['recurrence']
     }) => Promise<void>
 }
 
@@ -37,6 +39,7 @@ export function CreationModal({ slot, defaultContactId, onClose, onSave }: Creat
     const [notes, setNotes] = useState('')
     const [color, setColor] = useState<string>('#3b82f6')
     const [contactId, setContactId] = useState<string>(defaultContactId || '')
+    const [recurrence, setRecurrence] = useState<Task['recurrence']>(null)
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
@@ -49,8 +52,11 @@ export function CreationModal({ slot, defaultContactId, onClose, onSave }: Creat
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-            <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 p-4 md:items-center" onClick={onClose}>
+            <div
+                className="w-full max-w-md rounded-t-2xl md:rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl animate-in slide-in-from-bottom md:slide-in-from-bottom-0"
+                onClick={(e) => e.stopPropagation()}
+            >
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">New calendar block</h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                     {displaySlot.start.toLocaleString()} → {displaySlot.end.toLocaleString()}
@@ -136,6 +142,11 @@ export function CreationModal({ slot, defaultContactId, onClose, onSave }: Creat
                             ))}
                         </div>
                     </div>
+                    <RecurrenceSelector
+                        scheduledStart={displaySlot.start.toISOString()}
+                        recurrence={recurrence}
+                        onChange={setRecurrence}
+                    />
                     <div>
                         <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
                             Notes
@@ -171,6 +182,7 @@ export function CreationModal({ slot, defaultContactId, onClose, onSave }: Creat
                                     priority,
                                     color,
                                     contactId: contactId || undefined,
+                                    recurrence,
                                 })
                             } catch (err) {
                                 setError(

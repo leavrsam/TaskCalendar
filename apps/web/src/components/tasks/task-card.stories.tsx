@@ -21,6 +21,11 @@ const baseTask: Task = {
   scheduledEnd: null,
   isAllDay: false,
   isBackup: false,
+  recurrence: null,
+  recurringEventId: null,
+  originalStart: null,
+  isRecurringInstance: false,
+  isModified: false,
 }
 
 const meta: Meta<typeof TaskCard> = {
@@ -66,4 +71,3 @@ export const Backup: Story = {
     },
   },
 }
-

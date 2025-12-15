@@ -23,6 +23,11 @@ const baseEvent: TaskEvent = {
     notes: 'Bring fellowshipping family.',
     isAllDay: false,
     isBackup: false,
+    recurrence: null,
+    recurringEventId: null,
+    originalStart: null,
+    isRecurringInstance: false,
+    isModified: false,
   },
 }
 

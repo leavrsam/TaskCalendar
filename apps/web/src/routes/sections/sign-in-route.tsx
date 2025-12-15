@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { AuthLayout } from '@/routes/sections/auth-route'
 
 export function SignInRoute() {
-  const { user, signIn, loading } = useAuth()
+  const { user, signIn, signInWithGoogle, loading } = useAuth()
 
   if (user) {
     return <Navigate to="/" replace />
@@ -24,7 +24,12 @@ export function SignInRoute() {
         </>
       }
     >
-      <AuthForm mode="signIn" loading={loading} onSubmit={(values) => signIn(values.email, values.password)} />
+      <AuthForm
+        mode="signIn"
+        loading={loading}
+        onSubmit={(values) => signIn(values.email, values.password)}
+        onGoogleSignIn={signInWithGoogle}
+      />
     </AuthLayout>
   )
 }

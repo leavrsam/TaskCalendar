@@ -12,6 +12,8 @@ import {
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   updateProfile,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from 'firebase/auth'
 
 import { getFirebaseAuth, type AuthUser } from '@/lib/firebase'
@@ -20,6 +22,7 @@ type AuthContextValue = {
   user: AuthUser | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<void>
+  signInWithGoogle: () => Promise<void>
   createAccount: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
   updateUserProfile: (data: { displayName?: string; photoURL?: string }) => Promise<void>
@@ -51,6 +54,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
     },
     [auth],
   )
+
+  const signInWithGoogle = useCallback(async () => {
+    setLoading(true)
+    try {
+      const provider = new GoogleAuthProvider()
+      await signInWithPopup(auth, provider)
+    } finally {
+      setLoading(false)
+    }
+  }, [auth])
 
   const createAccount = useCallback(
     async (email: string, password: string) => {
@@ -88,11 +101,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
       user,
       loading,
       signIn,
+      signInWithGoogle,
       createAccount,
       signOut,
       updateUserProfile,
     }),
-    [user, loading, signIn, createAccount, signOut, updateUserProfile],
+    [user, loading, signIn, signInWithGoogle, createAccount, signOut, updateUserProfile],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

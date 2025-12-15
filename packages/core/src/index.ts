@@ -126,11 +126,27 @@ export const taskSchema = z.object({
   isBackup: z.boolean().default(false),
   color: z.string().nullable().optional(),
   sharedWith: z.array(uid).default([]),
+  // Recurrence fields
+  recurrence: z.object({
+    frequency: z.enum(['none', 'daily', 'weekly', 'monthly', 'annually', 'weekday', 'custom']),
+    interval: z.number().default(1),
+    endDate: z.string().nullable().optional(),
+    count: z.number().nullable().optional(),
+    byDay: z.array(z.number()).optional(), // 0-6 (Sun-Sat)
+    byMonthDay: z.number().nullable().optional(),
+    byMonth: z.number().nullable().optional(),
+  }).nullable().optional(),
+  // Instance tracking fields
+  recurringEventId: z.string().nullable().optional(),
+  originalStart: z.string().nullable().optional(),
+  isRecurringInstance: z.boolean().default(false),
+  isModified: z.boolean().default(false),
   createdAt: timestampString,
   updatedAt: timestampString,
 })
 
 export type Task = z.infer<typeof taskSchema>
+export type RecurrenceFrequency = 'none' | 'daily' | 'weekly' | 'monthly' | 'annually' | 'weekday' | 'custom'
 
 const inviteRoleSchema = z.enum(['viewer', 'editor'])
 const inviteStatusSchema = z.enum(['pending', 'accepted', 'declined', 'revoked'])

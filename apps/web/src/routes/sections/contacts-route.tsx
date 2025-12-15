@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Plus, Map as MapIcon, List } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Plus, Map as MapIcon, List, Upload, X } from 'lucide-react'
 import type { Contact } from '@taskcalendar/core'
 
 import { ContactCard } from '@/components/contacts/contact-card'
@@ -22,20 +22,35 @@ const STAGE_LABELS: Record<string, string> = {
   dropped: 'Archived',
 }
 
+type ImportedContact = {
+  name: string
+  phone?: string
+  email?: string
+  address?: string
+}
+
 export function ContactsRoute() {
   const contactsQuery = useContactsQuery()
   const createContact = useCreateContact()
   const updateContact = useUpdateContact()
   const deleteContact = useDeleteContact()
-  const { success: showSuccessToast } = useToast()
+  const { success: showSuccessToast, error: showErrorToast } = useToast()
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [editingContact, setEditingContact] = useState<Contact | null>(null)
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const [view, setView] = useState<'list' | 'map'>('list')
+  const [importPreview, setImportPreview] = useState<ImportedContact[]>([])
+  const [isImporting, setIsImporting] = useState(false)
+  const [supportsContactPicker, setSupportsContactPicker] = useState(false)
 
   const contacts = contactsQuery.data ?? []
   console.log('Contacts loaded:', contacts)
+
+  useEffect(() => {
+    // Check if Contact Picker API is available
+    setSupportsContactPicker('contacts' in navigator)
+  }, [])
 
   const handleCreate = async (data: Omit<Contact, 'id' | 'ownerUid' | 'createdAt' | 'updatedAt'>) => {
     await createContact.mutateAsync(data)
@@ -53,6 +68,63 @@ export function ContactsRoute() {
   const handleDelete = async (id: string) => {
     await deleteContact.mutateAsync(id)
     showSuccessToast({ title: 'Contact deleted', description: 'Removed from your contacts.' })
+  }
+
+  const handleImportClick = async () => {
+    try {
+      const props = ['name', 'tel', 'email', 'address']
+      const opts = { multiple: true }
+
+      // @ts-expect-error - Contact Picker API types not in TypeScript yet
+      const selectedContacts = await navigator.contacts.select(props, opts)
+
+      const importedContacts: ImportedContact[] = selectedContacts.map((contact: any) => ({
+        name: contact.name?.[0] || 'Unknown',
+        phone: contact.tel?.[0],
+        email: contact.email?.[0],
+        address: contact.address?.[0]?.formattedAddress || contact.address?.[0],
+      }))
+
+      setImportPreview(importedContacts)
+    } catch (err) {
+      if (err instanceof Error && err.name !== 'AbortError') {
+        showErrorToast({ title: 'Import failed', description: err.message })
+      }
+    }
+  }
+
+  const handleConfirmImport = async () => {
+    setIsImporting(true)
+    try {
+      let successCount = 0
+      for (const importedContact of importPreview) {
+        await createContact.mutateAsync({
+          name: importedContact.name,
+          stage: 'new',
+          phone: importedContact.phone,
+          email: importedContact.email,
+          address: importedContact.address,
+          tags: [],
+          lastContactedAt: null,
+          nextVisitAt: null,
+          sharedWith: [],
+        })
+        successCount++
+      }
+
+      showSuccessToast({
+        title: 'Contacts imported',
+        description: `Successfully imported ${successCount} contact${successCount !== 1 ? 's' : ''}.`
+      })
+      setImportPreview([])
+    } catch (err) {
+      showErrorToast({
+        title: 'Import error',
+        description: 'Some contacts could not be imported.'
+      })
+    } finally {
+      setIsImporting(false)
+    }
   }
 
   return (
@@ -88,6 +160,15 @@ export function ContactsRoute() {
               </div>
             </button>
           </div>
+          {supportsContactPicker && (
+            <button
+              onClick={handleImportClick}
+              className="flex items-center justify-center gap-2 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-900 dark:text-slate-50 hover:bg-slate-50 dark:hover:bg-slate-800"
+            >
+              <Upload className="h-4 w-4" />
+              Import
+            </button>
+          )}
           <button
             onClick={() => setIsCreateModalOpen(true)}
             className="flex items-center justify-center gap-2 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
@@ -158,6 +239,67 @@ export function ContactsRoute() {
 
       {selectedContact && (
         <ContactDetail contact={selectedContact} onClose={() => setSelectedContact(null)} />
+      )}
+
+      {/* Import Preview Modal */}
+      {importPreview.length > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+          <div className="w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+                  Confirm Import
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  {importPreview.length} contact{importPreview.length !== 1 ? 's' : ''} selected
+                </p>
+              </div>
+              <button
+                onClick={() => setImportPreview([])}
+                className="rounded-full p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="max-h-96 overflow-y-auto space-y-2 mb-4">
+              {importPreview.map((contact, index) => (
+                <div
+                  key={index}
+                  className="rounded-lg border border-slate-200 dark:border-slate-800 p-3"
+                >
+                  <p className="font-medium text-slate-900 dark:text-slate-50">{contact.name}</p>
+                  {contact.phone && (
+                    <p className="text-sm text-slate-600 dark:text-slate-400">{contact.phone}</p>
+                  )}
+                  {contact.email && (
+                    <p className="text-sm text-slate-600 dark:text-slate-400">{contact.email}</p>
+                  )}
+                  {contact.address && (
+                    <p className="text-sm text-slate-600 dark:text-slate-400">{contact.address}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setImportPreview([])}
+                className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-50"
+                disabled={isImporting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmImport}
+                className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
+                disabled={isImporting}
+              >
+                {isImporting ? 'Importing...' : `Import ${importPreview.length} Contact${importPreview.length !== 1 ? 's' : ''}`}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

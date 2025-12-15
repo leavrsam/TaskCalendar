@@ -15,6 +15,8 @@ import { taskSchema, type Task } from '@taskcalendar/core'
 
 import { useAuth } from '@/hooks/use-auth'
 import { getFirebaseFirestore } from '@/lib/firebase'
+import { expandRecurringEvents } from '@/lib/recurrence'
+import { startOfMonth, endOfMonth, addMonths } from 'date-fns'
 
 const key = (uid: string | undefined) => ['firestore', 'tasks', uid ?? 'anon']
 
@@ -66,19 +68,28 @@ export const useTasksQuery = (filter?: { status?: Task['status'] | 'all' }) => {
 
 export const useTaskEvents = () => {
   const tasks = useTasksQuery()
-  const events: TaskEvent[] =
-    tasks.data
-      ?.filter(
-        (task) => task.scheduledStart && task.scheduledEnd,
-      )
-      .map((task) => ({
-        id: task.id,
-        title: task.title,
-        start: new Date(task.scheduledStart as string),
-        end: new Date(task.scheduledEnd as string),
-        allDay: task.isAllDay,
-        resource: task,
-      })) ?? []
+
+  // Expand recurring events for current view +/- 2 months
+  const viewStart = startOfMonth(addMonths(new Date(), -2))
+  const viewEnd = endOfMonth(addMonths(new Date(), 2))
+
+  const allTasks = tasks.data ?? []
+  const tasksWithSchedule = allTasks.filter(
+    (task) => task.scheduledStart && task.scheduledEnd,
+  )
+
+  // Expand recurring events
+  const expandedTasks = expandRecurringEvents(tasksWithSchedule, viewStart, viewEnd)
+
+  const events: TaskEvent[] = expandedTasks.map((task) => ({
+    id: task.id,
+    title: task.title,
+    start: new Date(task.scheduledStart as string),
+    end: new Date(task.scheduledEnd as string),
+    allDay: task.isAllDay,
+    resource: task,
+  }))
+
   return { ...tasks, events }
 }
 
@@ -95,6 +106,11 @@ type CreateTaskInput = {
   isBackup?: boolean
   color?: string | null
   sharedWith?: string[]
+  recurrence?: Task['recurrence']
+  recurringEventId?: string | null
+  originalStart?: string | null
+  isRecurringInstance?: boolean
+  isModified?: boolean
 }
 
 export const useCreateTask = () => {
@@ -121,6 +137,11 @@ export const useCreateTask = () => {
           assignedTo: [user.uid],
           sharedWith: payload.sharedWith ?? [],
           notes: payload.notes,
+          recurrence: payload.recurrence ?? null,
+          recurringEventId: payload.recurringEventId ?? null,
+          originalStart: payload.originalStart ?? null,
+          isRecurringInstance: payload.isRecurringInstance ?? false,
+          isModified: payload.isModified ?? false,
           createdAt: now,
           updatedAt: now,
         }),
@@ -148,6 +169,8 @@ type UpdateTaskInput = {
       | 'color'
       | 'notes'
       | 'sharedWith'
+      | 'recurrence'
+      | 'isModified'
     >
   >
 }
@@ -225,3 +248,114 @@ export const useDeleteTask = () => {
   })
 }
 
+export const useUpdateRecurringInstance = () => {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+  const createTask = useCreateTask()
+  const updateTask = useUpdateTask()
+
+  return useMutation({
+    mutationFn: async ({ id, data, originalTask }: { id: string; data: UpdateTaskInput['data']; originalTask: Task }) => {
+      if (!user) throw new Error('You must be signed in')
+
+      // If it's a generated instance (not in DB yet), create it
+      if (id.includes('-')) {
+        // It's a virtual ID, create a new exception instance
+        await createTask.mutateAsync({
+          ...originalTask,
+          ...data,
+          recurringEventId: originalTask.recurringEventId || originalTask.id,
+          originalStart: originalTask.scheduledStart,
+          isRecurringInstance: true,
+          isModified: true,
+        })
+      } else {
+        // It's already an exception, just update it
+        await updateTask.mutateAsync({
+          id,
+          data: {
+            ...data,
+            isModified: true,
+          },
+        })
+      }
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: key(user?.uid) })
+    },
+  })
+}
+
+export const useUpdateRecurringSeriesAll = () => {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+  const updateTask = useUpdateTask()
+
+  return useMutation({
+    mutationFn: async ({ id, data, recurringEventId }: { id: string; data: UpdateTaskInput['data']; recurringEventId?: string | null }) => {
+      if (!user) throw new Error('You must be signed in')
+
+      // Update the parent event
+      const parentId = recurringEventId || id
+
+      await updateTask.mutateAsync({
+        id: parentId,
+        data,
+      })
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: key(user?.uid) })
+    },
+  })
+}
+
+export const useUpdateRecurringSeriesFuture = () => {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+  const createTask = useCreateTask()
+  const updateTask = useUpdateTask()
+
+  return useMutation({
+    mutationFn: async ({ data, originalTask, date }: { id: string; data: UpdateTaskInput['data']; originalTask: Task; date: Date }) => {
+      if (!user) throw new Error('You must be signed in')
+
+      const parentId = originalTask.recurringEventId || originalTask.id
+
+      // 1. End the current series at the previous occurrence
+      const prevEndDate = new Date(date)
+      prevEndDate.setDate(prevEndDate.getDate() - 1)
+
+      if (originalTask.recurrence) {
+        await updateTask.mutateAsync({
+          id: parentId,
+          data: {
+            recurrence: {
+              ...originalTask.recurrence,
+              endDate: prevEndDate.toISOString(),
+            }
+          }
+        })
+      }
+
+      // 2. Create new series starting from this date
+      await createTask.mutateAsync({
+        ...originalTask,
+        ...data,
+        scheduledStart: date.toISOString(),
+        // Recalculate end time based on duration
+        scheduledEnd: new Date(date.getTime() + (new Date(originalTask.scheduledEnd!).getTime() - new Date(originalTask.scheduledStart!).getTime())).toISOString(),
+        recurrence: {
+          ...originalTask.recurrence!,
+          endDate: originalTask.recurrence?.endDate,
+          count: originalTask.recurrence?.count,
+        },
+        recurringEventId: null, // New parent
+        isRecurringInstance: false,
+        isModified: false,
+      })
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: key(user?.uid) })
+    },
+  })
+}
