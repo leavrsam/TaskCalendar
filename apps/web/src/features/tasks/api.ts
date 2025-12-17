@@ -319,35 +319,64 @@ export const useUpdateRecurringSeriesFuture = () => {
     mutationFn: async ({ data, originalTask, date }: { id: string; data: UpdateTaskInput['data']; originalTask: Task; date: Date }) => {
       if (!user) throw new Error('You must be signed in')
 
-      const parentId = originalTask.recurringEventId || originalTask.id
+      const parentId = originalTask.recurrence ? originalTask.id : originalTask.recurringEventId
+
+      if (!parentId) throw new Error('Cannot split non-recurring task')
+
+      // Get the recurrence rule - prefer from originalTask, fall back to data.recurrence
+      const baseRecurrence = originalTask.recurrence || data.recurrence
+      if (!baseRecurrence) {
+        // If no recurrence available, we can't create a new series
+        // Just update this instance instead
+        console.warn('No recurrence rule available for split, updating instance only')
+        await updateTask.mutateAsync({
+          id: originalTask.id.includes('-') ? originalTask.id.split('-')[0] : originalTask.id,
+          data,
+        })
+        return
+      }
 
       // 1. End the current series at the previous occurrence
       const prevEndDate = new Date(date)
       prevEndDate.setDate(prevEndDate.getDate() - 1)
+      prevEndDate.setHours(23, 59, 59, 999)
 
-      if (originalTask.recurrence) {
-        await updateTask.mutateAsync({
-          id: parentId,
-          data: {
-            recurrence: {
-              ...originalTask.recurrence,
-              endDate: prevEndDate.toISOString(),
-            }
+      // Update the parent to end the series
+      await updateTask.mutateAsync({
+        id: parentId,
+        data: {
+          recurrence: {
+            ...baseRecurrence,
+            endDate: prevEndDate.toISOString(),
           }
-        })
-      }
+        }
+      })
 
       // 2. Create new series starting from this date
+      const duration = new Date(originalTask.scheduledEnd!).getTime() - new Date(originalTask.scheduledStart!).getTime()
+      const newStart = new Date(date)
+      const newEnd = new Date(newStart.getTime() + duration)
+
       await createTask.mutateAsync({
-        ...originalTask,
-        ...data,
-        scheduledStart: date.toISOString(),
-        // Recalculate end time based on duration
-        scheduledEnd: new Date(date.getTime() + (new Date(originalTask.scheduledEnd!).getTime() - new Date(originalTask.scheduledStart!).getTime())).toISOString(),
+        title: data.title ?? originalTask.title,
+        status: data.status ?? originalTask.status,
+        priority: data.priority ?? originalTask.priority,
+        notes: data.notes ?? originalTask.notes,
+        isAllDay: data.isAllDay ?? originalTask.isAllDay,
+        isBackup: data.isBackup ?? originalTask.isBackup,
+        color: data.color ?? originalTask.color,
+        contactId: originalTask.contactId ?? undefined,
+        scheduledStart: newStart.toISOString(),
+        scheduledEnd: newEnd.toISOString(),
+        dueAt: newEnd.toISOString(),
         recurrence: {
-          ...originalTask.recurrence!,
-          endDate: originalTask.recurrence?.endDate,
-          count: originalTask.recurrence?.count,
+          frequency: baseRecurrence.frequency,
+          interval: baseRecurrence.interval ?? 1,
+          byDay: baseRecurrence.byDay ?? null,
+          byMonth: baseRecurrence.byMonth ?? null,
+          byMonthDay: baseRecurrence.byMonthDay ?? null,
+          endDate: baseRecurrence.endDate || null,
+          count: null,
         },
         recurringEventId: null, // New parent
         isRecurringInstance: false,

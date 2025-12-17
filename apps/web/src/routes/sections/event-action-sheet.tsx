@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import clsx from 'clsx'
-import { Trash2, Save } from 'lucide-react'
-import type { Task } from '@taskcalendar/core'
+import { Trash2, Save, X } from 'lucide-react'
+import { AnimatedSheet } from '@/components/ui/animated-sheet'
+import { useMediaQuery } from '@/hooks/use-media-query'
 import {
     useUpdateTask,
     useDeleteTask,
@@ -10,21 +11,10 @@ import {
     useUpdateRecurringSeriesFuture,
     type TaskEvent
 } from '@/features/tasks/api'
+import type { Task } from '@taskcalendar/core'
 import { RecurrenceSelector } from '@/components/calendar/recurrence-selector'
 import { EditRecurringEventModal, type EditScope } from '@/components/calendar/edit-recurring-event-modal'
-
-const PRESET_COLORS = [
-    { name: 'Blue', value: '#3b82f6' },
-    { name: 'Purple', value: '#8b5cf6' },
-    { name: 'Pink', value: '#ec4899' },
-    { name: 'Red', value: '#ef4444' },
-    { name: 'Orange', value: '#f97316' },
-    { name: 'Yellow', value: '#eab308' },
-    { name: 'Green', value: '#22c55e' },
-    { name: 'Teal', value: '#14b8a6' },
-    { name: 'Cyan', value: '#06b6d4' },
-    { name: 'Indigo', value: '#6366f1' },
-]
+import { ColorPicker } from '@/components/ui/color-picker'
 
 type EventActionSheetProps = {
     event: TaskEvent | null
@@ -32,6 +22,7 @@ type EventActionSheetProps = {
 }
 
 export function EventActionSheet({ event, onClose }: EventActionSheetProps) {
+    const isDesktop = useMediaQuery('(min-width: 768px)')
     const updateTask = useUpdateTask()
     const deleteTask = useDeleteTask()
     const updateRecurringInstance = useUpdateRecurringInstance()
@@ -121,33 +112,17 @@ export function EventActionSheet({ event, onClose }: EventActionSheetProps) {
         handleUpdate({ isAllDay: e.target.checked })
     }
 
-    const toggleBackup = () => {
-        handleUpdate({ isBackup: !task.isBackup })
-    }
-
     const handleScopeConfirm = (scope: EditScope) => {
         setShowScopeModal(false)
 
         if (scopeAction === 'delete') {
             // Handle delete logic
             if (scope === 'this') {
-                // Delete single instance
-                // If it's a generated instance, we need to create an exception that is "cancelled"
-                // But for now, let's just use deleteDoc if it exists, or create exception if not
-                // Actually, deleting an instance means creating an exception with status 'cancelled' or similar?
-                // Or just removing it from view?
-                // For simplicity, let's assume we can delete the doc if it exists.
-                // If it's virtual, we need to create an exception.
-                // But wait, our API doesn't support "cancelled" status exception yet.
-                // Let's just use deleteDoc for now and assume it works for existing docs.
-                // For virtual docs, we can't "delete" them easily without storing an exception.
-                // Let's skip virtual instance deletion for now or implement it later.
-                // Just call deleteTask for now if it exists.
                 if (!task.id.includes('-')) {
                     deleteTask.mutate(task.id)
                 }
             } else if (scope === 'following') {
-                // Not implemented yet for delete
+                // Not implemented
             } else if (scope === 'all') {
                 // Delete parent
                 const parentId = task.recurringEventId || task.id
@@ -196,25 +171,28 @@ export function EventActionSheet({ event, onClose }: EventActionSheetProps) {
     }
 
     return (
-        <div
-            className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 px-4 py-6 md:items-center"
-            onClick={onClose}
+        <AnimatedSheet
+            isOpen={!!event}
+            onClose={onClose}
+            side={isDesktop ? 'right' : 'bottom'}
+            className={clsx(
+                "flex flex-col overflow-hidden",
+                isDesktop ? "h-full" : "max-h-[85vh]"
+            )}
         >
-            <div
-                className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="flex items-start justify-between">
+            <div className="flex h-full flex-col">
+                {/* Header */}
+                <div className="flex items-start justify-between border-b border-slate-100 p-6 dark:border-slate-800">
                     <div className="w-full pr-4">
-                        <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Event</p>
+                        <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Event Details</p>
                         <input
                             value={task.title}
                             onChange={(e) => handleUpdate({ title: e.target.value })}
-                            className="w-full bg-transparent text-lg font-semibold text-slate-900 focus:outline-none focus:ring-0 dark:text-slate-50"
+                            className="mt-1 w-full bg-transparent text-xl font-semibold text-slate-900 focus:outline-none focus:ring-0 dark:text-slate-50"
                             placeholder="Event title"
                         />
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                         {isDirty && (
                             <button
                                 type="button"
@@ -222,7 +200,7 @@ export function EventActionSheet({ event, onClose }: EventActionSheetProps) {
                                     setScopeAction('edit')
                                     setShowScopeModal(true)
                                 }}
-                                className="flex items-center gap-1 rounded-full bg-blue-500 px-3 py-1 text-xs font-medium text-white hover:bg-blue-600"
+                                className="flex items-center gap-1 rounded-full bg-blue-500 px-3 py-1 text-xs font-medium text-white hover:bg-blue-600 mr-2"
                             >
                                 <Save className="h-3 w-3" />
                                 Save
@@ -230,30 +208,21 @@ export function EventActionSheet({ event, onClose }: EventActionSheetProps) {
                         )}
                         <button
                             type="button"
-                            onClick={handleDeleteClick}
-                            className="rounded-full p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20"
-                            title="Delete event"
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </button>
-                        <button
-                            type="button"
                             onClick={onClose}
-                            className="rounded-full border border-slate-200 dark:border-slate-800 px-2 py-1 text-xs text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700"
+                            className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-500 dark:hover:bg-slate-800"
                         >
-                            Close
+                            <X className="h-5 w-5" />
                         </button>
                     </div>
                 </div>
 
-                <div className="mt-4 space-y-4">
+                {/* Scrollable Body */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-8">
                     {/* Time Controls */}
-                    <div className="grid gap-3">
+                    <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
-                                Time
-                            </label>
-                            <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                            <h4 className="text-sm font-medium text-slate-900 dark:text-slate-200">Date & Time</h4>
+                            <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                                 <input
                                     type="checkbox"
                                     checked={task.isAllDay}
@@ -263,45 +232,45 @@ export function EventActionSheet({ event, onClose }: EventActionSheetProps) {
                                 All day
                             </label>
                         </div>
+
                         <div className="grid gap-4">
                             {/* Start */}
-                            <div className="grid grid-cols-[1fr,auto] gap-2">
+                            <div className="grid grid-cols-[1fr,auto] gap-3">
                                 <div>
-                                    <label className="text-[10px] text-slate-400">Start Date</label>
+                                    <label className="mb-1 block text-[10px] font-medium uppercase text-slate-500">Start</label>
                                     <input
                                         type="date"
                                         value={formatDateForInput(task.scheduledStart, true)}
                                         onChange={(e) => {
                                             const newDate = e.target.value
                                             const current = new Date(task.scheduledStart as string)
-                                            // Keep time, update date
                                             const timePart = current.toLocaleTimeString('en-GB', { hour12: false }).slice(0, 5)
-                                            handleTimeChange('scheduledStart', `${newDate}T${timePart}`)
+                                            handleTimeChange('scheduledStart', `${newDate}T${timePart} `)
                                         }}
-                                        className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 px-2 py-1 text-sm text-slate-900 dark:text-slate-50 dark:[color-scheme:dark]"
+                                        className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-3 py-2 text-sm text-slate-900 dark:text-slate-50"
                                     />
                                 </div>
                                 {!task.isAllDay && (
-                                    <div>
-                                        <label className="text-[10px] text-slate-400">Time</label>
+                                    <div className="w-24">
+                                        <label className="mb-1 block text-[10px] font-medium uppercase text-slate-500">&nbsp;</label>
                                         <input
                                             type="time"
                                             value={task.scheduledStart ? new Date(task.scheduledStart as string).toLocaleTimeString('en-GB', { hour12: false }).slice(0, 5) : ''}
                                             onChange={(e) => {
                                                 const newTime = e.target.value
                                                 const datePart = formatDateForInput(task.scheduledStart, true)
-                                                handleTimeChange('scheduledStart', `${datePart}T${newTime}`)
+                                                handleTimeChange('scheduledStart', `${datePart}T${newTime} `)
                                             }}
-                                            className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 px-2 py-1 text-sm text-slate-900 dark:text-slate-50 dark:[color-scheme:dark]"
+                                            className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-3 py-2 text-sm text-slate-900 dark:text-slate-50"
                                         />
                                     </div>
                                 )}
                             </div>
 
                             {/* End */}
-                            <div className="grid grid-cols-[1fr,auto] gap-2">
+                            <div className="grid grid-cols-[1fr,auto] gap-3">
                                 <div>
-                                    <label className="text-[10px] text-slate-400">End Date</label>
+                                    <label className="mb-1 block text-[10px] font-medium uppercase text-slate-500">End</label>
                                     <input
                                         type="date"
                                         value={formatDateForInput(task.scheduledEnd, true)}
@@ -309,23 +278,23 @@ export function EventActionSheet({ event, onClose }: EventActionSheetProps) {
                                             const newDate = e.target.value
                                             const current = new Date(task.scheduledEnd as string)
                                             const timePart = current.toLocaleTimeString('en-GB', { hour12: false }).slice(0, 5)
-                                            handleTimeChange('scheduledEnd', `${newDate}T${timePart}`)
+                                            handleTimeChange('scheduledEnd', `${newDate}T${timePart} `)
                                         }}
-                                        className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 px-2 py-1 text-sm text-slate-900 dark:text-slate-50 dark:[color-scheme:dark]"
+                                        className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-3 py-2 text-sm text-slate-900 dark:text-slate-50"
                                     />
                                 </div>
                                 {!task.isAllDay && (
-                                    <div>
-                                        <label className="text-[10px] text-slate-400">Time</label>
+                                    <div className="w-24">
+                                        <label className="mb-1 block text-[10px] font-medium uppercase text-slate-500">&nbsp;</label>
                                         <input
                                             type="time"
                                             value={task.scheduledEnd ? new Date(task.scheduledEnd as string).toLocaleTimeString('en-GB', { hour12: false }).slice(0, 5) : ''}
                                             onChange={(e) => {
                                                 const newTime = e.target.value
                                                 const datePart = formatDateForInput(task.scheduledEnd, true)
-                                                handleTimeChange('scheduledEnd', `${datePart}T${newTime}`)
+                                                handleTimeChange('scheduledEnd', `${datePart}T${newTime} `)
                                             }}
-                                            className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 px-2 py-1 text-sm text-slate-900 dark:text-slate-50 dark:[color-scheme:dark]"
+                                            className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-3 py-2 text-sm text-slate-900 dark:text-slate-50"
                                         />
                                     </div>
                                 )}
@@ -333,87 +302,71 @@ export function EventActionSheet({ event, onClose }: EventActionSheetProps) {
                         </div>
                     </div>
 
-                    {/* Recurrence */}
-                    <RecurrenceSelector
-                        scheduledStart={task.scheduledStart}
-                        recurrence={task.recurrence}
-                        onChange={(recurrence) => handleUpdate({ recurrence })}
-                    />
-
-                    {/* Status Controls */}
-                    <div>
-                        <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Status</p>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                            {(['todo', 'inProgress', 'done'] as Task['status'][]).map((status) => (
-                                <button
-                                    key={status}
-                                    type="button"
-                                    onClick={(e) => handleStatusChange(e, status)}
-                                    className={clsx(
-                                        'rounded-full px-3 py-1 text-sm font-semibold transition-colors',
-                                        task.status === status
-                                            ? 'bg-brand-600 text-white'
-                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700',
-                                    )}
-                                >
-                                    {status}
-                                </button>
-                            ))}
-                        </div>
+                    <div className="border-t border-slate-100 dark:border-slate-800 pt-6">
+                        <RecurrenceSelector
+                            scheduledStart={task.scheduledStart}
+                            recurrence={task.recurrence}
+                            onChange={(recurrence) => handleUpdate({ recurrence })}
+                        />
                     </div>
 
-                    {/* Color Controls */}
-                    <div>
-                        <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Color</p>
-                        <div className="mt-2 grid grid-cols-5 gap-2">
-                            {PRESET_COLORS.map((presetColor) => (
-                                <button
-                                    key={presetColor.value}
-                                    type="button"
-                                    onClick={() => handleColorChange(presetColor.value)}
-                                    className="group relative h-8 w-full rounded-lg transition-all hover:scale-110"
-                                    style={{ backgroundColor: presetColor.value }}
-                                    title={presetColor.name}
-                                >
-                                    {(task.color === presetColor.value || (!task.color && presetColor.value === '#3b82f6')) && (
-                                        <div className="absolute inset-0 flex items-center justify-center">
-                                            <div className="h-2 w-2 rounded-full border-2 border-white bg-white dark:bg-slate-900/30" />
-                                        </div>
-                                    )}
-                                </button>
-                            ))}
+                    {/* Status & Priority Grid */}
+                    <div className="grid grid-cols-2 gap-6 border-t border-slate-100 dark:border-slate-800 pt-6">
+                        <div>
+                            <p className="mb-3 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Status</p>
+                            <div className="flex flex-col gap-2">
+                                {(['todo', 'inProgress', 'done'] as Task['status'][]).map((status) => (
+                                    <button
+                                        key={status}
+                                        type="button"
+                                        onClick={(e) => handleStatusChange(e, status)}
+                                        className={clsx(
+                                            'flex w-full items-center justify-between rounded-md px-3 py-2 text-sm transition-colors',
+                                            task.status === status
+                                                ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/20 dark:text-brand-300 font-medium'
+                                                : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/50',
+                                        )}
+                                    >
+                                        <span className="capitalize">{status === 'inProgress' ? 'In Progress' : status}</span>
+                                        {task.status === status && <div className="h-1.5 w-1.5 rounded-full bg-brand-500" />}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                    </div>
 
-                    {/* Backup Toggle */}
-                    <div>
-                        <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Backup</p>
-                        <div className="mt-2 flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-2">
-                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                Backup block
-                            </span>
-                            <input
-                                type="checkbox"
-                                checked={task.isBackup || false}
-                                onChange={toggleBackup}
-                                className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-                            />
+                        <div>
+                            <p className="mb-3 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Color</p>
+                            <ColorPicker value={task.color} onChange={handleColorChange} />
                         </div>
                     </div>
 
                     {/* Notes */}
-                    <div>
-                        <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Notes</label>
+                    <div className="border-t border-slate-100 dark:border-slate-800 pt-6">
+                        <label className="mb-2 block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Notes</label>
                         <textarea
                             value={task.notes || ''}
                             onChange={(e) => {
                                 handleUpdate({ notes: e.target.value })
                             }}
-                            className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-50 focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
-                            rows={3}
-                            placeholder="Add notes..."
+                            className="w-full rounded-xl border-none bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-900 dark:text-slate-50 focus:ring-2 focus:ring-brand-500/20 min-h-[100px] resize-none"
+                            placeholder="Add notes about this event..."
                         />
                     </div>
+                </div>
+
+                {/* Footer Actions */}
+                <div className="bg-slate-50 p-4 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex justify-between">
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-400">ID: {task.id.slice(0, 8)}...</span>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleDeleteClick}
+                        className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-900/20 transition-colors"
+                    >
+                        <Trash2 className="h-4 w-4" />
+                        Delete Event
+                    </button>
                 </div>
             </div>
 
@@ -424,6 +377,6 @@ export function EventActionSheet({ event, onClose }: EventActionSheetProps) {
                     onCancel={() => setShowScopeModal(false)}
                 />
             )}
-        </div>
+        </AnimatedSheet>
     )
 }

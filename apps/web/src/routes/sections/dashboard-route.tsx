@@ -52,7 +52,7 @@ export function DashboardRoute() {
 
   return (
     <div className="space-y-6">
-      <header className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+      <header className="glass-panel p-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <CollaboratorAvatar
@@ -70,7 +70,7 @@ export function DashboardRoute() {
                 Welcome back{user?.displayName ? `, ${user.displayName.split(' ')[0]}` : ''}
               </h1>
               <p className="text-sm text-slate-600 dark:text-slate-400">
-                Here's what's happening in your natural life today.
+                Here's what's happening today.
               </p>
             </div>
           </div>
@@ -79,24 +79,32 @@ export function DashboardRoute() {
 
       <QuickActions />
 
-      <section className="grid gap-4 md:grid-cols-4">
-        <StatCard
-          label="Active contacts"
-          value={contactsQuery.data?.length ?? 0}
-          hint="Across all stages"
-        />
-        <StatCard
-          label="Visits this week"
-          value={lessonsQuery.data?.length ?? 0}
-          hint="Interactions logged"
-        />
-        <StatCard label="Open tasks" value={tasksQuery.data?.length ?? 0} hint="Includes backlog" />
-        <StatCard label="Active goals" value={goalStats.total} hint="Across all focus areas" />
+      <section className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:pb-0 md:px-0 md:grid md:grid-cols-4 scrollbar-hide">
+        <div className="min-w-[160px] md:min-w-0">
+          <StatCard
+            label="Active contacts"
+            value={contactsQuery.data?.length ?? 0}
+            hint="Across all stages"
+          />
+        </div>
+        <div className="min-w-[160px] md:min-w-0">
+          <StatCard
+            label="Visits this week"
+            value={lessonsQuery.data?.length ?? 0}
+            hint="Interactions logged"
+          />
+        </div>
+        <div className="min-w-[160px] md:min-w-0">
+          <StatCard label="Open tasks" value={tasksQuery.data?.length ?? 0} hint="Includes backlog" />
+        </div>
+        <div className="min-w-[160px] md:min-w-0">
+          <StatCard label="Active goals" value={goalStats.total} hint="Across all focus areas" />
+        </div>
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[2fr,1fr]">
         <div className="space-y-6">
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+          <div className="glass-panel p-5">
             <p className="text-xs uppercase tracking-wide text-slate-500">Today's Focus</p>
             {upcomingTask ? (
               <div className="mt-3">
@@ -117,7 +125,7 @@ export function DashboardRoute() {
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+          <div className="glass-panel p-5">
             <p className="text-xs uppercase tracking-wide text-slate-500">Goals focus</p>
             {goalStats.total === 0 ? (
               <p className="mt-2 text-sm text-slate-500">No personal goals yet. Create one to begin.</p>
@@ -127,7 +135,7 @@ export function DashboardRoute() {
                   {goalStats.onTrack} on track • {goalStats.needsAttention} need attention
                 </p>
                 {goalStats.nextGoal && (
-                  <div className="mt-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
+                  <div className="mt-3 rounded-xl border border-slate-100 bg-slate-50 p-3 dark:bg-slate-800/50 dark:border-slate-700/50">
                     <p className="text-xs uppercase tracking-wide text-slate-500">
                       Next to focus
                     </p>
@@ -154,7 +162,7 @@ export function DashboardRoute() {
             )}
           </div>
 
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+          <div className="glass-panel p-5">
             <p className="text-xs uppercase tracking-wide text-slate-500">Sharing status</p>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
               {sharedCount > 0
@@ -186,7 +194,7 @@ type StatCardProps = {
 
 function StatCard({ label, value, hint }: StatCardProps) {
   return (
-    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
+    <div className="glass-card p-4 transition-all hover:scale-[1.02]">
       <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
       <p className="mt-2 text-3xl font-semibold text-slate-900 dark:text-slate-50">{value}</p>
       <p className="text-xs text-slate-500">{hint}</p>

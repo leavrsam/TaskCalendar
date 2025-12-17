@@ -33,7 +33,7 @@ export function RecentVisitsWidget({ visits, contacts }: RecentVisitsWidgetProps
         .slice(0, 3)
 
     return (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="glass-panel p-5">
             <div className="flex items-center justify-between">
                 <p className="text-xs uppercase tracking-wide text-slate-500">Recent Visits</p>
                 <a href="/lessons" className="flex items-center gap-1 text-xs font-medium text-brand-600 hover:text-brand-700">

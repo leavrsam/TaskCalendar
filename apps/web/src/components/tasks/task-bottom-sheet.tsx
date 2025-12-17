@@ -79,7 +79,7 @@ export function TaskBottomSheet({
 
             {/* Bottom Sheet */}
             <div
-                className={`fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl bg-white dark:bg-slate-900 shadow-2xl transition-all duration-300 animate-in slide-in-from-bottom ${sheetHeight}`}
+                className={`fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl glass-dock shadow-2xl transition-all duration-300 animate-in slide-in-from-bottom ${sheetHeight}`}
             >
                 {/* Drag Handle */}
                 <div
@@ -116,8 +116,8 @@ export function TaskBottomSheet({
                                 type="button"
                                 onClick={() => onFilterChange(status as Task['status'] | 'all')}
                                 className={status === filter
-                                    ? 'px-3 py-1 text-xs font-semibold rounded-full bg-brand-600 text-white'
-                                    : 'px-3 py-1 text-xs font-semibold rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                                    ? 'px-3 py-1 text-xs font-semibold rounded-full bg-brand-600/90 text-white shadow-sm'
+                                    : 'px-3 py-1 text-xs font-semibold rounded-full bg-white/50 text-slate-600 dark:bg-slate-800/50 dark:text-slate-400 border border-white/20'
                                 }
                             >
                                 {status === 'inProgress' ? 'In Progress' : status.charAt(0).toUpperCase() + status.slice(1)}
@@ -136,7 +136,7 @@ export function TaskBottomSheet({
                         {tasks.map((task) => (
                             <div
                                 key={task.id}
-                                className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
+                                className="p-3 rounded-xl border border-white/20 bg-white/40 dark:bg-slate-800/40 backdrop-blur-sm"
                                 draggable
                                 onDragStart={() => onDragTaskChange(task.id)}
                                 onDragEnd={() => onDragTaskChange(null)}
@@ -144,10 +144,10 @@ export function TaskBottomSheet({
                                 <p className="font-semibold text-sm text-slate-900 dark:text-slate-50">{task.title}</p>
                                 <div className="flex items-center gap-2 mt-1">
                                     <span className={`text-xs px-2 py-0.5 rounded-full ${task.status === 'done'
-                                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
-                                            : task.status === 'inProgress'
-                                                ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400'
-                                                : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
+                                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
+                                        : task.status === 'inProgress'
+                                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400'
+                                            : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
                                         }`}>
                                         {task.status === 'inProgress' ? 'In Progress' : task.status}
                                     </span>

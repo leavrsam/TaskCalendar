@@ -19,6 +19,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "firebase": "^12.6.0",
+    "framer-motion": "^12.23.26",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.554.0",
     "react": "^19.2.0",
@@ -29,6 +30,7 @@
     "react-hook-form": "^7.66.1",
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.9.6",
+    "use-long-press": "^3.3.0",
     "zod": "^4.1.12",
     "zustand": "^5.0.8"
   },
