@@ -17,14 +17,14 @@
 
 :root.dark {
   color: #f1f5f9;
-  background-color: #020617;
+  background-color: #0a0a0a;
 }
 
 @layer utilities {
   .glass {
     @apply backdrop-blur-xl bg-white/70 dark:bg-slate-900/60 border border-white/50 dark:border-white/10 shadow-xl;
   }
-  
+
   .glass-panel {
     @apply glass rounded-3xl;
   }
@@ -35,36 +35,41 @@
 
   /* Liquid Gradient Backgrounds */
   .bg-liquid-light {
-    background-image: 
-        radial-gradient(at 0% 0%, rgba(216, 180, 254, 0.3) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, rgba(167, 139, 250, 0.3) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(196, 181, 253, 0.3) 0px, transparent 50%),
-        radial-gradient(at 0% 100%, rgba(167, 243, 208, 0.3) 0px, transparent 50%);
+    background-image:
+      radial-gradient(at 0% 0%, rgba(216, 180, 254, 0.3) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(167, 139, 250, 0.3) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(196, 181, 253, 0.3) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, rgba(167, 243, 208, 0.3) 0px, transparent 50%);
     background-size: 150% 150%;
     animation: gradient-flow 15s ease infinite alternate;
   }
 
   .bg-liquid-dark {
-    background-image: 
-        radial-gradient(at 0% 0%, rgba(76, 29, 149, 0.4) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, rgba(124, 58, 237, 0.2) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(167, 139, 250, 0.1) 0px, transparent 50%),
-        radial-gradient(at 0% 100%, rgba(139, 92, 246, 0.2) 0px, transparent 50%);
+    background-image:
+      radial-gradient(at 0% 0%, rgba(38, 38, 38, 0.6) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(45, 45, 45, 0.4) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(38, 38, 38, 0.3) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, rgba(23, 23, 23, 0.5) 0px, transparent 50%);
     background-size: 150% 150%;
     animation: gradient-flow 15s ease infinite alternate;
   }
 }
 
 @keyframes gradient-flow {
-  0% { background-position: 0% 0%; }
-  100% { background-position: 100% 100%; }
+  0% {
+    background-position: 0% 0%;
+  }
+
+  100% {
+    background-position: 100% 100%;
+  }
 }
 
 body {
   margin: 0;
   min-height: 100vh;
   /* Default liquid background */
-  @apply bg-slate-50 dark:bg-slate-950 bg-liquid-light dark:bg-liquid-dark bg-fixed; 
+  @apply bg-slate-50 dark:bg-neutral-950 bg-liquid-light dark:bg-liquid-dark bg-fixed;
 }
 
 body.dark {
@@ -146,4 +151,50 @@ body.dark {
 /* Hide the default "today" highlight if it's too strong */
 .dark .rbc-day-slot.rbc-today {
   background-color: rgba(30, 41, 59, 0.3);
+}
+
+/* Fix calendar header - prevent all-day events from covering day labels */
+.rbc-header {
+  padding: 0 !important;
+  overflow: visible !important;
+  position: relative;
+  z-index: 10;
+}
+
+/* Day label row should be above all-day events */
+.rbc-row.rbc-time-header-cell {
+  position: relative;
+  z-index: 10;
+  background: inherit;
+}
+
+/* All-day events section - push it down from the header */
+.rbc-time-header-content {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Add bottom padding to the header row containing day labels */
+.rbc-time-header-cell .rbc-header {
+  padding-bottom: 12px !important;
+}
+
+/* Style the all-day event row */
+.rbc-allday-cell {
+  position: relative;
+  z-index: 5;
+  min-height: auto !important;
+}
+
+.rbc-row-content {
+  overflow: visible !important;
+}
+
+/* Ensure multi-day events span properly */
+.rbc-row-bg {
+  z-index: 0;
+}
+
+.rbc-row-segment {
+  padding: 0 2px;
 }

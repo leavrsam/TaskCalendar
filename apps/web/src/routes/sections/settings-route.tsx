@@ -54,8 +54,10 @@ export function SettingsRoute() {
   )
 }
 
+import { themeColors, type ThemeColor } from '@/lib/themes'
+
 function AppearanceSettings() {
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme, themeColor, setThemeColor } = useTheme()
 
   const themes = [
     { value: 'light' as const, label: 'Light', icon: Sun, description: 'Light mode' },
@@ -64,34 +66,74 @@ function AppearanceSettings() {
   ]
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Appearance</h2>
-      <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-        Choose how the app looks for you
-      </p>
-      <div className="mt-6 grid gap-3 sm:grid-cols-3">
-        {themes.map((option) => {
-          const Icon = option.icon
-          return (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => setTheme(option.value)}
-              className={`flex flex-col items-center gap-3 rounded-xl border-2 p-4 transition ${theme === option.value
-                ? 'border-brand-500 bg-brand-50 dark:border-brand-400 dark:bg-brand-950'
-                : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-slate-600'
-                }`}
-            >
-              <Icon className={`h-8 w-8 ${theme === option.value ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
-              <div className="text-center">
-                <p className={`text-sm font-semibold ${theme === option.value ? 'text-brand-700 dark:text-brand-400' : 'text-slate-900 dark:text-slate-50'}`}>
-                  {option.label}
-                </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{option.description}</p>
-              </div>
-            </button>
-          )
-        })}
+    <div className="space-y-6">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Theme Mode</h2>
+        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+          Choose between light and dark mode
+        </p>
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          {themes.map((option) => {
+            const Icon = option.icon
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setTheme(option.value)}
+                className={`flex flex-col items-center gap-3 rounded-xl border-2 p-4 transition ${theme === option.value
+                  ? 'border-brand-500 bg-brand-50 dark:border-brand-400 dark:bg-brand-950/30'
+                  : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-slate-600'
+                  }`}
+              >
+                <Icon className={`h-8 w-8 ${theme === option.value ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
+                <div className="text-center">
+                  <p className={`text-sm font-semibold ${theme === option.value ? 'text-brand-700 dark:text-brand-400' : 'text-slate-900 dark:text-slate-50'}`}>
+                    {option.label}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{option.description}</p>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Accent Color</h2>
+        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+          Customize your primary brand color
+        </p>
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
+          {Object.entries(themeColors).map(([key, value]) => {
+            const isSelected = themeColor === key
+            // Construct the background color string based on the theme definition (500 shade)
+            // Since we know the format is "R G B", we can stick it in rgb()
+            const colorStyle = { backgroundColor: `rgb(${value.colors[500]})` }
+
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setThemeColor(key as ThemeColor)}
+                className={`group relative flex items-center gap-3 rounded-xl border-2 p-3 transition-all hover:border-slate-300 dark:hover:border-slate-600 ${isSelected
+                  ? 'border-brand-500 bg-brand-50 dark:border-brand-400 dark:bg-brand-950/30'
+                  : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800'
+                  }`}
+              >
+                <div
+                  className="h-8 w-8 rounded-full shadow-sm ring-2 ring-white/20"
+                  style={colorStyle}
+                />
+                <span className={`text-sm font-medium ${isSelected ? 'text-brand-700 dark:text-brand-300' : 'text-slate-700 dark:text-slate-200'}`}>
+                  {value.label}
+                </span>
+                {isSelected && (
+                  <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-brand-600 dark:bg-brand-400" />
+                )}
+              </button>
+            )
+          })}
+        </div>
       </div>
     </div>
   )

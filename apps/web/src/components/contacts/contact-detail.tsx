@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
-import { User, Calendar, CheckCircle2, Clock, Plus, CalendarPlus } from 'lucide-react'
+import { User, Calendar, CheckCircle2, Clock, Plus, CalendarPlus, Target, Check } from 'lucide-react'
 import type { Contact } from '@taskcalendar/core'
 
 import { useTasksQuery, useCreateTask } from '@/features/tasks/api'
@@ -8,6 +8,7 @@ import { useLessonsQuery, useCreateVisit } from '@/features/lessons/api'
 import { TaskCard } from '@/components/tasks/task-card'
 import { CreationModal } from '@/components/calendar/creation-modal'
 import { VisitForm } from '@/components/visits/visit-form'
+import { GoalProgressPopup } from '@/components/contacts/goal-progress-popup'
 import { useToast } from '@/hooks/use-toast'
 
 type ContactDetailProps = {
@@ -18,6 +19,7 @@ type ContactDetailProps = {
 export function ContactDetail({ contact, onClose }: ContactDetailProps) {
     const [isTaskModalOpen, setIsTaskModalOpen] = useState(false)
     const [isVisitModalOpen, setIsVisitModalOpen] = useState(false)
+    const [showGoalsPopup, setShowGoalsPopup] = useState(false)
 
     const tasksQuery = useTasksQuery()
     const lessonsQuery = useLessonsQuery()
@@ -80,8 +82,12 @@ export function ContactDetail({ contact, onClose }: ContactDetailProps) {
                             <User className="h-6 w-6" />
                         </div>
                         <div>
-                            <h2 className="text-2xl font-semibold text-slate-900">{contact.name}</h2>
-                            <p className="text-sm text-slate-500 capitalize">{contact.stage}</p>
+                            <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">{contact.name}</h2>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 capitalize">
+                                {contact.tags && contact.tags.length > 0
+                                    ? contact.tags.join(', ')
+                                    : contact.stage}
+                            </p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -117,7 +123,7 @@ export function ContactDetail({ contact, onClose }: ContactDetailProps) {
                     <div className="grid gap-3 text-sm">
                         {contact.phone && (
                             <div>
-                                <span className="font-semibold text-slate-700">Phone:</span>{' '}
+                                <span className="font-semibold text-slate-700 dark:text-slate-300">Phone:</span>{' '}
                                 <a href={`tel:${contact.phone}`} className="text-brand-600 hover:underline">
                                     {contact.phone}
                                 </a>
@@ -125,7 +131,7 @@ export function ContactDetail({ contact, onClose }: ContactDetailProps) {
                         )}
                         {contact.email && (
                             <div>
-                                <span className="font-semibold text-slate-700">Email:</span>{' '}
+                                <span className="font-semibold text-slate-700 dark:text-slate-300">Email:</span>{' '}
                                 <a href={`mailto:${contact.email}`} className="text-brand-600 hover:underline">
                                     {contact.email}
                                 </a>
@@ -133,22 +139,65 @@ export function ContactDetail({ contact, onClose }: ContactDetailProps) {
                         )}
                         {contact.address && (
                             <div>
-                                <span className="font-semibold text-slate-700">Address:</span>{' '}
-                                <span className="text-slate-600">{contact.address}</span>
+                                <span className="font-semibold text-slate-700 dark:text-slate-300">Address:</span>{' '}
+                                <span className="text-slate-600 dark:text-slate-400">{contact.address}</span>
                             </div>
                         )}
                         {contact.notes && (
                             <div>
-                                <span className="font-semibold text-slate-700">Notes:</span>{' '}
-                                <p className="mt-1 text-slate-600">{contact.notes}</p>
+                                <span className="font-semibold text-slate-700 dark:text-slate-300">Notes:</span>{' '}
+                                <p className="mt-1 text-slate-600 dark:text-slate-400">{contact.notes}</p>
                             </div>
                         )}
                     </div>
                 </div>
 
+                {/* Goals Section */}
+                <div className="border-b border-slate-200 dark:border-slate-800 p-6">
+                    <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50 flex items-center gap-2">
+                            <Target className="h-4 w-4 text-brand-500" />
+                            Goals
+                        </h3>
+                        <button
+                            onClick={() => setShowGoalsPopup(true)}
+                            className="text-xs font-medium text-brand-600 hover:text-brand-700"
+                        >
+                            View All
+                        </button>
+                    </div>
+                    {contact.goals && contact.goals.length > 0 ? (
+                        <div className="space-y-2">
+                            {contact.goals.slice(0, 3).map((goal) => (
+                                <div key={goal.id} className="flex items-center gap-2 text-sm">
+                                    <div className={`flex-shrink-0 h-4 w-4 rounded-full border flex items-center justify-center ${goal.isCompleted
+                                        ? 'bg-emerald-500 border-emerald-500 text-white'
+                                        : 'border-slate-300 dark:border-slate-600'
+                                        }`}>
+                                        {goal.isCompleted && <Check className="h-2.5 w-2.5" />}
+                                    </div>
+                                    <span className={goal.isCompleted ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-300'}>
+                                        {goal.title}
+                                    </span>
+                                    {goal.subGoals.length > 0 && (
+                                        <span className="text-xs text-slate-400">
+                                            ({goal.subGoals.filter(sg => sg.isCompleted).length}/{goal.subGoals.length})
+                                        </span>
+                                    )}
+                                </div>
+                            ))}
+                            {contact.goals.length > 3 && (
+                                <p className="text-xs text-slate-400">+{contact.goals.length - 3} more goals</p>
+                            )}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-slate-400">No goals set. Click "View All" to add some!</p>
+                    )}
+                </div>
+
                 {/* Timeline */}
                 <div className="flex-1 overflow-y-auto p-6">
-                    <h3 className="mb-4 text-lg font-semibold text-slate-900">Activity Timeline</h3>
+                    <h3 className="mb-4 text-lg font-semibold text-slate-900 dark:text-slate-50">Activity Timeline</h3>
 
                     {timeline.length === 0 ? (
                         <div className="rounded-lg border border-dashed border-slate-200 dark:border-slate-800 p-8 text-center">
@@ -218,6 +267,13 @@ export function ContactDetail({ contact, onClose }: ContactDetailProps) {
                     contacts={[contact]}
                     onClose={() => setIsVisitModalOpen(false)}
                     onSubmit={handleCreateVisit}
+                />
+            )}
+
+            {showGoalsPopup && (
+                <GoalProgressPopup
+                    contact={contact}
+                    onClose={() => setShowGoalsPopup(false)}
                 />
             )}
         </div>

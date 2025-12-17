@@ -99,6 +99,7 @@ type CreateTaskInput = {
   priority?: Task['priority']
   dueAt?: string | null
   contactId?: string
+  contactIds?: string[]
   notes?: string
   scheduledStart?: string | null
   scheduledEnd?: string | null
@@ -106,6 +107,8 @@ type CreateTaskInput = {
   isBackup?: boolean
   color?: string | null
   sharedWith?: string[]
+  address?: string
+  location?: { lat: number; lng: number } | null
   recurrence?: Task['recurrence']
   recurringEventId?: string | null
   originalStart?: string | null
@@ -136,7 +139,10 @@ export const useCreateTask = () => {
           color: payload.color ?? null,
           assignedTo: [user.uid],
           sharedWith: payload.sharedWith ?? [],
+          address: payload.address,
+          location: payload.location ?? null,
           notes: payload.notes,
+          contactIds: payload.contactIds ?? [],
           recurrence: payload.recurrence ?? null,
           recurringEventId: payload.recurringEventId ?? null,
           originalStart: payload.originalStart ?? null,
@@ -169,8 +175,12 @@ type UpdateTaskInput = {
       | 'color'
       | 'notes'
       | 'sharedWith'
+      | 'address'
+      | 'location'
       | 'recurrence'
       | 'isModified'
+      | 'contactId'
+      | 'contactIds'
     >
   >
 }

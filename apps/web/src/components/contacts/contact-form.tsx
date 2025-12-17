@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { X, MapPin } from 'lucide-react'
-import type { Contact, ContactStage } from '@taskcalendar/core'
+import { X, MapPin, Plus, Trash2, Check } from 'lucide-react'
+import type { Contact, ContactStage, ContactGoal } from '@taskcalendar/core'
 import { CONTACT_STAGE_ORDER } from '@taskcalendar/core'
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -51,6 +51,7 @@ export function ContactForm({ initialData, onSubmit, onClose, title }: ContactFo
         email: '',
         notes: '',
         location: null as { lat: number; lng: number } | null,
+        goals: [] as ContactGoal[],
     })
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isGeocoding, setIsGeocoding] = useState(false)
@@ -65,6 +66,7 @@ export function ContactForm({ initialData, onSubmit, onClose, title }: ContactFo
                 email: initialData.email || '',
                 notes: initialData.notes || '',
                 location: initialData.location || null,
+                goals: initialData.goals || [],
             })
         }
     }, [initialData])
@@ -97,6 +99,7 @@ export function ContactForm({ initialData, onSubmit, onClose, title }: ContactFo
                 address: form.address || undefined,
                 notes: form.notes || undefined,
                 location: form.location || null,
+                goals: form.goals,
                 tags: initialData?.tags || [],
                 lastContactedAt: initialData?.lastContactedAt || null,
                 nextVisitAt: initialData?.nextVisitAt || null,
@@ -219,6 +222,90 @@ export function ContactForm({ initialData, onSubmit, onClose, title }: ContactFo
                             rows={3}
                             placeholder="Add notes about family, interests, etc."
                         />
+                    </div>
+
+                    {/* Goals Section */}
+                    <div>
+                        <label className="block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 mb-2">Goals</label>
+                        <div className="space-y-2">
+                            {form.goals.map((goal, index) => (
+                                <div key={goal.id} className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg px-3 py-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const newGoals = [...form.goals]
+                                            newGoals[index] = { ...goal, isCompleted: !goal.isCompleted, updatedAt: new Date().toISOString() }
+                                            setForm({ ...form, goals: newGoals })
+                                        }}
+                                        className={`flex-shrink-0 h-4 w-4 rounded-full border flex items-center justify-center ${goal.isCompleted
+                                            ? 'bg-emerald-500 border-emerald-500 text-white'
+                                            : 'border-slate-300 dark:border-slate-600'
+                                            }`}
+                                    >
+                                        {goal.isCompleted && <Check className="h-2.5 w-2.5" />}
+                                    </button>
+                                    <span className={`flex-1 text-sm ${goal.isCompleted ? 'text-slate-400 line-through' : 'text-slate-900 dark:text-slate-50'}`}>
+                                        {goal.title}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setForm({ ...form, goals: form.goals.filter(g => g.id !== goal.id) })}
+                                        className="p-1 text-slate-400 hover:text-rose-500"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            ))}
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    id="new-goal-input"
+                                    placeholder="Add a goal..."
+                                    className="flex-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 px-3 py-2 text-sm"
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault()
+                                            const input = e.target as HTMLInputElement
+                                            if (input.value.trim()) {
+                                                const now = new Date().toISOString()
+                                                const newGoal: ContactGoal = {
+                                                    id: Math.random().toString(36).substring(2, 11),
+                                                    title: input.value.trim(),
+                                                    isCompleted: false,
+                                                    subGoals: [],
+                                                    createdAt: now,
+                                                    updatedAt: now,
+                                                }
+                                                setForm({ ...form, goals: [...form.goals, newGoal] })
+                                                input.value = ''
+                                            }
+                                        }
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const input = document.getElementById('new-goal-input') as HTMLInputElement
+                                        if (input?.value.trim()) {
+                                            const now = new Date().toISOString()
+                                            const newGoal: ContactGoal = {
+                                                id: Math.random().toString(36).substring(2, 11),
+                                                title: input.value.trim(),
+                                                isCompleted: false,
+                                                subGoals: [],
+                                                createdAt: now,
+                                                updatedAt: now,
+                                            }
+                                            setForm({ ...form, goals: [...form.goals, newGoal] })
+                                            input.value = ''
+                                        }
+                                    }}
+                                    className="px-3 py-2 rounded-lg bg-brand-600 text-white hover:bg-brand-700"
+                                >
+                                    <Plus className="h-4 w-4" />
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="flex justify-end gap-3 pt-2">

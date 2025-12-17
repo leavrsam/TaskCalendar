@@ -52,9 +52,9 @@ export function LessonsRoute() {
     <div className="space-y-6">
       <header className="flex items-start justify-between rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500">Slice 4</p>
-          <h1 className="text-2xl font-semibold text-slate-900">Visits & Interactions</h1>
-          <p className="text-sm text-slate-600">
+          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Slice 4</p>
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">Visits & Interactions</h1>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
             Log your visits, track conversations, and remember next steps for every relationship.
           </p>
         </div>
@@ -75,7 +75,7 @@ export function LessonsRoute() {
             </div>
           )}
           {!lessonsQuery.isLoading && visits.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50 p-8 text-center text-sm text-slate-500">
+            <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-8 text-center text-sm text-slate-500 dark:text-slate-400">
               <p>No visits logged yet.</p>
               <p className="mt-1">Click "Log Visit" to record your first interaction.</p>
             </div>
@@ -98,10 +98,10 @@ export function LessonsRoute() {
             <div className="mt-4 space-y-4">
               {visits.slice(0, 5).map((visit) => (
                 <div key={visit.id} className="relative pl-4 before:absolute before:left-0 before:top-2 before:h-2 before:w-2 before:rounded-full before:bg-slate-200">
-                  <p className="text-sm font-medium text-slate-900">
+                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
                     Visited {getContactName(visit.contactId)}
                   </p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     {new Date(visit.taughtAt).toLocaleDateString()}
                   </p>
                 </div>

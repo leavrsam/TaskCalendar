@@ -108,6 +108,7 @@ export function ContactsRoute() {
           lastContactedAt: null,
           nextVisitAt: null,
           sharedWith: [],
+          goals: [],
         })
         successCount++
       }
@@ -141,7 +142,7 @@ export function ContactsRoute() {
           <div className="flex rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 p-1">
             <button
               onClick={() => setView('list')}
-              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors sm:flex-none ${view === 'list' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors sm:flex-none ${view === 'list' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-50 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                 }`}
             >
               <div className="flex items-center justify-center gap-2">
@@ -151,7 +152,7 @@ export function ContactsRoute() {
             </button>
             <button
               onClick={() => setView('map')}
-              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors sm:flex-none ${view === 'map' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors sm:flex-none ${view === 'map' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-50 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                 }`}
             >
               <div className="flex items-center justify-center gap-2">
@@ -190,7 +191,7 @@ export function ContactsRoute() {
               <div key={stageKey} className="space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
                   <h3 className="font-semibold text-slate-700">{label}</h3>
-                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+                  <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-400">
                     {stageContacts.length}
                   </span>
                 </div>

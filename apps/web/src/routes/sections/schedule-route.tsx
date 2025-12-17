@@ -46,7 +46,7 @@ import { EventActionSheet } from '@/routes/sections/event-action-sheet'
 
 const CustomDateHeader = ({ date, label, localizer }: any) => {
   return (
-    <div className="flex flex-col items-center py-2">
+    <div className="flex flex-col items-center py-2 pb-2">
       <span className="text-[11px] font-medium text-slate-500 uppercase tracking-widest leading-none mb-1">{format(date, 'EEE')}</span>
       <div className={clsx(
         "flex items-center justify-center h-9 w-9 rounded-full text-2xl font-normal transition-colors",
@@ -62,7 +62,7 @@ const CustomDateHeader = ({ date, label, localizer }: any) => {
 
 export function ScheduleRoute() {
   const { user } = useAuth()
-  const { toggleSidebar } = useOutletContext<{ toggleSidebar: () => void }>()
+  const { toggleSidebar, isSidebarOpen } = useOutletContext<{ toggleSidebar: () => void; isSidebarOpen: boolean }>()
 
   const tasksQuery = useTasksQuery()
   const eventsQuery = useTaskEvents()
@@ -167,94 +167,97 @@ export function ScheduleRoute() {
       <DndProvider backend={HTML5Backend}>
         <div className="flex h-screen flex-col">
           {/* Header */}
-          <header className="flex flex-col gap-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-2 pl-4 flex-shrink-0 transition-all">
+          <header className={`flex items-center justify-between gap-4 bg-white dark:bg-slate-900 p-2 pr-4 flex-shrink-0 transition-all h-16 ${!isSidebarOpen ? 'pl-2' : 'pl-4'}`}>
             {/* Left: Menu, Title, Nav, Date */}
             <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={toggleSidebar}
-                  className="rounded-full p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-                  title="Toggle sidebar"
-                >
-                  <Menu className="h-5 w-5" />
-                </button>
-                <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white">
-                    <CalendarDays className="h-5 w-5" />
-                  </div>
-                  <h1 className="hidden text-xl font-semibold text-slate-900 dark:text-slate-50 sm:block">
-                    TaskCalendar
-                  </h1>
-                </div>
-                <div className="ml-8 flex items-center gap-3">
+              {/* Left: Menu, Title - Only visible if sidebar is closed */}
+              {!isSidebarOpen && (
+                <div className="flex items-center gap-2 animate-in fade-in duration-200">
                   <button
                     type="button"
-                    className="rounded border border-slate-300 dark:border-slate-600 px-4 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
-                    onClick={() => setWeekAnchor(new Date())}
+                    onClick={toggleSidebar}
+                    className="rounded-full p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                    title="Toggle sidebar"
                   >
-                    Today
+                    <Menu className="h-5 w-5" />
                   </button>
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      className="rounded-full p-1.5 text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-                      onClick={() => handleNavigate('prev')}
-                    >
-                      <ChevronLeft className="h-5 w-5" />
-                    </button>
-                    <button
-                      type="button"
-                      className="rounded-full p-1.5 text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-                      onClick={() => handleNavigate('next')}
-                    >
-                      <ChevronRight className="h-5 w-5" />
-                    </button>
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white">
+                      <CalendarDays className="h-5 w-5" />
+                    </div>
+                    <h1 className="hidden text-xl font-semibold text-slate-900 dark:text-slate-50 sm:block">
+                      TaskCalendar
+                    </h1>
                   </div>
-                  <h2 className="ml-2 text-xl font-medium text-slate-700 dark:text-slate-200">
-                    {format(weekAnchor, 'MMMM yyyy')}
-                  </h2>
                 </div>
+              )}
+              <div className="ml-8 flex items-center gap-3">
+                <button
+                  type="button"
+                  className="rounded border border-slate-300 dark:border-slate-600 px-4 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                  onClick={() => setWeekAnchor(new Date())}
+                >
+                  Today
+                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    className="rounded-full p-1.5 text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                    onClick={() => handleNavigate('prev')}
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-full p-1.5 text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                    onClick={() => handleNavigate('next')}
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                </div>
+                <h2 className="ml-2 text-xl font-medium text-slate-700 dark:text-slate-200">
+                  {format(weekAnchor, 'MMMM yyyy')}
+                </h2>
+              </div>
+            </div>
+
+            {/* Right: View dropdown and Avatar */}
+            <div className="flex items-center gap-3 mr-4">
+              {/* View Segmented Control (Mobile/Desktop adaptive) */}
+              <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+                {(['day', 'week', 'agenda'] as View[]).map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setView(v)}
+                    className={clsx(
+                      'px-3 py-1 text-xs font-medium rounded-md transition-all capitalize',
+                      view === v
+                        ? 'bg-white dark:bg-slate-700 text-brand-600 shadow-sm scale-105'
+                        : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                    )}
+                  >
+                    {v}
+                  </button>
+                ))}
               </div>
 
-              {/* Right: View dropdown and Avatar */}
-              <div className="flex items-center gap-3 mr-4">
-                {/* View Segmented Control (Mobile/Desktop adaptive) */}
-                <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
-                  {(['day', 'week', 'agenda'] as View[]).map((v) => (
-                    <button
-                      key={v}
-                      onClick={() => setView(v)}
-                      className={clsx(
-                        'px-3 py-1 text-xs font-medium rounded-md transition-all capitalize',
-                        view === v
-                          ? 'bg-white dark:bg-slate-700 text-brand-600 shadow-sm scale-105'
-                          : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
-                      )}
-                    >
-                      {v}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="ml-1">
-                  <CollaboratorAvatar
-                    collaborator={{
-                      uid: user?.uid ?? 'me',
-                      email: user?.email ?? '',
-                      label: user?.displayName || user?.email || 'You',
-                    }}
-                    size="md"
-                    photoURL={user?.photoURL ?? undefined}
-                  />
-                </div>
+              <div className="ml-1">
+                <CollaboratorAvatar
+                  collaborator={{
+                    uid: user?.uid ?? 'me',
+                    email: user?.email ?? '',
+                    label: user?.displayName || user?.email || 'You',
+                  }}
+                  size="md"
+                  photoURL={user?.photoURL ?? undefined}
+                />
               </div>
             </div>
           </header>
 
-          {/* Full-screen Calendar */}
+          {/* Full-screen Calendar Card */}
           <div
-            className="flex-1 overflow-hidden relative"
+            className="flex-1 overflow-hidden relative rounded-tl-3xl bg-slate-100 dark:bg-zinc-900"
             onTouchStart={onCalendarTouchStart}
             onTouchMove={onCalendarTouchMove}
             onTouchEnd={onCalendarTouchEnd}
@@ -337,10 +340,11 @@ export function ScheduleRoute() {
                 if (!creationSlot) return
                 await createTask.mutateAsync({
                   ...values,
-                  ...(values.contactId ? { contactId: values.contactId } : {}),
-                  scheduledStart: creationSlot.start.toISOString(),
-                  scheduledEnd: creationSlot.end.toISOString(),
-                  dueAt: creationSlot.end.toISOString(),
+                  ...(values.contactIds && values.contactIds.length > 0 ? { contactIds: values.contactIds } : {}),
+                  // Use modal's dates if provided (for all-day multi-day events), otherwise use slot
+                  scheduledStart: values.scheduledStart ?? creationSlot.start.toISOString(),
+                  scheduledEnd: values.scheduledEnd ?? creationSlot.end.toISOString(),
+                  dueAt: values.scheduledEnd ?? creationSlot.end.toISOString(),
                 })
                 setCreationSlot(null)
               }}
@@ -351,8 +355,8 @@ export function ScheduleRoute() {
             onClose={() => setSelectedEventId(null)}
           />
         </div>
-      </DndProvider>
-    </ScheduleContext.Provider>
+      </DndProvider >
+    </ScheduleContext.Provider >
   )
 }
 
@@ -435,7 +439,7 @@ function AgendaBoard({
   }
 
   return (
-    <div className="flex h-full flex-col bg-white dark:bg-slate-900">
+    <div className="flex h-full flex-col">
       <DndProvider backend={HTML5Backend}>
         <CustomDragLayer />
         <div className="h-full">
@@ -454,6 +458,26 @@ function AgendaBoard({
             }
             .rbc-time-view {
               background: transparent !important;
+              border: none !important;
+            }
+            .rbc-header {
+              border-bottom: none !important;
+              padding-bottom: 4px !important;
+            }
+            .rbc-allday-cell {
+              height: auto !important;
+              max-height: unset !important;
+            }
+            .rbc-time-header-content {
+              border-left: none !important;
+            }
+            /* Connect header grid lines */
+            .rbc-header + .rbc-header {
+              border-left: 1px solid rgba(226, 232, 240, 0.8) !important;
+            }
+            .dark .rbc-header + .rbc-header {
+              border-left: 1px solid rgba(51, 65, 85, 0.4) !important;
+            }
               border: none !important;
             }
             .rbc-header {
@@ -560,9 +584,11 @@ export function CalendarEvent({ event }: { event: TaskEvent }) {
 
   const nextStatus = getNextStatus(event.resource.status)
   const contacts = contactsQuery.data ?? []
-  const contact = event.resource.contactId
-    ? contacts.find((c) => c.id === event.resource.contactId)
-    : null
+
+  // Handle multiple contacts
+  const taskContactIds = event.resource.contactIds || (event.resource.contactId ? [event.resource.contactId] : [])
+  const firstContact = taskContactIds.length > 0 ? contacts.find(c => c.id === taskContactIds[0]) : null
+  const additionalContactsCount = Math.max(0, taskContactIds.length - 1)
 
   const handleToggleStatus = (clickEvent: React.MouseEvent<HTMLButtonElement>) => {
     clickEvent.stopPropagation()
@@ -576,7 +602,7 @@ export function CalendarEvent({ event }: { event: TaskEvent }) {
   // Calculate event duration in minutes
   const durationMinutes =
     ((event.end as Date).getTime() - (event.start as Date).getTime()) / (1000 * 60)
-  const isSmallEvent = durationMinutes < 90 // Less than 1.5 hours
+  const isSmallEvent = durationMinutes < 60 // Less than 1 hour
 
   // Get status-specific styling for the pill/circle button
   const getStatusPillStyle = (status: Task['status']) => {
@@ -594,20 +620,65 @@ export function CalendarEvent({ event }: { event: TaskEvent }) {
 
   // Compact layout for small events
   if (isSmallEvent) {
+    // If very small (< 45 mins), only show title
+    const showContact = durationMinutes >= 45
+
     return (
       <div
-        className="flex h-full items-center justify-between gap-2 text-xs text-white cursor-pointer"
+        className="flex h-full items-center justify-between gap-2 text-xs text-white cursor-pointer px-1"
         onClick={(e) => {
           e.stopPropagation()
           setSelectedEventId(event.id)
         }}
       >
-        <div className="flex-1 truncate">
+        <div className="flex-1 overflow-hidden">
           <p className="truncate text-xs font-semibold leading-tight">{event.title}</p>
-          {contact && (
-            <p className="truncate text-[10px] opacity-90">{contact.name}</p>
+          {showContact && firstContact && (
+            <p className="truncate text-[10px] opacity-90">
+              {firstContact.name}
+              {additionalContactsCount > 0 && ` +${additionalContactsCount}`}
+            </p>
           )}
         </div>
+        {!showContact && (
+          <button
+            type="button"
+            onClick={handleToggleStatus}
+            className={clsx(
+              'flex h-3 w-3 flex-shrink-0 items-center justify-center rounded-full border transition-colors',
+              getStatusPillStyle(event.resource.status)
+            )}
+            aria-label="Toggle task status"
+          />
+        )}
+        {showContact && (
+          <button
+            type="button"
+            onClick={handleToggleStatus}
+            className={clsx(
+              'flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border transition-colors',
+              getStatusPillStyle(event.resource.status)
+            )}
+            aria-label="Toggle task status"
+          >
+            {event.resource.status === 'done' && <span className="text-[10px]">✓</span>}
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  // Full layout for larger events
+  return (
+    <div
+      className="flex h-full flex-col gap-0.5 text-xs text-white cursor-pointer px-2 py-1"
+      onClick={(e) => {
+        e.stopPropagation()
+        setSelectedEventId(event.id)
+      }}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <p className="truncate text-xs font-semibold leading-tight pt-0.5">{event.title}</p>
         <button
           type="button"
           onClick={handleToggleStatus}
@@ -620,36 +691,17 @@ export function CalendarEvent({ event }: { event: TaskEvent }) {
           {event.resource.status === 'done' && <span className="text-[10px]">✓</span>}
         </button>
       </div>
-    )
-  }
-
-  // Full layout for larger events
-  return (
-    <div
-      className="flex h-full flex-col gap-1.5 text-xs text-white cursor-pointer"
-      onClick={(e) => {
-        e.stopPropagation()
-        setSelectedEventId(event.id)
-      }}
-    >
-      <p className="truncate text-xs font-semibold leading-tight">{event.title}</p>
-      {contact && (
-        <p className="truncate text-[10px] opacity-90">👤 {contact.name}</p>
+      {firstContact && (
+        <p className="truncate text-[10px] opacity-90">
+          👤 {firstContact.name}
+          {additionalContactsCount > 0 && ` +${additionalContactsCount}`}
+        </p>
       )}
-      <button
-        type="button"
-        onClick={handleToggleStatus}
-        className={clsx(
-          'inline-flex items-center gap-1 rounded-full border px-2 py-1 text-white transition-colors',
-          getStatusPillStyle(event.resource.status)
-        )}
-        aria-label="Toggle task status"
-      >
-        {event.resource.status === 'done' && <span>✓</span>}
-        <span className="text-[10px] font-medium capitalize">
-          {event.resource.status === 'inProgress' ? 'In progress' : event.resource.status}
-        </span>
-      </button>
+      {durationMinutes > 60 && event.resource.address && (
+        <p className="truncate text-[10px] opacity-75">
+          📍 {event.resource.address}
+        </p>
+      )}
     </div>
   )
 }

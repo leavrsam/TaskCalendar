@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 
 import clsx from 'clsx'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, CalendarDays } from 'lucide-react'
 
 import { mainNavigation } from '@/config/navigation'
 import { useAuth } from '@/hooks/use-auth'
@@ -27,17 +27,27 @@ export function AppLayout() {
   const mobileSecondaryNav = mainNavigation.filter(n => !mobilePrimaryNav.includes(n))
 
   return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="flex min-h-screen bg-white dark:bg-slate-900">
       {/* Desktop Sidebar */}
       <aside className={clsx(
-        "hidden w-64 flex-shrink-0 border-r border-slate-200 bg-white px-4 py-8 dark:border-slate-800 dark:bg-slate-900 transition-all duration-300 ease-in-out",
-        isSidebarOpen ? "lg:block" : "lg:hidden"
+        "hidden w-64 flex-shrink-0 bg-white dark:bg-slate-900 transition-all duration-300 ease-in-out flex flex-col",
+        isSidebarOpen ? "lg:flex" : "lg:hidden"
       )}>
-        <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">TaskCalendar</p>
-          <p className="text-lg font-semibold text-slate-900 dark:text-slate-50">Area Book</p>
+        <div className="h-16 flex items-center gap-2 px-3 pr-4">
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="rounded-full p-3 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white">
+              <CalendarDays className="h-5 w-5" />
+            </div>
+            <p className="text-xl font-semibold text-slate-900 dark:text-slate-50">TaskCalendar</p>
+          </div>
         </div>
-        <nav className="mt-8 space-y-1">
+        <nav className="mt-6 px-4 space-y-1 overflow-y-auto flex-1">
           {mainNavigation.map((item) => (
             <NavLink
               key={item.path}

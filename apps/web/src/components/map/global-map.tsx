@@ -2,21 +2,41 @@ import { useMemo } from 'react'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import type { Contact, Task } from '@taskcalendar/core'
-import { formatDistanceToNow } from 'date-fns'
+import { formatDistanceToNow, format } from 'date-fns'
 
 // Fix for Leaflet marker icons in React
 import L from 'leaflet'
 import icon from 'leaflet/dist/images/marker-icon.png'
 import iconShadow from 'leaflet/dist/images/marker-shadow.png'
 
-const DefaultIcon = L.icon({
+// Default blue icon for contacts
+const ContactIcon = L.icon({
     iconUrl: icon,
     shadowUrl: iconShadow,
     iconSize: [25, 41],
     iconAnchor: [12, 41],
 })
 
-L.Marker.prototype.options.icon = DefaultIcon
+// Custom orange/red icon for events (using SVG data URL)
+const EventIcon = L.divIcon({
+    className: 'event-marker',
+    html: `<div style="
+        width: 28px;
+        height: 28px;
+        background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        border: 2px solid white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    "><span style="transform: rotate(45deg); font-size: 12px;">📅</span></div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 28],
+})
+
+L.Marker.prototype.options.icon = ContactIcon
 
 type GlobalMapProps = {
     contacts: Contact[]
@@ -40,7 +60,8 @@ const getPseudoCoordinates = (address: string) => {
 }
 
 export function GlobalMap({ contacts, tasks }: GlobalMapProps) {
-    const markers = useMemo(() => {
+    // Contact markers
+    const contactMarkers = useMemo(() => {
         return contacts
             .filter((c) => c.location || c.address)
             .map((c) => {
@@ -55,6 +76,18 @@ export function GlobalMap({ contacts, tasks }: GlobalMapProps) {
             })
     }, [contacts, tasks])
 
+    // Event markers - tasks with addresses that are not done
+    const eventMarkers = useMemo(() => {
+        return tasks
+            .filter((t) => (t.location || t.address) && t.status !== 'done')
+            .map((t) => ({
+                ...t,
+                position: t.location
+                    ? ([t.location.lat, t.location.lng] as [number, number])
+                    : getPseudoCoordinates(t.address!),
+            }))
+    }, [tasks])
+
     return (
         <div className="h-[calc(100vh-12rem)] w-full overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
             <MapContainer center={[40.7608, -111.8910]} zoom={12} style={{ height: '100%', width: '100%' }}>
@@ -62,8 +95,10 @@ export function GlobalMap({ contacts, tasks }: GlobalMapProps) {
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                {markers.map((contact) => (
-                    <Marker key={contact.id} position={contact.position}>
+
+                {/* Contact Markers */}
+                {contactMarkers.map((contact) => (
+                    <Marker key={`contact-${contact.id}`} position={contact.position} icon={ContactIcon}>
                         <Popup>
                             <div className="min-w-[200px] p-1">
                                 <h3 className="font-semibold text-slate-900">{contact.name}</h3>
@@ -94,6 +129,51 @@ export function GlobalMap({ contacts, tasks }: GlobalMapProps) {
                                                 </li>
                                             ))}
                                         </ul>
+                                    </div>
+                                )}
+                            </div>
+                        </Popup>
+                    </Marker>
+                ))}
+
+                {/* Event Markers */}
+                {eventMarkers.map((event) => (
+                    <Marker key={`event-${event.id}`} position={event.position} icon={EventIcon}>
+                        <Popup>
+                            <div className="min-w-[200px] p-1">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-lg">📅</span>
+                                    <h3 className="font-semibold text-slate-900">{event.title}</h3>
+                                </div>
+                                {event.address && (
+                                    <p className="text-xs text-slate-500 mt-1">{event.address}</p>
+                                )}
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium uppercase ${event.status === 'todo' ? 'bg-slate-100 text-slate-700' :
+                                            event.status === 'inProgress' ? 'bg-amber-100 text-amber-700' :
+                                                'bg-emerald-100 text-emerald-700'
+                                        }`}>
+                                        {event.status === 'inProgress' ? 'In Progress' : event.status}
+                                    </span>
+                                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium uppercase ${event.priority === 'high' ? 'bg-red-100 text-red-700' :
+                                            event.priority === 'medium' ? 'bg-amber-100 text-amber-700' :
+                                                'bg-emerald-100 text-emerald-700'
+                                        }`}>
+                                        {event.priority} priority
+                                    </span>
+                                </div>
+                                {event.scheduledStart && (
+                                    <div className="mt-2 text-xs text-slate-600">
+                                        <p className="font-medium">
+                                            {format(new Date(event.scheduledStart), 'MMM d, yyyy')}
+                                        </p>
+                                        {!event.isAllDay && (
+                                            <p className="text-slate-400">
+                                                {format(new Date(event.scheduledStart), 'h:mm a')}
+                                                {event.scheduledEnd && ` - ${format(new Date(event.scheduledEnd), 'h:mm a')}`}
+                                            </p>
+                                        )}
+                                        {event.isAllDay && <p className="text-slate-400">All day</p>}
                                     </div>
                                 )}
                             </div>

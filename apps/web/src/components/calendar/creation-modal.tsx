@@ -6,6 +6,7 @@ import { AnimatedModal } from '@/components/ui/animated-modal'
 import { ColorPicker } from '@/components/ui/color-picker'
 import { DatePicker } from '@/components/ui/date-picker'
 import { CustomSelect } from '@/components/ui/custom-select'
+import { LocationPicker } from '@/components/map/location-picker'
 import clsx from 'clsx'
 import { ChevronDown } from 'lucide-react'
 
@@ -17,12 +18,15 @@ type CreationModalProps = {
         title: string
         status: Task['status']
         notes?: string
-        contactId?: string
+        contactIds?: string[]
         priority: Task['priority']
         color?: string | null
         recurrence?: Task['recurrence']
         scheduledStart?: string
         scheduledEnd?: string
+        isAllDay?: boolean
+        address?: string
+        location?: { lat: number; lng: number } | null
     }) => Promise<void>
 }
 
@@ -61,8 +65,12 @@ export function CreationModal({ slot, defaultContactId, onClose, onSave }: Creat
     const [priority, setPriority] = useState<Task['priority']>('medium')
     const [notes, setNotes] = useState('')
     const [color, setColor] = useState<string>('#3b82f6')
-    const [contactId, setContactId] = useState<string>(defaultContactId || '')
+    const [contactIds, setContactIds] = useState<string[]>(defaultContactId ? [defaultContactId] : [])
     const [recurrence, setRecurrence] = useState<Task['recurrence']>(null)
+    const [isAllDay, setIsAllDay] = useState(false)
+    const [address, setAddress] = useState('')
+    const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
+    const [showContactDropdown, setShowContactDropdown] = useState(false)
 
     // Date/Time State
     const [startDate, setStartDate] = useState(slot?.start ?? defaultStart)
@@ -139,44 +147,95 @@ export function CreationModal({ slot, defaultContactId, onClose, onSave }: Creat
                 </div>
 
                 {/* Date & Time Row */}
-                <div className="flex flex-col sm:flex-row gap-3">
-                    {/* Date Picker */}
-                    <div className="flex-1">
-                        <DatePicker
-                            value={startDate}
-                            onChange={(date) => {
-                                // Preserve time, update date
-                                const newStart = new Date(startDate)
-                                newStart.setFullYear(date.getFullYear(), date.getMonth(), date.getDate())
-
-                                const newEnd = new Date(endDate)
-                                newEnd.setFullYear(date.getFullYear(), date.getMonth(), date.getDate())
-
-                                setStartDate(newStart)
-                                setEndDate(newEnd)
-                            }}
-                        />
+                <div className="flex flex-col gap-3">
+                    {/* All Day Toggle + Date Row */}
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setIsAllDay(!isAllDay)}
+                            className={clsx(
+                                "relative flex h-6 w-11 items-center rounded-full transition-colors",
+                                isAllDay ? "bg-brand-600" : "bg-slate-200 dark:bg-slate-700"
+                            )}
+                        >
+                            <span
+                                className={clsx(
+                                    "h-5 w-5 rounded-full bg-white shadow transition-transform",
+                                    isAllDay ? "translate-x-5" : "translate-x-0.5"
+                                )}
+                            />
+                        </button>
+                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">All day</span>
                     </div>
 
-                    {/* Time Dropdowns */}
-                    <div className="flex items-center gap-2 flex-1">
+                    {/* Date Pickers Row */}
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        {/* Start Date Picker */}
                         <div className="flex-1">
-                            <CustomSelect
-                                value={startTimeValue}
-                                onChange={handleStartTimeChange}
-                                options={TIME_SLOTS}
-                                placeholder="Start"
+                            <DatePicker
+                                value={startDate}
+                                onChange={(date) => {
+                                    // Preserve time, update date
+                                    const newStart = new Date(startDate)
+                                    newStart.setFullYear(date.getFullYear(), date.getMonth(), date.getDate())
+
+                                    setStartDate(newStart)
+
+                                    // If all-day, also update end date if it's before start
+                                    if (isAllDay && newStart > endDate) {
+                                        setEndDate(new Date(newStart))
+                                    } else if (!isAllDay) {
+                                        const newEnd = new Date(endDate)
+                                        newEnd.setFullYear(date.getFullYear(), date.getMonth(), date.getDate())
+                                        setEndDate(newEnd)
+                                    }
+                                }}
                             />
                         </div>
-                        <span className="text-slate-400 font-medium">-</span>
-                        <div className="flex-1">
-                            <CustomSelect
-                                value={endTimeValue}
-                                onChange={handleEndTimeChange}
-                                options={TIME_SLOTS}
-                                placeholder="End"
-                            />
-                        </div>
+
+                        {/* Time Dropdowns (hidden if all-day) */}
+                        {!isAllDay && (
+                            <div className="flex items-center gap-2 flex-1">
+                                <div className="flex-1">
+                                    <CustomSelect
+                                        value={startTimeValue}
+                                        onChange={handleStartTimeChange}
+                                        options={TIME_SLOTS}
+                                        placeholder="Start"
+                                    />
+                                </div>
+                                <span className="text-slate-400 font-medium">-</span>
+                                <div className="flex-1">
+                                    <CustomSelect
+                                        value={endTimeValue}
+                                        onChange={handleEndTimeChange}
+                                        options={TIME_SLOTS}
+                                        placeholder="End"
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* End Date Picker (shown if all-day for multi-day events) */}
+                        {isAllDay && (
+                            <>
+                                <span className="text-slate-400 font-medium self-center">to</span>
+                                <div className="flex-1">
+                                    <DatePicker
+                                        value={endDate}
+                                        onChange={(date) => {
+                                            const newEnd = new Date(date)
+                                            // Ensure end is not before start
+                                            if (newEnd < startDate) {
+                                                setEndDate(new Date(startDate))
+                                            } else {
+                                                setEndDate(newEnd)
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -207,28 +266,100 @@ export function CreationModal({ slot, defaultContactId, onClose, onSave }: Creat
                             onChange={setRecurrence}
                         />
 
-                        <div className="flex items-center gap-2">
-                            <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 flex-shrink-0">
-                                Contact
+                        {/* Contact Multi-Select */}
+                        <div className="space-y-2">
+                            <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+                                Contacts
                             </label>
-                            <div className="relative flex-1">
-                                <select
-                                    value={contactId}
-                                    onChange={(e) => setContactId(e.target.value)}
-                                    className="w-full appearance-none rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 pl-3 pr-8 py-1.5 text-sm text-slate-900 dark:text-slate-50"
+                            <div className="relative">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowContactDropdown(!showContactDropdown)}
+                                    className="w-full flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-50"
                                 >
-                                    <option value="">None</option>
-                                    {contacts.map((contact) => (
-                                        <option key={contact.id} value={contact.id}>
-                                            {contact.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                    <span className={contactIds.length === 0 ? 'text-slate-400' : ''}>
+                                        {contactIds.length === 0 ? 'Select contacts...' : `${contactIds.length} selected`}
+                                    </span>
+                                    <ChevronDown className="w-4 h-4 text-slate-400" />
+                                </button>
+                                {showContactDropdown && (
+                                    <div className="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg">
+                                        {contacts.length === 0 ? (
+                                            <p className="px-3 py-2 text-sm text-slate-400">No contacts available</p>
+                                        ) : (
+                                            contacts.map((contact) => (
+                                                <label
+                                                    key={contact.id}
+                                                    className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer"
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={contactIds.includes(contact.id)}
+                                                        onChange={(e) => {
+                                                            if (e.target.checked) {
+                                                                setContactIds([...contactIds, contact.id])
+                                                            } else {
+                                                                setContactIds(contactIds.filter(id => id !== contact.id))
+                                                            }
+                                                        }}
+                                                        className="rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                                                    />
+                                                    <span className="text-sm text-slate-900 dark:text-slate-50">{contact.name}</span>
+                                                </label>
+                                            ))
+                                        )}
+                                    </div>
+                                )}
                             </div>
+                            {contactIds.length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                    {contactIds.map(id => {
+                                        const contact = contacts.find(c => c.id === id)
+                                        return contact ? (
+                                            <span
+                                                key={id}
+                                                className="inline-flex items-center gap-1 pl-3 pr-1 py-1 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 text-sm"
+                                            >
+                                                <span className="whitespace-nowrap">{contact.name}</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setContactIds(contactIds.filter(cid => cid !== id))}
+                                                    className="p-1 rounded-full hover:bg-brand-200 dark:hover:bg-brand-800 text-brand-600 dark:text-brand-400 transition-colors flex-shrink-0"
+                                                    title="Remove"
+                                                >
+                                                    <span className="text-base leading-none">×</span>
+                                                </button>
+                                            </span>
+                                        ) : null
+                                    })}
+                                </div>
+                            )}
                         </div>
                     </div>
 
+                    {/* Location */}
+                    <div className="flex items-center gap-2">
+                        <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 flex-shrink-0">
+                            Location
+                        </label>
+                        <input
+                            type="text"
+                            value={address}
+                            onChange={(e) => setAddress(e.target.value)}
+                            placeholder="Add address or location..."
+                            className="flex-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 px-3 py-1.5 text-sm text-slate-900 dark:text-slate-50 placeholder:text-slate-400"
+                        />
+                        <LocationPicker
+                            value={location}
+                            address={address}
+                            onChange={(loc, addr) => {
+                                setLocation(loc)
+                                if (addr !== undefined) setAddress(addr)
+                            }}
+                        />
+                    </div>
+
+                    {/* Notes */}
                     <textarea
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
@@ -259,16 +390,28 @@ export function CreationModal({ slot, defaultContactId, onClose, onSave }: Creat
                         setSaving(true)
                         setError(null)
                         try {
+                            // For all-day events, set proper day boundaries
+                            let finalStart = startDate
+                            let finalEnd = endDate
+                            if (isAllDay) {
+                                finalStart = new Date(startDate)
+                                finalStart.setHours(0, 0, 0, 0)
+                                finalEnd = new Date(endDate)
+                                finalEnd.setHours(23, 59, 59, 999)
+                            }
                             await onSave({
                                 title: title || '(No Title)',
                                 status,
                                 notes,
                                 priority,
                                 color,
-                                contactId: contactId || undefined,
+                                contactIds: contactIds.length > 0 ? contactIds : undefined,
                                 recurrence,
-                                scheduledStart: startDate.toISOString(),
-                                scheduledEnd: endDate.toISOString(),
+                                scheduledStart: finalStart.toISOString(),
+                                scheduledEnd: finalEnd.toISOString(),
+                                isAllDay,
+                                address: address || undefined,
+                                location,
                             })
                         } catch (err) {
                             setError(err instanceof Error ? err.message : 'Error saving')

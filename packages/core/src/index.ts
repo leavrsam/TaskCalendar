@@ -36,6 +36,28 @@ export const CONTACT_STAGE_ORDER: ContactStage[] = [
   'dropped',
 ]
 
+// Contact Goals schema (with sub-goals support)
+export const contactSubGoalSchema = z.object({
+  id: z.string(),
+  title: z.string().min(1),
+  isCompleted: z.boolean().default(false),
+})
+
+export type ContactSubGoal = z.infer<typeof contactSubGoalSchema>
+
+export const contactGoalSchema = z.object({
+  id: z.string(),
+  title: z.string().min(1),
+  description: z.string().optional(),
+  isCompleted: z.boolean().default(false),
+  progress: z.number().min(0).max(100).optional(),
+  subGoals: z.array(contactSubGoalSchema).default([]),
+  createdAt: timestampString,
+  updatedAt: timestampString,
+})
+
+export type ContactGoal = z.infer<typeof contactGoalSchema>
+
 export const contactSchema = z.object({
   id: contactId,
   ownerUid: uid,
@@ -50,6 +72,7 @@ export const contactSchema = z.object({
   }).nullable().optional(),
   tags: z.array(z.string()).default([]),
   notes: z.string().optional(),
+  goals: z.array(contactGoalSchema).default([]),
   lastContactedAt: z.string().nullable(),
   nextVisitAt: z.string().nullable(),
   sharedWith: z.array(uid).default([]),
@@ -113,7 +136,8 @@ export type Goal = z.infer<typeof goalSchema>
 export const taskSchema = z.object({
   id: taskId,
   ownerUid: uid,
-  contactId: contactId.optional(),
+  contactId: contactId.optional(), // Legacy single contact (for backward compatibility)
+  contactIds: z.array(contactId).default([]), // Multiple contacts
   title: z.string(),
   status: z.enum(['todo', 'inProgress', 'done']),
   priority: z.enum(['low', 'medium', 'high']).default('medium'),
@@ -126,6 +150,12 @@ export const taskSchema = z.object({
   isBackup: z.boolean().default(false),
   color: z.string().nullable().optional(),
   sharedWith: z.array(uid).default([]),
+  // Location fields
+  address: z.string().optional(),
+  location: z.object({
+    lat: z.number(),
+    lng: z.number(),
+  }).nullable().optional(),
   // Recurrence fields
   recurrence: z.object({
     frequency: z.enum(['none', 'daily', 'weekly', 'monthly', 'annually', 'weekday', 'custom']),
