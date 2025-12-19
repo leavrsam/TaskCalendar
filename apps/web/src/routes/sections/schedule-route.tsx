@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useState } from 'react'
-import { useOutletContext } from 'react-router-dom'
+import { useOutletContext, NavLink } from 'react-router-dom'
 import clsx from 'clsx'
 import { DndProvider, useDrop } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
@@ -24,7 +24,7 @@ const DnDCalendar = withDragAndDrop<TaskEvent, TaskEvent>(Calendar)
 
 import type { Task } from '@taskcalendar/core'
 
-import { Menu, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Menu } from 'lucide-react'
 import { CollaboratorAvatar } from '@/components/collaborators/collaborator-avatar'
 import { TaskFAB } from '@/components/fab/task-fab'
 import { TaskBottomSheet } from '@/components/tasks/task-bottom-sheet'
@@ -43,8 +43,9 @@ import { calendarLocalizer } from '@/lib/calendar'
 import { useAuth } from '@/hooks/use-auth'
 import { CreationModal } from '@/components/calendar/creation-modal'
 import { EventActionSheet } from '@/routes/sections/event-action-sheet'
+import { useCalendarStore } from '@/stores/calendar-store'
 
-const CustomDateHeader = ({ date, label, localizer }: any) => {
+const CustomDateHeader = ({ date }: any) => {
   return (
     <div className="flex flex-col items-center py-2 pb-2">
       <span className="text-[11px] font-medium text-slate-500 uppercase tracking-widest leading-none mb-1">{format(date, 'EEE')}</span>
@@ -73,13 +74,16 @@ export function ScheduleRoute() {
 
   // View state
   const [filter, setFilter] = useState<Task['status'] | 'all'>('all')
-  const [view, setView] = useState<View>(window.innerWidth < 768 ? 'agenda' : 'week')
+  const [view, setView] = useState<View>(window.innerWidth < 768 ? 'day' : 'week')
 
   const [isTaskSheetOpen, setIsTaskSheetOpen] = useState(false)
 
   const [creationSlot, setCreationSlot] = useState<{ start: Date; end: Date } | null>(null)
   const [dragTaskId, setDragTaskId] = useState<string | null>(null)
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
+
+  // Import State from Store
+  const importedEvents = useCalendarStore((state) => state.importedEvents)
 
   const filteredTasks = useMemo(() => {
     if (filter === 'all') return tasks
@@ -165,74 +169,62 @@ export function ScheduleRoute() {
   return (
     <ScheduleContext.Provider value={{ setSelectedEventId }}>
       <DndProvider backend={HTML5Backend}>
-        <div className="flex h-screen flex-col">
+        <div className="flex h-screen flex-col overflow-x-hidden">
           {/* Header */}
-          <header className={`flex items-center justify-between gap-4 bg-white dark:bg-slate-900 p-2 pr-4 flex-shrink-0 transition-all h-16 ${!isSidebarOpen ? 'pl-2' : 'pl-4'}`}>
-            {/* Left: Menu, Title, Nav, Date */}
-            <div className="flex items-center justify-between w-full">
-              {/* Left: Menu, Title - Only visible if sidebar is closed */}
+          <header className={`flex items-center justify-between gap-2 bg-white dark:bg-slate-900 p-2 pr-3 flex-shrink-0 transition-all h-14 sm:h-16 overflow-x-auto ${!isSidebarOpen ? 'pl-2' : 'pl-3'}`}>
+            {/* Left: Menu, Nav, Date */}
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+              {/* Menu button - Only visible if sidebar is closed */}
               {!isSidebarOpen && (
-                <div className="flex items-center gap-2 animate-in fade-in duration-200">
-                  <button
-                    type="button"
-                    onClick={toggleSidebar}
-                    className="rounded-full p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-                    title="Toggle sidebar"
-                  >
-                    <Menu className="h-5 w-5" />
-                  </button>
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white">
-                      <CalendarDays className="h-5 w-5" />
-                    </div>
-                    <h1 className="hidden text-xl font-semibold text-slate-900 dark:text-slate-50 sm:block">
-                      TaskCalendar
-                    </h1>
-                  </div>
-                </div>
-              )}
-              <div className="ml-8 flex items-center gap-3">
                 <button
                   type="button"
-                  className="rounded border border-slate-300 dark:border-slate-600 px-4 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
-                  onClick={() => setWeekAnchor(new Date())}
+                  onClick={toggleSidebar}
+                  className="rounded-full p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 flex-shrink-0"
+                  title="Toggle sidebar"
                 >
-                  Today
+                  <Menu className="h-5 w-5" />
                 </button>
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    className="rounded-full p-1.5 text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-                    onClick={() => handleNavigate('prev')}
-                  >
-                    <ChevronLeft className="h-5 w-5" />
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded-full p-1.5 text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-                    onClick={() => handleNavigate('next')}
-                  >
-                    <ChevronRight className="h-5 w-5" />
-                  </button>
-                </div>
-                <h2 className="ml-2 text-xl font-medium text-slate-700 dark:text-slate-200">
-                  {format(weekAnchor, 'MMMM yyyy')}
-                </h2>
+              )}
+              <button
+                type="button"
+                className="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800 flex-shrink-0"
+                onClick={() => setWeekAnchor(new Date())}
+              >
+                Today
+              </button>
+              <div className="flex items-center flex-shrink-0">
+                <button
+                  type="button"
+                  className="rounded-full p-1.5 text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                  onClick={() => handleNavigate('prev')}
+                >
+                  <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+                </button>
+                <button
+                  type="button"
+                  className="rounded-full p-1.5 text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                  onClick={() => handleNavigate('next')}
+                >
+                  <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                </button>
               </div>
+              <h2 className="text-xs sm:text-base font-medium text-slate-700 dark:text-slate-200 whitespace-nowrap">
+                {format(weekAnchor, 'MMM yyyy')}
+              </h2>
             </div>
 
-            {/* Right: View dropdown and Avatar */}
-            <div className="flex items-center gap-3 mr-4">
-              {/* View Segmented Control (Mobile/Desktop adaptive) */}
-              <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+            {/* Right: View toggle */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5">
+
                 {(['day', 'week', 'agenda'] as View[]).map((v) => (
                   <button
                     key={v}
                     onClick={() => setView(v)}
                     className={clsx(
-                      'px-3 py-1 text-xs font-medium rounded-md transition-all capitalize',
+                      'px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-medium rounded-md transition-all capitalize',
                       view === v
-                        ? 'bg-white dark:bg-slate-700 text-brand-600 shadow-sm scale-105'
+                        ? 'bg-white dark:bg-slate-700 text-brand-600 shadow-sm'
                         : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
                     )}
                   >
@@ -240,17 +232,18 @@ export function ScheduleRoute() {
                   </button>
                 ))}
               </div>
-
-              <div className="ml-1">
-                <CollaboratorAvatar
-                  collaborator={{
-                    uid: user?.uid ?? 'me',
-                    email: user?.email ?? '',
-                    label: user?.displayName || user?.email || 'You',
-                  }}
-                  size="md"
-                  photoURL={user?.photoURL ?? undefined}
-                />
+              <div className="hidden sm:block">
+                <NavLink to="/settings">
+                  <CollaboratorAvatar
+                    collaborator={{
+                      uid: user?.uid ?? 'me',
+                      email: user?.email ?? '',
+                      label: user?.displayName || user?.email || 'You',
+                    }}
+                    size="sm"
+                    photoURL={user?.photoURL ?? undefined}
+                  />
+                </NavLink>
               </div>
             </div>
           </header>
@@ -272,7 +265,7 @@ export function ScheduleRoute() {
             }}
           >
             <AgendaBoard
-              events={eventsQuery.events}
+              events={[...eventsQuery.events, ...importedEvents]}
               isLoading={eventsQuery.isLoading}
               view={view}
               onView={setView}
@@ -354,6 +347,7 @@ export function ScheduleRoute() {
             event={selectedEvent}
             onClose={() => setSelectedEventId(null)}
           />
+
         </div>
       </DndProvider >
     </ScheduleContext.Provider >
@@ -377,7 +371,6 @@ type AgendaBoardProps = {
 
 function AgendaBoard({
   events,
-  isLoading,
   view,
   onView,
   onSlotSelect,
@@ -402,6 +395,17 @@ function AgendaBoard({
       resource: draggingTask,
     }
   }, [draggingTask])
+
+  // Dynamic step/timeslots based on zoom (timeSlotHeight)
+  const { step, timeslots } = useMemo(() => {
+    // We always set timeslots to 1 so that every interval acts as a "Group" and gets a label in the gutter.
+    // timeSlotHeight: 5px (~60px/hr) -> Default
+    // 8px (~96px/hr) -> Medium Zoom
+    // 15px (~180px/hr) -> High Zoom
+    if (timeSlotHeight >= 15) return { step: 15, timeslots: 1 } // High zoom: 15 min intervals
+    if (timeSlotHeight >= 8) return { step: 30, timeslots: 1 } // Medium zoom: 30 min intervals
+    return { step: 60, timeslots: 1 } // Low zoom: 60 min intervals
+  }, [timeSlotHeight])
 
   const TimeSlotWrapper = ({ children, value }: any) => {
     // Magnetic Snapping Logic
@@ -446,15 +450,29 @@ function AgendaBoard({
           <style>
             {`
             .rbc-time-slot {
-              min-height: ${timeSlotHeight}px !important;
-              border-top: none !important; 
+              min-height: ${timeSlotHeight * (step / 5)}px !important;
+              border-top: none !important;
             }
             .rbc-timeslot-group {
-              min-height: ${timeSlotHeight * 12}px !important; /* 12 slots of 5 mins = 60 mins */
-              border-bottom: 1px solid rgba(226, 232, 240, 0.8) !important; /* light slate border */
+              min-height: ${timeSlotHeight * (step / 5)}px !important;
+              border-bottom: 1px solid rgba(226, 232, 240, 0.4) !important; /* light border for sub-slots */
+            }
+            
+            /* Darker border for hour lines (every 2nd at 30m, every 4th at 15m) */
+            ${step === 30 ? `
+              .rbc-timeslot-group:nth-child(2n) { border-bottom: 1px solid rgba(226, 232, 240, 0.8) !important; }
+              .dark .rbc-timeslot-group:nth-child(2n) { border-bottom: 1px solid rgba(51, 65, 85, 0.4) !important; }
+            ` : ''}
+            ${step === 15 ? `
+              .rbc-timeslot-group:nth-child(4n) { border-bottom: 1px solid rgba(226, 232, 240, 0.8) !important; }
+              .dark .rbc-timeslot-group:nth-child(4n) { border-bottom: 1px solid rgba(51, 65, 85, 0.4) !important; }
+            ` : ''}
+
+            .dark .rbc-time-slot {
+              border-top: none !important;
             }
             .dark .rbc-timeslot-group {
-              border-bottom: 1px solid rgba(51, 65, 85, 0.4) !important;
+              border-bottom: 1px solid rgba(51, 65, 85, 0.2) !important;
             }
             .rbc-time-view {
               background: transparent !important;
@@ -478,17 +496,11 @@ function AgendaBoard({
             .dark .rbc-header + .rbc-header {
               border-left: 1px solid rgba(51, 65, 85, 0.4) !important;
             }
-              border: none !important;
-            }
-            .rbc-header {
-                border-bottom: none !important;
-                border: none !important;
-            }
             .rbc-time-header-content {
-                border-left: 1px solid rgba(226, 232, 240, 0.4) !important;
+              border-left: 1px solid rgba(226, 232, 240, 0.4) !important;
             }
             .dark .rbc-time-header-content {
-                border-left: 1px solid rgba(51, 65, 85, 0.4) !important;
+              border-left: 1px solid rgba(51, 65, 85, 0.4) !important;
             }
             .rbc-day-slot {
               background: transparent !important;
@@ -498,11 +510,11 @@ function AgendaBoard({
               border-left: 1px solid rgba(51, 65, 85, 0.4) !important;
             }
             .rbc-time-content {
-               border-top: none !important;
-               border: none !important;
+              border-top: none !important;
+              border: none !important;
             }
             .rbc-time-gutter .rbc-timeslot-group {
-                border-bottom: none !important;
+              border-bottom: none !important;
             }
           `}
           </style>
@@ -515,14 +527,20 @@ function AgendaBoard({
             onNavigate={onAnchorChange}
             toolbar={false}
             culture="en-US"
-            step={15}
-            timeslots={4}
+            step={step}
+            timeslots={timeslots}
             popup
             resizable
             selectable
             style={{ height: '100%' }}
             formats={{
               eventTimeRangeFormat: () => '',
+              timeGutterFormat: (date: Date, culture: any, localizer: any) => {
+                const stepVal = step; // capture value - force refresh
+                if (stepVal === 60) return localizer.format(date, 'h a', culture)
+                if (date.getMinutes() === 0) return localizer.format(date, 'h a', culture)
+                return localizer.format(date, 'mm', culture) // just minutes for sub-slots to save space
+              }
             }}
             components={{
               event: CalendarEvent,

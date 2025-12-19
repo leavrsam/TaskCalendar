@@ -18,7 +18,7 @@ export type NavItem = {
 
 export const mainNavigation: NavItem[] = [
   { label: 'Dashboard', path: '/', icon: <House className="h-4 w-4" /> },
-  { label: 'Contacts', path: '/contacts', icon: <Users className="h-4 w-4" /> },
+  { label: 'People', path: '/contacts', icon: <Users className="h-4 w-4" /> },
   { label: 'Lessons', path: '/lessons', icon: <NotebookText className="h-4 w-4" /> },
   { label: 'Tasks & Calendar', path: '/schedule', icon: <CalendarDays className="h-4 w-4" /> },
   { label: 'Goals', path: '/goals', icon: <ClipboardList className="h-4 w-4" /> },

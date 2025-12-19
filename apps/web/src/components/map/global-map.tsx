@@ -89,7 +89,7 @@ export function GlobalMap({ contacts, tasks }: GlobalMapProps) {
     }, [tasks])
 
     return (
-        <div className="h-[calc(100vh-12rem)] w-full overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
+        <div className="h-full w-full z-0 relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
             <MapContainer center={[40.7608, -111.8910]} zoom={12} style={{ height: '100%', width: '100%' }}>
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -150,14 +150,14 @@ export function GlobalMap({ contacts, tasks }: GlobalMapProps) {
                                 )}
                                 <div className="mt-2 flex flex-wrap gap-2">
                                     <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium uppercase ${event.status === 'todo' ? 'bg-slate-100 text-slate-700' :
-                                            event.status === 'inProgress' ? 'bg-amber-100 text-amber-700' :
-                                                'bg-emerald-100 text-emerald-700'
+                                        event.status === 'inProgress' ? 'bg-amber-100 text-amber-700' :
+                                            'bg-emerald-100 text-emerald-700'
                                         }`}>
                                         {event.status === 'inProgress' ? 'In Progress' : event.status}
                                     </span>
                                     <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium uppercase ${event.priority === 'high' ? 'bg-red-100 text-red-700' :
-                                            event.priority === 'medium' ? 'bg-amber-100 text-amber-700' :
-                                                'bg-emerald-100 text-emerald-700'
+                                        event.priority === 'medium' ? 'bg-amber-100 text-amber-700' :
+                                            'bg-emerald-100 text-emerald-700'
                                         }`}>
                                         {event.priority} priority
                                     </span>

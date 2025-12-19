@@ -474,15 +474,15 @@ export function EventActionSheet({ event, onClose }: EventActionSheetProps) {
                     <button
                         type="button"
                         onClick={handleDeleteClick}
-                        className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-900/20 transition-colors"
+                        className="flex items-center gap-2 rounded-xl px-5 py-3 text-base font-medium text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-900/20 transition-colors min-h-[48px]"
                     >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-5 w-5" />
                         Delete
                     </button>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="flex items-center justify-center rounded-xl bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 transition-all"
+                        className="flex items-center justify-center rounded-xl bg-brand-600 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-brand-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 transition-all min-h-[48px]"
                     >
                         Save
                     </button>

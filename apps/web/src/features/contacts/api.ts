@@ -15,8 +15,6 @@ import {
   CONTACT_STAGE_ORDER,
   type Contact,
   type ContactStage,
-  type ContactGoal,
-  type ContactSubGoal,
 } from '@taskcalendar/core'
 
 import { useAuth } from '@/hooks/use-auth'

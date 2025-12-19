@@ -132,31 +132,31 @@ export function ContactsRoute() {
     <div className="space-y-6">
       <header className="flex flex-col gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm md:flex-row md:items-start md:justify-between">
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500">Slice 3</p>
+
           <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">People & Relationships</h1>
           <p className="text-sm text-slate-600">
             Manage your contacts, track their progress, and build meaningful relationships.
           </p>
         </div>
         <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
-          <div className="flex rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 p-1">
+          <div className="flex rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 p-1">
             <button
               onClick={() => setView('list')}
-              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors sm:flex-none ${view === 'list' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-50 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+              className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors sm:flex-none ${view === 'list' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-50 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                 }`}
             >
               <div className="flex items-center justify-center gap-2">
-                <List className="h-4 w-4" />
+                <List className="h-5 w-5" />
                 List
               </div>
             </button>
             <button
               onClick={() => setView('map')}
-              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors sm:flex-none ${view === 'map' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-50 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+              className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors sm:flex-none ${view === 'map' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-50 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                 }`}
             >
               <div className="flex items-center justify-center gap-2">
-                <MapIcon className="h-4 w-4" />
+                <MapIcon className="h-5 w-5" />
                 Map
               </div>
             </button>
@@ -164,17 +164,17 @@ export function ContactsRoute() {
           {supportsContactPicker && (
             <button
               onClick={handleImportClick}
-              className="flex items-center justify-center gap-2 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-900 dark:text-slate-50 hover:bg-slate-50 dark:hover:bg-slate-800"
+              className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-5 py-3 text-sm font-semibold text-slate-900 dark:text-slate-50 hover:bg-slate-50 dark:hover:bg-slate-800 min-h-[48px]"
             >
-              <Upload className="h-4 w-4" />
+              <Upload className="h-5 w-5" />
               Import
             </button>
           )}
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center justify-center gap-2 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+            className="flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-700 min-h-[48px]"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-5 w-5" />
             Add Person
           </button>
         </div>

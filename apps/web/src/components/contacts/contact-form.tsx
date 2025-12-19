@@ -120,30 +120,30 @@ export function ContactForm({ initialData, onSubmit, onClose, title }: ContactFo
                     <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">{title}</h2>
                     <button
                         onClick={onClose}
-                        className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+                        className="rounded-full p-3 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300"
                     >
-                        <X className="h-5 w-5" />
+                        <X className="h-6 w-6" />
                     </button>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Name</label>
+                        <label className="block text-sm font-semibold uppercase text-slate-500 dark:text-slate-400">Name</label>
                         <input
                             required
                             value={form.name}
                             onChange={(e) => setForm({ ...form, name: e.target.value })}
-                            className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-50 focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                            className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 px-4 py-3 text-base text-slate-900 dark:text-slate-50 focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                             placeholder="John Doe"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Stage</label>
+                        <label className="block text-sm font-semibold uppercase text-slate-500 dark:text-slate-400">Stage</label>
                         <select
                             value={form.stage}
                             onChange={(e) => setForm({ ...form, stage: e.target.value as ContactStage })}
-                            className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-50 focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                            className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 px-4 py-3 text-base text-slate-900 dark:text-slate-50 focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                         >
                             {CONTACT_STAGE_ORDER.map((stage) => (
                                 <option key={stage} value={stage}>
@@ -308,18 +308,18 @@ export function ContactForm({ initialData, onSubmit, onClose, title }: ContactFo
                         </div>
                     </div>
 
-                    <div className="flex justify-end gap-3 pt-2">
+                    <div className="flex justify-end gap-3 pt-4">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                            className="rounded-xl px-5 py-3 text-base font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 min-h-[48px]"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
+                            className="rounded-xl bg-brand-600 px-5 py-3 text-base font-semibold text-white hover:bg-brand-700 disabled:opacity-50 min-h-[48px]"
                         >
                             {isSubmitting ? 'Saving...' : 'Save Contact'}
                         </button>

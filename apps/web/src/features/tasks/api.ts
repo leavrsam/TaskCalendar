@@ -382,7 +382,7 @@ export const useUpdateRecurringSeriesFuture = () => {
         recurrence: {
           frequency: baseRecurrence.frequency,
           interval: baseRecurrence.interval ?? 1,
-          byDay: baseRecurrence.byDay ?? null,
+          byDay: baseRecurrence.byDay ?? undefined,
           byMonth: baseRecurrence.byMonth ?? null,
           byMonthDay: baseRecurrence.byMonthDay ?? null,
           endDate: baseRecurrence.endDate || null,

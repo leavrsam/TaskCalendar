@@ -21,6 +21,7 @@ const meta: Meta<typeof ContactCard> = {
       sharedWith: ['avery-demo'],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      goals: [],
     },
   },
 }

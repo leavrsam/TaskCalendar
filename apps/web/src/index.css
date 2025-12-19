@@ -30,7 +30,7 @@
   }
 
   .glass-dock {
-    @apply backdrop-blur-2xl bg-white/80 dark:bg-slate-900/80 border border-white/50 dark:border-white/10 shadow-2xl shadow-brand-500/10 dark:shadow-black/50;
+    @apply backdrop-blur-md bg-white/60 dark:bg-slate-900/60 border border-white/40 dark:border-white/10 shadow-2xl shadow-brand-500/10 dark:shadow-black/50;
   }
 
   /* Liquid Gradient Backgrounds */
@@ -53,6 +53,23 @@
     background-size: 150% 150%;
     animation: gradient-flow 15s ease infinite alternate;
   }
+
+  /* Mobile-first touch utilities */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  .mobile-input {
+    @apply py-3 px-4 text-base rounded-xl;
+  }
+
+  .mobile-button {
+    @apply py-3 px-5 text-base font-medium rounded-xl min-h-[48px];
+  }
+
+  .mobile-card {
+    @apply p-4 sm:p-5 rounded-2xl;
+  }
 }
 
 @keyframes gradient-flow {
@@ -68,6 +85,7 @@
 body {
   margin: 0;
   min-height: 100vh;
+  overflow-x: hidden;
   /* Default liquid background */
   @apply bg-slate-50 dark:bg-neutral-950 bg-liquid-light dark:bg-liquid-dark bg-fixed;
 }
@@ -78,6 +96,7 @@ body.dark {
 
 #root {
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* Dark Mode Overrides for React Big Calendar */

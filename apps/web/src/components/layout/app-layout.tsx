@@ -27,7 +27,7 @@ export function AppLayout() {
   const mobileSecondaryNav = mainNavigation.filter(n => !mobilePrimaryNav.includes(n))
 
   return (
-    <div className="flex min-h-screen bg-white dark:bg-slate-900">
+    <div className="flex min-h-screen bg-white dark:bg-slate-900 overflow-x-hidden">
       {/* Desktop Sidebar */}
       <aside className={clsx(
         "hidden w-64 flex-shrink-0 bg-white dark:bg-slate-900 transition-all duration-300 ease-in-out flex flex-col",
@@ -99,57 +99,67 @@ export function AppLayout() {
         </div>
       </aside>
 
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col overflow-x-hidden w-full max-w-full">
         {/* Mobile Header */}
         <header className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 lg:hidden dark:border-slate-800 dark:bg-slate-900">
           <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">TaskCalendar</p>
-          <CollaboratorAvatar
-            collaborator={{
-              uid: user?.uid ?? 'me',
-              email: user?.email ?? '',
-              label: user?.displayName || user?.email || 'You',
-            }}
-            size="sm"
-            photoURL={user?.photoURL ?? undefined}
-          />
+          <NavLink to="/settings">
+            <CollaboratorAvatar
+              collaborator={{
+                uid: user?.uid ?? 'me',
+                email: user?.email ?? '',
+                label: user?.displayName || user?.email || 'You',
+              }}
+              size="sm"
+              photoURL={user?.photoURL ?? undefined}
+            />
+          </NavLink>
         </header>
 
         {/* Main Content */}
         <main className={clsx(
-          "flex-1",
+          "flex-1 overflow-x-hidden max-w-full",
           isSchedule ? "p-0" : "p-4 pb-24 lg:p-8 lg:pb-8"
         )}>
           <Outlet context={{ isSidebarOpen, toggleSidebar: () => setIsSidebarOpen(prev => !prev) }} />
         </main>
 
         {/* Mobile Floating Dock */}
-        <nav className="fixed bottom-6 left-4 right-4 z-40 flex items-center justify-around glass-dock rounded-2xl px-2 py-3 lg:hidden transition-all duration-300">
+        <nav className="fixed bottom-4 left-3 right-3 z-[1100] flex items-center justify-around glass-dock rounded-2xl px-1 py-2 lg:hidden transition-all duration-300">
           {mobilePrimaryNav.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
                 clsx(
-                  'flex flex-col items-center gap-1 p-2 transition-all duration-200 active:scale-95',
+                  'flex flex-col items-center gap-0.5 p-3 min-w-[56px] transition-all duration-200 active:scale-95',
                   isActive
-                    ? 'text-brand-600 scale-110 drop-shadow-sm'
+                    ? 'text-brand-600 scale-105'
                     : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200',
                 )
               }
             >
-              <div className={clsx("transition-transform duration-200", ({ isActive }: { isActive: boolean }) => isActive ? "-translate-y-1" : "")}>
-                {item.icon}
-              </div>
+              {({ isActive }) => (
+                <>
+                  <div className={clsx("transition-transform duration-200 [&>svg]:h-7 [&>svg]:w-7", isActive && "-translate-y-0.5")}>
+                    {item.icon}
+                  </div>
+                  <span className={clsx("text-[10px] font-medium", isActive ? 'text-brand-600' : 'text-slate-400 dark:text-slate-500')}>
+                    {item.label}
+                  </span>
+                </>
+              )}
             </NavLink>
           ))}
           <button
             onClick={() => setIsMobileMenuOpen(true)}
             className={clsx(
-              'flex flex-col items-center gap-1 p-2 text-slate-500 transition-all duration-200 active:scale-95 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200',
+              'flex flex-col items-center gap-0.5 p-3 min-w-[56px] text-slate-500 transition-all duration-200 active:scale-95 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200',
               isMobileMenuOpen && 'text-brand-600'
             )}
           >
-            <Menu className="h-6 w-6" />
+            <Menu className="h-7 w-7" />
+            <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">More</span>
           </button>
         </nav>
 
@@ -158,23 +168,23 @@ export function AppLayout() {
           <>
             {/* Backdrop */}
             <div
-              className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm animate-in fade-in"
+              className="fixed inset-0 z-[1200] bg-black/20 backdrop-blur-sm animate-in fade-in"
               onClick={() => setIsMobileMenuOpen(false)}
             />
 
             {/* Drawer */}
-            <div className="fixed inset-y-0 right-0 z-50 w-72 glass-panel border-l border-white/20 p-4 shadow-2xl animate-in slide-in-from-right duration-300 flex flex-col">
-              <div className="flex items-center justify-between mb-8">
+            <div className="fixed inset-y-0 right-0 z-[1200] w-72 glass-panel border-l border-white/20 p-4 shadow-2xl animate-in slide-in-from-right duration-300 flex flex-col">
+              <div className="flex items-center justify-between mb-6">
                 <p className="text-lg font-semibold text-slate-900 dark:text-slate-50">Menu</p>
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="rounded-full p-2 text-slate-500 hover:bg-white/50 dark:text-slate-400 dark:hover:bg-slate-800/50 transition-colors"
+                  className="rounded-full p-3 text-slate-500 hover:bg-white/50 dark:text-slate-400 dark:hover:bg-slate-800/50 transition-colors"
                 >
-                  <X className="h-6 w-6" />
+                  <X className="h-7 w-7" />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto space-y-1">
+              <div className="flex-1 overflow-y-auto space-y-2">
                 {mobileSecondaryNav.map((item) => (
                   <NavLink
                     key={item.path}
@@ -182,7 +192,7 @@ export function AppLayout() {
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={({ isActive }) =>
                       clsx(
-                        'flex items-center gap-3 rounded-xl px-4 py-3 text-base font-medium transition-all',
+                        'flex items-center gap-4 rounded-xl px-4 py-4 text-base font-medium transition-all [&>svg]:h-6 [&>svg]:w-6',
                         isActive
                           ? 'bg-brand-50/80 text-brand-700 dark:bg-brand-950/50 dark:text-brand-400 shadow-sm'
                           : 'text-slate-600 hover:bg-white/40 dark:text-slate-400 dark:hover:bg-slate-800/40',

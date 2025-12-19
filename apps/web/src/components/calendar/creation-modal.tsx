@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import type { Task } from '@taskcalendar/core'
 import { useContactsQuery } from '@/features/contacts/api'
 import { RecurrenceSelector } from '@/components/calendar/recurrence-selector'
@@ -93,10 +93,7 @@ export function CreationModal({ slot, defaultContactId, onClose, onSave }: Creat
         }
     }, [slot])
 
-    // Helper to format date for display "Dec 17, 2025"
-    const formattedDate = useMemo(() => {
-        return startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    }, [startDate])
+
 
     const handleStartTimeChange = (newTimeStr: string) => {
         setStartTimeValue(newTimeStr)
@@ -384,7 +381,7 @@ export function CreationModal({ slot, defaultContactId, onClose, onSave }: Creat
                 </button>
                 <button
                     type="button"
-                    className="rounded-full bg-brand-600 px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-brand-500/30 disabled:opacity-60 hover:bg-brand-700 active:scale-95 transition-all"
+                    className="rounded-xl bg-brand-600 px-6 py-3 text-base font-semibold text-white shadow-lg shadow-brand-500/30 disabled:opacity-60 hover:bg-brand-700 active:scale-95 transition-all min-h-[48px]"
                     disabled={saving}
                     onClick={async () => {
                         setSaving(true)

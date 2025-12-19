@@ -6,10 +6,16 @@ import { DataManagementCard } from '@/components/settings/data-management-card'
 import { CollaboratorAvatar } from '@/components/collaborators/collaborator-avatar'
 import { useAuth } from '@/hooks/use-auth'
 import { useTheme } from '@/components/providers/theme-provider'
+import { ImportModal } from '@/components/calendar/import-modal'
+import { useCalendarStore } from '@/stores/calendar-store'
+import type { TaskEvent } from '@/features/tasks/api'
+import type { Task } from '@taskcalendar/core'
+import ICAL from 'ical.js'
+import { Calendar as CalendarIcon, Download } from 'lucide-react'
 
 export function SettingsRoute() {
   const { user } = useAuth()
-  const [tab, setTab] = useState<'sharing' | 'notifications' | 'data' | 'appearance'>('appearance')
+  const [tab, setTab] = useState<'sharing' | 'notifications' | 'data' | 'appearance' | 'integrations'>('appearance')
 
   return (
     <div className="space-y-6">
@@ -33,13 +39,13 @@ export function SettingsRoute() {
           </div>
         </div>
       </header>
-      <div className="flex gap-2">
-        {['appearance', 'sharing', 'notifications', 'data'].map((option) => (
+      <div className="flex flex-wrap gap-2">
+        {['appearance', 'integrations', 'sharing', 'notifications', 'data'].map((option) => (
           <button
             key={option}
             type="button"
-            onClick={() => setTab(option as 'sharing' | 'notifications' | 'data' | 'appearance')}
-            className={`rounded-full border px-4 py-2 text-sm font-semibold capitalize ${tab === option ? 'border-brand-500 text-brand-700 dark:border-brand-400 dark:text-brand-400' : 'border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-400'
+            onClick={() => setTab(option as any)}
+            className={`rounded-xl border px-5 py-3 text-sm font-semibold capitalize min-h-[44px] ${tab === option ? 'border-brand-500 text-brand-700 dark:border-brand-400 dark:text-brand-400' : 'border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-400'
               }`}
           >
             {option}
@@ -47,6 +53,7 @@ export function SettingsRoute() {
         ))}
       </div>
       {tab === 'appearance' && <AppearanceSettings />}
+      {tab === 'integrations' && <IntegrationsSettings />}
       {tab === 'sharing' && <ShareWorkspaceCard />}
       {tab === 'notifications' && <NotificationsPlaceholder />}
       {tab === 'data' && <DataManagementCard />}
@@ -135,6 +142,126 @@ function AppearanceSettings() {
           })}
         </div>
       </div>
+    </div>
+  )
+}
+
+function IntegrationsSettings() {
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false)
+  const addImportedEvents = useCalendarStore((state) => state.addImportedEvents)
+  const importedEventsCount = useCalendarStore((state) => state.importedEvents.length)
+  const clearImportedEvents = useCalendarStore((state) => state.clearImportedEvents)
+
+  const handleImportCalendar = async (url: string) => {
+    try {
+      // Proxy via allorigins to bypass CORS for demo purposes
+      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`
+      const response = await fetch(proxyUrl)
+      if (!response.ok) throw new Error('Failed to fetch calendar')
+
+      const data = await response.json()
+      const icsData = data.contents
+
+      const jcalData = ICAL.parse(icsData)
+      const comp = new ICAL.Component(jcalData)
+      const vevents = comp.getAllSubcomponents('vevent')
+
+      const newEvents: TaskEvent[] = vevents.map((vevent: any) => {
+        const event = new ICAL.Event(vevent)
+        const startDate = event.startDate.toJSDate()
+        const endDate = event.endDate.toJSDate()
+
+        const mockTask: Task = {
+          id: `imported-${event.uid}`,
+          ownerUid: 'imported',
+          title: event.summary,
+          status: 'todo',
+          priority: 'medium',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          scheduledStart: startDate.toISOString(),
+          scheduledEnd: endDate.toISOString(),
+          isAllDay: event.startDate.isDate,
+          location: event.location ? { lat: 0, lng: 0 } : undefined,
+          address: event.location,
+          notes: event.description,
+          // tags: ['imported'], // Removed to fix type error
+          recurrence: null,
+          sharedWith: [],
+          isBackup: true,
+          contactIds: [],
+          dueAt: null,
+          assignedTo: [],
+          isRecurringInstance: false,
+          isModified: false,
+        }
+
+        return {
+          id: mockTask.id,
+          title: mockTask.title,
+          start: startDate,
+          end: endDate,
+          resource: mockTask,
+          allDay: mockTask.isAllDay,
+        }
+      })
+
+      addImportedEvents(newEvents)
+    } catch (err) {
+      console.error('Import failed', err)
+      throw new Error('Could not parse calendar URL. See console for details.')
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Calendar Integrations</h2>
+        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+          Connect external calendars to view your schedule in one place.
+        </p>
+
+        <div className="mt-6 space-y-4">
+          <div className="flex items-center justify-between rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
+                <CalendarIcon className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="font-medium text-slate-900 dark:text-slate-50">Google Calendar (iCal)</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  {importedEventsCount > 0
+                    ? `${importedEventsCount} events synced`
+                    : 'Sync via public or private iCal URL'}
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              {importedEventsCount > 0 && (
+                <button
+                  onClick={clearImportedEvents}
+                  className="rounded-lg px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-900/20"
+                >
+                  Clear
+                </button>
+              )}
+              <button
+                onClick={() => setIsImportModalOpen(true)}
+                className="flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 dark:bg-slate-50 dark:text-slate-900 dark:hover:bg-slate-200"
+              >
+                <Download className="h-4 w-4" />
+                Import
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImport={handleImportCalendar}
+      />
     </div>
   )
 }

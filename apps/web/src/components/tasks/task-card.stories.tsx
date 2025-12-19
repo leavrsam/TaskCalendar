@@ -17,6 +17,7 @@ const baseTask: Task = {
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   contactId: 'contact-maria',
+  contactIds: [],
   scheduledStart: null,
   scheduledEnd: null,
   isAllDay: false,

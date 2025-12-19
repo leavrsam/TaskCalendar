@@ -69,7 +69,7 @@ export function AnimatedSheet({
 
                     {/* Sheet Panel */}
                     <motion.div
-                        variants={variants}
+                        variants={variants as any}
                         initial="hidden"
                         animate="visible"
                         exit="exit"

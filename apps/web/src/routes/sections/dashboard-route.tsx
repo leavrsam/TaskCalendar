@@ -51,7 +51,7 @@ export function DashboardRoute() {
   const contacts = contactsQuery.data?.map((c) => ({ id: c.id, name: c.name })) ?? []
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-full overflow-hidden">
       <header className="glass-panel p-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -79,10 +79,10 @@ export function DashboardRoute() {
 
       <QuickActions />
 
-      <section className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:pb-0 md:px-0 md:grid md:grid-cols-4 scrollbar-hide">
+      <section className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory md:pb-0 md:grid md:grid-cols-4 scrollbar-hide">
         <div className="min-w-[160px] md:min-w-0">
           <StatCard
-            label="Active contacts"
+            label="Active people"
             value={contactsQuery.data?.length ?? 0}
             hint="Across all stages"
           />
@@ -153,8 +153,8 @@ export function DashboardRoute() {
                     </p>
                   </div>
                 )}
-                <div className="mt-3 flex flex-wrap gap-2 text-sm text-brand-600">
-                  <a className="hover:underline" href="/goals">
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <a className="text-sm font-medium text-brand-600 py-2 px-1 hover:underline" href="/goals">
                     View all goals
                   </a>
                 </div>
@@ -175,7 +175,7 @@ export function DashboardRoute() {
               onClick={() => {
                 window.location.href = '/settings'
               }}
-              className="mt-4 rounded-full border border-dashed border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:border-brand-300"
+              className="mt-4 rounded-xl border border-dashed border-slate-300 px-5 py-3 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:border-brand-300 min-h-[48px]"
             >
               Manage sharing
             </button>
@@ -194,10 +194,10 @@ type StatCardProps = {
 
 function StatCard({ label, value, hint }: StatCardProps) {
   return (
-    <div className="glass-card p-4 transition-all hover:scale-[1.02]">
-      <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-2 text-3xl font-semibold text-slate-900 dark:text-slate-50">{value}</p>
-      <p className="text-xs text-slate-500">{hint}</p>
+    <div className="glass-card p-5 transition-all hover:scale-[1.02]">
+      <p className="text-xs sm:text-sm uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="mt-2 text-4xl font-semibold text-slate-900 dark:text-slate-50">{value}</p>
+      <p className="text-sm text-slate-500 mt-1">{hint}</p>
     </div>
   )
 }

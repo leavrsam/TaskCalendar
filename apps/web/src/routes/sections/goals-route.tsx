@@ -77,9 +77,9 @@ export function GoalsRoute() {
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Add a goal</h2>
           <div className="space-y-3 text-sm">
             <div>
-              <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Category</label>
+              <label className="text-sm font-semibold uppercase text-slate-500 dark:text-slate-400">Category</label>
               <select
-                className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-50"
+                className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-base text-slate-900 dark:text-slate-50"
                 value={form.metric}
                 onChange={(e) =>
                   setForm((prev) => ({
@@ -96,11 +96,11 @@ export function GoalsRoute() {
               </select>
             </div>
             <div>
-              <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Title</label>
+              <label className="text-sm font-semibold uppercase text-slate-500 dark:text-slate-400">Title</label>
               <input
                 value={form.title}
                 onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-                className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-slate-900 dark:text-slate-50"
+                className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-base text-slate-900 dark:text-slate-50"
               />
             </div>
             <div className="grid gap-3 md:grid-cols-2">
@@ -150,7 +150,7 @@ export function GoalsRoute() {
                 void handleCreate()
               }}
               disabled={createGoal.isPending}
-              className="w-full rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+              className="w-full rounded-xl bg-brand-600 px-5 py-3 text-base font-semibold text-white hover:bg-brand-700 disabled:opacity-60 min-h-[48px]"
             >
               {createGoal.isPending ? 'Saving…' : 'Create goal'}
             </button>
