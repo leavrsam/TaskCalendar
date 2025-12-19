@@ -9,11 +9,15 @@ import { useAuth } from '@/hooks/use-auth'
 import { CollaboratorAvatar } from '@/components/collaborators/collaborator-avatar'
 import { MiniCalendar } from '@/components/calendar/mini-calendar'
 
+import { useScrollDirection } from '@/hooks/use-scroll-direction'
+
+// ... (in AppLayout)
 export function AppLayout() {
   const { user, signOut } = useAuth()
   const { pathname } = useLocation()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const scrollDirection = useScrollDirection()
 
   const isSchedule = pathname === '/schedule'
 
@@ -27,7 +31,7 @@ export function AppLayout() {
   const mobileSecondaryNav = mainNavigation.filter(n => !mobilePrimaryNav.includes(n))
 
   return (
-    <div className="flex min-h-screen bg-white dark:bg-slate-900 overflow-x-hidden">
+    <div className="flex h-screen bg-white dark:bg-slate-900 overflow-hidden">
       {/* Desktop Sidebar */}
       <aside className={clsx(
         "hidden w-64 flex-shrink-0 bg-white dark:bg-slate-900 transition-all duration-300 ease-in-out flex flex-col",
@@ -99,9 +103,9 @@ export function AppLayout() {
         </div>
       </aside>
 
-      <div className="flex flex-1 flex-col overflow-x-hidden w-full max-w-full">
+      <div className="flex flex-1 flex-col h-full overflow-hidden w-full max-w-full">
         {/* Mobile Header */}
-        <header className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 lg:hidden dark:border-slate-800 dark:bg-slate-900">
+        <header className="flex-shrink-0 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 lg:hidden dark:border-slate-800 dark:bg-slate-900">
           <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">TaskCalendar</p>
           <NavLink to="/settings">
             <CollaboratorAvatar
@@ -118,14 +122,19 @@ export function AppLayout() {
 
         {/* Main Content */}
         <main className={clsx(
-          "flex-1 overflow-x-hidden max-w-full",
-          isSchedule ? "p-0" : "p-4 pb-24 lg:p-8 lg:pb-8"
+          "flex-1 max-w-full relative",
+          // For schedule, we hide overflow on main so the inner calendar handles it. 
+          // For others, we allow main to scroll.
+          isSchedule ? "overflow-hidden p-0" : "overflow-y-auto p-4 pb-24 lg:p-8 lg:pb-8"
         )}>
           <Outlet context={{ isSidebarOpen, toggleSidebar: () => setIsSidebarOpen(prev => !prev) }} />
         </main>
 
         {/* Mobile Floating Dock */}
-        <nav className="fixed bottom-4 left-3 right-3 z-[1100] flex items-center justify-around glass-dock rounded-2xl px-1 py-2 lg:hidden transition-all duration-300">
+        <nav className={clsx(
+          "fixed bottom-4 left-3 right-3 z-[1100] flex items-center justify-around glass-dock rounded-2xl px-1 py-2 lg:hidden transition-transform duration-300 ease-in-out",
+          scrollDirection === 'down' && "translate-y-[150%]"
+        )}>
           {mobilePrimaryNav.map((item) => (
             <NavLink
               key={item.path}

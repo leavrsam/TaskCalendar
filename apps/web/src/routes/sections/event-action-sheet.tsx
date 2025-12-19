@@ -190,303 +190,301 @@ export function EventActionSheet({ event, onClose }: EventActionSheetProps) {
             side={isDesktop ? 'right' : 'bottom'}
             className={clsx(
                 "flex flex-col overflow-hidden",
-                isDesktop ? "h-full" : "max-h-[85vh]"
+                isDesktop ? "h-full" : "max-h-[96vh]"
             )}
         >
-            <div className="flex h-full flex-col">
-                {/* Header */}
-                <div className="flex items-start justify-between border-b border-slate-100 p-6 dark:border-slate-800">
-                    <div className="w-full pr-4">
-                        <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Event Details</p>
-                        <input
-                            value={task.title}
-                            onChange={(e) => handleUpdate({ title: e.target.value })}
-                            className="mt-1 w-full bg-transparent text-xl font-semibold text-slate-900 focus:outline-none focus:ring-0 dark:text-slate-50"
-                            placeholder="Event title"
-                        />
-                    </div>
-                    <div className="flex items-center gap-1">
-                        {isDirty && (
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setScopeAction('edit')
-                                    setShowScopeModal(true)
-                                }}
-                                className="flex items-center gap-1 rounded-full bg-blue-500 px-3 py-1 text-xs font-medium text-white hover:bg-blue-600 mr-2"
-                            >
-                                <Save className="h-3 w-3" />
-                                Save
-                            </button>
-                        )}
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-slate-100 p-6 dark:border-slate-800">
+                <div className="w-full pr-4">
+                    <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Event Details</p>
+                    <input
+                        value={task.title}
+                        onChange={(e) => handleUpdate({ title: e.target.value })}
+                        className="mt-1 w-full bg-transparent text-xl font-semibold text-slate-900 focus:outline-none focus:ring-0 dark:text-slate-50"
+                        placeholder="Event title"
+                    />
+                </div>
+                <div className="flex items-center gap-1">
+                    {isDirty && (
                         <button
                             type="button"
-                            onClick={onClose}
-                            className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-500 dark:hover:bg-slate-800"
+                            onClick={() => {
+                                setScopeAction('edit')
+                                setShowScopeModal(true)
+                            }}
+                            className="flex items-center gap-1 rounded-full bg-blue-500 px-3 py-1 text-xs font-medium text-white hover:bg-blue-600 mr-2"
                         >
-                            <X className="h-5 w-5" />
+                            <Save className="h-3 w-3" />
+                            Save
                         </button>
-                    </div>
+                    )}
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-500 dark:hover:bg-slate-800"
+                    >
+                        <X className="h-5 w-5" />
+                    </button>
                 </div>
+            </div>
 
-                {/* Scrollable Body */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-8">
-                    {/* Time Controls */}
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-medium text-slate-900 dark:text-slate-200">Date & Time</h4>
-                            <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+            {/* Scrollable Body */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                {/* Time Controls */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-medium text-slate-900 dark:text-slate-200">Date & Time</h4>
+                        <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                            <input
+                                type="checkbox"
+                                checked={task.isAllDay}
+                                onChange={toggleAllDay}
+                                className="rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                            />
+                            All day
+                        </label>
+                    </div>
+
+                    <div className="grid gap-4">
+                        {/* Start */}
+                        <div className="grid grid-cols-[1fr,auto] gap-3">
+                            <div>
+                                <label className="mb-1 block text-[10px] font-medium uppercase text-slate-500">Start</label>
                                 <input
-                                    type="checkbox"
-                                    checked={task.isAllDay}
-                                    onChange={toggleAllDay}
-                                    className="rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                                    type="date"
+                                    value={formatDateForInput(task.scheduledStart, true)}
+                                    onChange={(e) => {
+                                        const newDate = e.target.value
+                                        const current = new Date(task.scheduledStart as string)
+                                        const timePart = current.toLocaleTimeString('en-GB', { hour12: false }).slice(0, 5)
+                                        handleTimeChange('scheduledStart', `${newDate}T${timePart} `)
+                                    }}
+                                    className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-3 py-2 text-sm text-slate-900 dark:text-slate-50"
                                 />
-                                All day
-                            </label>
-                        </div>
-
-                        <div className="grid gap-4">
-                            {/* Start */}
-                            <div className="grid grid-cols-[1fr,auto] gap-3">
-                                <div>
-                                    <label className="mb-1 block text-[10px] font-medium uppercase text-slate-500">Start</label>
+                            </div>
+                            {!task.isAllDay && (
+                                <div className="w-24">
+                                    <label className="mb-1 block text-[10px] font-medium uppercase text-slate-500">&nbsp;</label>
                                     <input
-                                        type="date"
-                                        value={formatDateForInput(task.scheduledStart, true)}
+                                        type="time"
+                                        value={task.scheduledStart ? new Date(task.scheduledStart as string).toLocaleTimeString('en-GB', { hour12: false }).slice(0, 5) : ''}
                                         onChange={(e) => {
-                                            const newDate = e.target.value
-                                            const current = new Date(task.scheduledStart as string)
-                                            const timePart = current.toLocaleTimeString('en-GB', { hour12: false }).slice(0, 5)
-                                            handleTimeChange('scheduledStart', `${newDate}T${timePart} `)
+                                            const newTime = e.target.value
+                                            const datePart = formatDateForInput(task.scheduledStart, true)
+                                            handleTimeChange('scheduledStart', `${datePart}T${newTime} `)
                                         }}
                                         className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-3 py-2 text-sm text-slate-900 dark:text-slate-50"
                                     />
                                 </div>
-                                {!task.isAllDay && (
-                                    <div className="w-24">
-                                        <label className="mb-1 block text-[10px] font-medium uppercase text-slate-500">&nbsp;</label>
-                                        <input
-                                            type="time"
-                                            value={task.scheduledStart ? new Date(task.scheduledStart as string).toLocaleTimeString('en-GB', { hour12: false }).slice(0, 5) : ''}
-                                            onChange={(e) => {
-                                                const newTime = e.target.value
-                                                const datePart = formatDateForInput(task.scheduledStart, true)
-                                                handleTimeChange('scheduledStart', `${datePart}T${newTime} `)
-                                            }}
-                                            className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-3 py-2 text-sm text-slate-900 dark:text-slate-50"
-                                        />
-                                    </div>
-                                )}
-                            </div>
+                            )}
+                        </div>
 
-                            {/* End */}
-                            <div className="grid grid-cols-[1fr,auto] gap-3">
-                                <div>
-                                    <label className="mb-1 block text-[10px] font-medium uppercase text-slate-500">End</label>
+                        {/* End */}
+                        <div className="grid grid-cols-[1fr,auto] gap-3">
+                            <div>
+                                <label className="mb-1 block text-[10px] font-medium uppercase text-slate-500">End</label>
+                                <input
+                                    type="date"
+                                    value={formatDateForInput(task.scheduledEnd, true)}
+                                    onChange={(e) => {
+                                        const newDate = e.target.value
+                                        const current = new Date(task.scheduledEnd as string)
+                                        const timePart = current.toLocaleTimeString('en-GB', { hour12: false }).slice(0, 5)
+                                        handleTimeChange('scheduledEnd', `${newDate}T${timePart} `)
+                                    }}
+                                    className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-3 py-2 text-sm text-slate-900 dark:text-slate-50"
+                                />
+                            </div>
+                            {!task.isAllDay && (
+                                <div className="w-24">
+                                    <label className="mb-1 block text-[10px] font-medium uppercase text-slate-500">&nbsp;</label>
                                     <input
-                                        type="date"
-                                        value={formatDateForInput(task.scheduledEnd, true)}
+                                        type="time"
+                                        value={task.scheduledEnd ? new Date(task.scheduledEnd as string).toLocaleTimeString('en-GB', { hour12: false }).slice(0, 5) : ''}
                                         onChange={(e) => {
-                                            const newDate = e.target.value
-                                            const current = new Date(task.scheduledEnd as string)
-                                            const timePart = current.toLocaleTimeString('en-GB', { hour12: false }).slice(0, 5)
-                                            handleTimeChange('scheduledEnd', `${newDate}T${timePart} `)
+                                            const newTime = e.target.value
+                                            const datePart = formatDateForInput(task.scheduledEnd, true)
+                                            handleTimeChange('scheduledEnd', `${datePart}T${newTime} `)
                                         }}
                                         className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-3 py-2 text-sm text-slate-900 dark:text-slate-50"
                                     />
-                                </div>
-                                {!task.isAllDay && (
-                                    <div className="w-24">
-                                        <label className="mb-1 block text-[10px] font-medium uppercase text-slate-500">&nbsp;</label>
-                                        <input
-                                            type="time"
-                                            value={task.scheduledEnd ? new Date(task.scheduledEnd as string).toLocaleTimeString('en-GB', { hour12: false }).slice(0, 5) : ''}
-                                            onChange={(e) => {
-                                                const newTime = e.target.value
-                                                const datePart = formatDateForInput(task.scheduledEnd, true)
-                                                handleTimeChange('scheduledEnd', `${datePart}T${newTime} `)
-                                            }}
-                                            className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 px-3 py-2 text-sm text-slate-900 dark:text-slate-50"
-                                        />
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="border-t border-slate-100 dark:border-slate-800 pt-6">
-                        <RecurrenceSelector
-                            scheduledStart={task.scheduledStart}
-                            recurrence={task.recurrence}
-                            onChange={(recurrence) => handleUpdate({ recurrence })}
-                        />
-                    </div>
-
-                    {/* Status & Priority Grid */}
-                    <div className="grid grid-cols-2 gap-6 border-t border-slate-100 dark:border-slate-800 pt-6">
-                        <div>
-                            <p className="mb-3 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Status</p>
-                            <div className="flex flex-col gap-2">
-                                {(['todo', 'inProgress', 'done'] as Task['status'][]).map((status) => (
-                                    <button
-                                        key={status}
-                                        type="button"
-                                        onClick={(e) => handleStatusChange(e, status)}
-                                        className={clsx(
-                                            'flex w-full items-center justify-between rounded-md px-3 py-2 text-sm transition-colors',
-                                            task.status === status
-                                                ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/20 dark:text-brand-300 font-medium'
-                                                : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/50',
-                                        )}
-                                    >
-                                        <span className="capitalize">{status === 'inProgress' ? 'In Progress' : status}</span>
-                                        {task.status === status && <div className="h-1.5 w-1.5 rounded-full bg-brand-500" />}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div>
-                            <p className="mb-3 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Color</p>
-                            <ColorPicker value={task.color} onChange={handleColorChange} />
-                        </div>
-                    </div>
-
-                    {/* Contact */}
-                    <div className="border-t border-slate-100 dark:border-slate-800 pt-6">
-                        <label className="mb-2 block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Contacts</label>
-                        <div className="space-y-2">
-                            <div className="relative">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowContactsDropdown(!showContactsDropdown)}
-                                    className="w-full flex items-center justify-between rounded-xl bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-900 dark:text-slate-50"
-                                >
-                                    <span className={taskContactIds.length === 0 ? 'text-slate-400' : ''}>
-                                        {taskContactIds.length === 0 ? 'Select contacts...' : `${taskContactIds.length} selected`}
-                                    </span>
-                                    <ChevronDown className="w-4 h-4 text-slate-400" />
-                                </button>
-                                {showContactsDropdown && (
-                                    <div className="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg">
-                                        {contacts.length === 0 ? (
-                                            <p className="px-4 py-3 text-sm text-slate-400">No contacts available</p>
-                                        ) : (
-                                            contacts.map((contact) => (
-                                                <label
-                                                    key={contact.id}
-                                                    className="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer"
-                                                >
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={taskContactIds.includes(contact.id)}
-                                                        onChange={(e) => {
-                                                            if (e.target.checked) {
-                                                                handleUpdate({ contactIds: [...taskContactIds, contact.id] })
-                                                            } else {
-                                                                handleUpdate({ contactIds: taskContactIds.filter(id => id !== contact.id) })
-                                                            }
-                                                        }}
-                                                        className="rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-                                                    />
-                                                    <span className="text-sm text-slate-900 dark:text-slate-50">{contact.name}</span>
-                                                </label>
-                                            ))
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                            {selectedContacts.length > 0 && (
-                                <div className="flex flex-wrap gap-2">
-                                    {selectedContacts.map(contact => (
-                                        <span
-                                            key={contact.id}
-                                            className="inline-flex items-center gap-1 pl-3 pr-1 py-1 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 text-sm"
-                                        >
-                                            <span className="whitespace-nowrap">{contact.name}</span>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setGoalsContactId(contact.id)
-                                                    setShowGoalsPopup(true)
-                                                }}
-                                                className="p-1 rounded-full hover:bg-brand-200 dark:hover:bg-brand-800 transition-colors flex-shrink-0"
-                                                title="View Goals"
-                                            >
-                                                <Target className="h-4 w-4" />
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleUpdate({ contactIds: taskContactIds.filter(id => id !== contact.id) })}
-                                                className="p-1 rounded-full hover:bg-brand-200 dark:hover:bg-brand-800 transition-colors flex-shrink-0"
-                                                title="Remove"
-                                            >
-                                                <span className="text-base leading-none">×</span>
-                                            </button>
-                                        </span>
-                                    ))}
                                 </div>
                             )}
                         </div>
                     </div>
+                </div>
 
-                    {/* Location */}
-                    <div className="border-t border-slate-100 dark:border-slate-800 pt-6">
-                        <label className="mb-2 block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Location</label>
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="text"
-                                value={task.address || ''}
-                                onChange={(e) => handleUpdate({ address: e.target.value })}
-                                placeholder="Add address or location..."
-                                className="flex-1 rounded-xl border-none bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-900 dark:text-slate-50 focus:ring-2 focus:ring-brand-500/20"
-                            />
-                            <LocationPicker
-                                value={task.location || null}
-                                address={task.address}
-                                onChange={(loc, addr) => {
-                                    handleUpdate({
-                                        location: loc,
-                                        address: addr !== undefined ? addr : task.address
-                                    })
-                                }}
-                            />
+                <div className="border-t border-slate-100 dark:border-slate-800 pt-6">
+                    <RecurrenceSelector
+                        scheduledStart={task.scheduledStart}
+                        recurrence={task.recurrence}
+                        onChange={(recurrence) => handleUpdate({ recurrence })}
+                    />
+                </div>
+
+                {/* Status & Priority Grid */}
+                <div className="grid grid-cols-2 gap-6 border-t border-slate-100 dark:border-slate-800 pt-6">
+                    <div>
+                        <p className="mb-3 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Status</p>
+                        <div className="flex flex-col gap-2">
+                            {(['todo', 'inProgress', 'done'] as Task['status'][]).map((status) => (
+                                <button
+                                    key={status}
+                                    type="button"
+                                    onClick={(e) => handleStatusChange(e, status)}
+                                    className={clsx(
+                                        'flex w-full items-center justify-between rounded-md px-3 py-2 text-sm transition-colors',
+                                        task.status === status
+                                            ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/20 dark:text-brand-300 font-medium'
+                                            : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800/50',
+                                    )}
+                                >
+                                    <span className="capitalize">{status === 'inProgress' ? 'In Progress' : status}</span>
+                                    {task.status === status && <div className="h-1.5 w-1.5 rounded-full bg-brand-500" />}
+                                </button>
+                            ))}
                         </div>
                     </div>
 
-                    {/* Notes */}
-                    <div className="border-t border-slate-100 dark:border-slate-800 pt-6">
-                        <label className="mb-2 block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Notes</label>
-                        <textarea
-                            value={task.notes || ''}
-                            onChange={(e) => {
-                                handleUpdate({ notes: e.target.value })
+                    <div>
+                        <p className="mb-3 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Color</p>
+                        <ColorPicker value={task.color} onChange={handleColorChange} />
+                    </div>
+                </div>
+
+                {/* Contact */}
+                <div className="border-t border-slate-100 dark:border-slate-800 pt-6">
+                    <label className="mb-2 block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Contacts</label>
+                    <div className="space-y-2">
+                        <div className="relative">
+                            <button
+                                type="button"
+                                onClick={() => setShowContactsDropdown(!showContactsDropdown)}
+                                className="w-full flex items-center justify-between rounded-xl bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-900 dark:text-slate-50"
+                            >
+                                <span className={taskContactIds.length === 0 ? 'text-slate-400' : ''}>
+                                    {taskContactIds.length === 0 ? 'Select contacts...' : `${taskContactIds.length} selected`}
+                                </span>
+                                <ChevronDown className="w-4 h-4 text-slate-400" />
+                            </button>
+                            {showContactsDropdown && (
+                                <div className="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg">
+                                    {contacts.length === 0 ? (
+                                        <p className="px-4 py-3 text-sm text-slate-400">No contacts available</p>
+                                    ) : (
+                                        contacts.map((contact) => (
+                                            <label
+                                                key={contact.id}
+                                                className="flex items-center gap-2 px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer"
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={taskContactIds.includes(contact.id)}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            handleUpdate({ contactIds: [...taskContactIds, contact.id] })
+                                                        } else {
+                                                            handleUpdate({ contactIds: taskContactIds.filter(id => id !== contact.id) })
+                                                        }
+                                                    }}
+                                                    className="rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                                                />
+                                                <span className="text-sm text-slate-900 dark:text-slate-50">{contact.name}</span>
+                                            </label>
+                                        ))
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                        {selectedContacts.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                                {selectedContacts.map(contact => (
+                                    <span
+                                        key={contact.id}
+                                        className="inline-flex items-center gap-1 pl-3 pr-1 py-1 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 text-sm"
+                                    >
+                                        <span className="whitespace-nowrap">{contact.name}</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setGoalsContactId(contact.id)
+                                                setShowGoalsPopup(true)
+                                            }}
+                                            className="p-1 rounded-full hover:bg-brand-200 dark:hover:bg-brand-800 transition-colors flex-shrink-0"
+                                            title="View Goals"
+                                        >
+                                            <Target className="h-4 w-4" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleUpdate({ contactIds: taskContactIds.filter(id => id !== contact.id) })}
+                                            className="p-1 rounded-full hover:bg-brand-200 dark:hover:bg-brand-800 transition-colors flex-shrink-0"
+                                            title="Remove"
+                                        >
+                                            <span className="text-base leading-none">×</span>
+                                        </button>
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Location */}
+                <div className="border-t border-slate-100 dark:border-slate-800 pt-6">
+                    <label className="mb-2 block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Location</label>
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="text"
+                            value={task.address || ''}
+                            onChange={(e) => handleUpdate({ address: e.target.value })}
+                            placeholder="Add address or location..."
+                            className="flex-1 rounded-xl border-none bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-900 dark:text-slate-50 focus:ring-2 focus:ring-brand-500/20"
+                        />
+                        <LocationPicker
+                            value={task.location || null}
+                            address={task.address}
+                            onChange={(loc, addr) => {
+                                handleUpdate({
+                                    location: loc,
+                                    address: addr !== undefined ? addr : task.address
+                                })
                             }}
-                            className="w-full rounded-xl border-none bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-900 dark:text-slate-50 focus:ring-2 focus:ring-brand-500/20 min-h-[100px] resize-none"
-                            placeholder="Add notes about this event..."
                         />
                     </div>
                 </div>
 
-                {/* Footer Actions */}
-                <div className="bg-slate-50 p-4 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                    <button
-                        type="button"
-                        onClick={handleDeleteClick}
-                        className="flex items-center gap-2 rounded-xl px-5 py-3 text-base font-medium text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-900/20 transition-colors min-h-[48px]"
-                    >
-                        <Trash2 className="h-5 w-5" />
-                        Delete
-                    </button>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="flex items-center justify-center rounded-xl bg-brand-600 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-brand-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 transition-all min-h-[48px]"
-                    >
-                        Save
-                    </button>
+                {/* Notes */}
+                <div className="border-t border-slate-100 dark:border-slate-800 pt-6">
+                    <label className="mb-2 block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Notes</label>
+                    <textarea
+                        value={task.notes || ''}
+                        onChange={(e) => {
+                            handleUpdate({ notes: e.target.value })
+                        }}
+                        className="w-full rounded-xl border-none bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-900 dark:text-slate-50 focus:ring-2 focus:ring-brand-500/20 min-h-[100px] resize-none"
+                        placeholder="Add notes about this event..."
+                    />
                 </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="bg-slate-50 p-4 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center shrink-0 z-10 relative">
+                <button
+                    type="button"
+                    onClick={handleDeleteClick}
+                    className="flex items-center gap-2 rounded-xl px-5 py-3 text-base font-medium text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-900/20 transition-colors min-h-[48px]"
+                >
+                    <Trash2 className="h-5 w-5" />
+                    Delete
+                </button>
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="flex items-center justify-center rounded-xl bg-brand-600 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-brand-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 transition-all min-h-[48px]"
+                >
+                    Save
+                </button>
             </div>
 
             {showScopeModal && (

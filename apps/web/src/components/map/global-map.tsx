@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import { useMemo, useState } from 'react'
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import type { Contact, Task } from '@taskcalendar/core'
 import { formatDistanceToNow, format } from 'date-fns'
@@ -36,11 +36,46 @@ const EventIcon = L.divIcon({
     iconAnchor: [14, 28],
 })
 
+// Custom green icon for saved locations
+const LocationPinIcon = L.divIcon({
+    className: 'location-pin-marker',
+    html: `<div style="
+        width: 28px;
+        height: 28px;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        border: 2px solid white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    "><span style="transform: rotate(45deg); font-size: 14px;">📍</span></div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 28],
+})
+
 L.Marker.prototype.options.icon = ContactIcon
+
+// Component to handle map clicks
+function MapClickHandler({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) {
+    useMapEvents({
+        click(e) {
+            onLocationSelect(e.latlng.lat, e.latlng.lng)
+        },
+    })
+    return null
+}
 
 type GlobalMapProps = {
     contacts: Contact[]
     tasks: Task[]
+    draftPosition?: { lat: number; lng: number } | null
+    onDraftLocationChange?: (location: { lat: number; lng: number } | null) => void
+    onCreateEvent?: (lat: number, lng: number) => void
+    onCreateLocation?: (lat: number, lng: number) => void
+    onDeleteLocation?: (id: string) => void
+    onEditEvent?: (task: Task) => void
 }
 
 // Pseudo-geocoding: Deterministically map an address string to a lat/lng near Salt Lake City
@@ -59,10 +94,49 @@ const getPseudoCoordinates = (address: string) => {
     return [40.7608 + latOffset, -111.8910 + lngOffset] as [number, number]
 }
 
-export function GlobalMap({ contacts, tasks }: GlobalMapProps) {
-    // Contact markers
+export function GlobalMap({
+    contacts,
+    tasks,
+    draftPosition: externalDraftPosition,
+    onDraftLocationChange,
+    onCreateEvent,
+    onCreateLocation,
+    onDeleteLocation,
+    onEditEvent
+}: GlobalMapProps) {
+    // Internal state fallback if not controlled (though we plan to control it)
+    const [internalDraftPosition, setInternalDraftPosition] = useState<{ lat: number; lng: number } | null>(null)
+
+    // Use external if provided, otherwise internal
+    const draftPosition = externalDraftPosition !== undefined ? externalDraftPosition : internalDraftPosition
+
+    const handleDraftChange = (lat: number, lng: number) => {
+        if (onDraftLocationChange) {
+            onDraftLocationChange({ lat, lng })
+        } else {
+            setInternalDraftPosition({ lat, lng })
+        }
+    }
+
+    // Split contacts into regular contacts and simplified location pins
+    const { regularContacts, locationPins } = useMemo(() => {
+        const regular: typeof contacts = []
+        const pins: typeof contacts = []
+
+        contacts.forEach(c => {
+            if (c.tags?.includes('pinned-location')) {
+                pins.push(c)
+            } else {
+                regular.push(c)
+            }
+        })
+
+        return { regularContacts: regular, locationPins: pins }
+    }, [contacts])
+
+    // Contact markers (Regular)
     const contactMarkers = useMemo(() => {
-        return contacts
+        return regularContacts
             .filter((c) => c.location || c.address)
             .map((c) => {
                 const contactTasks = tasks.filter(t => t.contactId === c.id && t.status !== 'done')
@@ -74,7 +148,19 @@ export function GlobalMap({ contacts, tasks }: GlobalMapProps) {
                     activeTasks: contactTasks
                 }
             })
-    }, [contacts, tasks])
+    }, [regularContacts, tasks])
+
+    // Location Pin markers
+    const locationPinMarkers = useMemo(() => {
+        return locationPins
+            .filter((c) => c.location || c.address)
+            .map((c) => ({
+                ...c,
+                position: c.location
+                    ? ([c.location.lat, c.location.lng] as [number, number])
+                    : getPseudoCoordinates(c.address!),
+            }))
+    }, [locationPins])
 
     // Event markers - tasks with addresses that are not done
     const eventMarkers = useMemo(() => {
@@ -96,7 +182,36 @@ export function GlobalMap({ contacts, tasks }: GlobalMapProps) {
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
 
-                {/* Contact Markers */}
+                {onCreateEvent && (
+                    <MapClickHandler onLocationSelect={handleDraftChange} />
+                )}
+
+                {/* Draft Marker */}
+                {draftPosition && (
+                    <Marker position={[draftPosition.lat, draftPosition.lng]}>
+                        <Popup>
+                            <div className="p-2 text-center flex flex-col gap-2">
+                                <p className="mb-1 text-sm font-medium text-slate-900">New Location</p>
+                                <div className="flex flex-col gap-2">
+                                    <button
+                                        onClick={() => onCreateEvent?.(draftPosition.lat, draftPosition.lng)}
+                                        className="w-full rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-700"
+                                    >
+                                        Create Event
+                                    </button>
+                                    <button
+                                        onClick={() => onCreateLocation?.(draftPosition.lat, draftPosition.lng)}
+                                        className="w-full rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
+                                    >
+                                        Save Location
+                                    </button>
+                                </div>
+                            </div>
+                        </Popup>
+                    </Marker>
+                )}
+
+                {/* Contact Markers (People) */}
                 {contactMarkers.map((contact) => (
                     <Marker key={`contact-${contact.id}`} position={contact.position} icon={ContactIcon}>
                         <Popup>
@@ -131,6 +246,25 @@ export function GlobalMap({ contacts, tasks }: GlobalMapProps) {
                                         </ul>
                                     </div>
                                 )}
+                            </div>
+                        </Popup>
+                    </Marker>
+                ))}
+
+                {/* Location Pin Markers (Saved Locations) */}
+                {locationPinMarkers.map((pin) => (
+                    <Marker key={`pin-${pin.id}`} position={pin.position} icon={LocationPinIcon}>
+                        <Popup>
+                            <div className="min-w-[150px] p-1 text-center">
+                                <h3 className="font-semibold text-slate-900 mb-1">{pin.name}</h3>
+                                <p className="text-xs text-slate-500 mb-3">{pin.address}</p>
+
+                                <button
+                                    onClick={() => onDeleteLocation?.(pin.id)}
+                                    className="w-full rounded-md bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-100 border border-red-100"
+                                >
+                                    Delete Pin
+                                </button>
                             </div>
                         </Popup>
                     </Marker>
@@ -175,6 +309,14 @@ export function GlobalMap({ contacts, tasks }: GlobalMapProps) {
                                         )}
                                         {event.isAllDay && <p className="text-slate-400">All day</p>}
                                     </div>
+                                )}
+                                {onEditEvent && (
+                                    <button
+                                        onClick={() => onEditEvent(event)}
+                                        className="mt-3 w-full rounded-md bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                                    >
+                                        Edit Event
+                                    </button>
                                 )}
                             </div>
                         </Popup>

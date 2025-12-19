@@ -13,6 +13,7 @@ import { ChevronDown } from 'lucide-react'
 type CreationModalProps = {
     slot?: { start: Date; end: Date } | null
     defaultContactId?: string
+    defaultLocation?: { lat: number; lng: number }
     onClose: () => void
     onSave: (values: {
         title: string
@@ -31,19 +32,20 @@ type CreationModalProps = {
 }
 
 // Generate time slots (15 min intervals)
-const TIME_SLOTS = Array.from({ length: 4 * 24 }).map((_, i) => {
-    const hours = Math.floor(i / 4)
-    const minutes = (i % 4) * 15
+// Generate time slots (5 min intervals)
+const TIME_SLOTS = Array.from({ length: 12 * 24 }).map((_, i) => {
+    const hours = Math.floor(i / 12)
+    const minutes = (i % 12) * 5
     const date = new Date()
     date.setHours(hours, minutes)
-    // Format: "2:15 PM"
+    // Format: "2:05 PM"
     const label = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })
-    // Value: "14:15" (for easy parsing)
+    // Value: "14:05" (for easy parsing)
     const value = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
     return { label, value }
 })
 
-export function CreationModal({ slot, defaultContactId, onClose, onSave }: CreationModalProps) {
+export function CreationModal({ slot, defaultContactId, defaultLocation, onClose, onSave }: CreationModalProps) {
     const contactsQuery = useContactsQuery()
     // Helper
     const toTimeValue = (d: Date) => {
@@ -69,7 +71,7 @@ export function CreationModal({ slot, defaultContactId, onClose, onSave }: Creat
     const [recurrence, setRecurrence] = useState<Task['recurrence']>(null)
     const [isAllDay, setIsAllDay] = useState(false)
     const [address, setAddress] = useState('')
-    const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
+    const [location, setLocation] = useState<{ lat: number; lng: number } | null>(defaultLocation ?? null)
     const [showContactDropdown, setShowContactDropdown] = useState(false)
 
     // Date/Time State
@@ -92,6 +94,13 @@ export function CreationModal({ slot, defaultContactId, onClose, onSave }: Creat
             setEndTimeValue(toTimeValue(slot.end))
         }
     }, [slot])
+
+    // Sync defaultLocation
+    useEffect(() => {
+        if (defaultLocation) {
+            setLocation(defaultLocation)
+        }
+    }, [defaultLocation])
 
 
 
@@ -129,9 +138,9 @@ export function CreationModal({ slot, defaultContactId, onClose, onSave }: Creat
             isOpen={true}
             onClose={onClose}
             layoutId={slot ? `slot-${slot.start.toISOString()}` : undefined}
-            className="w-full max-w-md rounded-t-2xl md:rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl"
+            className="w-full max-w-md rounded-t-2xl md:rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl flex flex-col max-h-[85vh] p-0"
         >
-            <div className="space-y-6">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 {/* Title Input (Moved to Top) */}
                 <div>
                     <input
@@ -371,7 +380,7 @@ export function CreationModal({ slot, defaultContactId, onClose, onSave }: Creat
                 </div>
             </div>
 
-            <div className="mt-6 flex items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-800 pt-4">
+            <div className="p-6 flex items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-900 z-10">
                 <button
                     type="button"
                     className="text-sm font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
@@ -419,10 +428,10 @@ export function CreationModal({ slot, defaultContactId, onClose, onSave }: Creat
                 >
                     {saving ? 'Saving' : 'Save Event'}
                 </button>
+                {error && (
+                    <p className="absolute bottom-16 left-0 w-full text-center text-xs font-semibold text-rose-600 pointer-events-none">{error}</p>
+                )}
             </div>
-            {error && (
-                <p className="mt-2 text-center text-xs font-semibold text-rose-600">{error}</p>
-            )}
         </AnimatedModal>
     )
 }

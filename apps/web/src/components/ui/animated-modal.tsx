@@ -46,14 +46,14 @@ export function AnimatedModal({
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
                         className={clsx(
-                            'fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm',
+                            'fixed inset-0 z-[1300] bg-slate-900/40 backdrop-blur-sm',
                             overlayClassName
                         )}
                         onClick={onClose}
                     />
 
                     {/* Dialog Container */}
-                    <div className="fixed inset-0 z-50 flex items-end justify-center p-4 md:items-center pointer-events-none">
+                    <div className="fixed inset-0 z-[1300] flex items-end justify-center p-4 md:items-center pointer-events-none">
                         {/* Morphing Card */}
                         <motion.div
                             layoutId={layoutId} // Magically morphs from the trigger element if ID matches

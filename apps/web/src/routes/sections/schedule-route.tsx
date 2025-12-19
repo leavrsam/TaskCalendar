@@ -216,11 +216,10 @@ export function ScheduleRoute() {
             {/* Right: View toggle */}
             <div className="flex items-center gap-2 flex-shrink-0">
               <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5">
-
-                {(['day', 'week', 'agenda'] as View[]).map((v) => (
+                {(['day', 'week', 'agenda']).map((v) => (
                   <button
                     key={v}
-                    onClick={() => setView(v)}
+                    onClick={() => setView(v as View)}
                     className={clsx(
                       'px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-medium rounded-md transition-all capitalize',
                       view === v
@@ -231,6 +230,19 @@ export function ScheduleRoute() {
                     {v}
                   </button>
                 ))}
+                <button
+                  onClick={() => setIsTaskSheetOpen(true)}
+                  className={clsx(
+                    'px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-medium rounded-md transition-all capitalize',
+                    // Highlight if open? Or just standard button? Standard button style usually, but since it's an action not a view state, maybe distinct?
+                    // Let's keep it consistent with other tabs but active state logic doesn't apply directly to `view`.
+                    isTaskSheetOpen
+                      ? 'bg-white dark:bg-slate-700 text-brand-600 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                  )}
+                >
+                  Tasks
+                </button>
               </div>
               <div className="hidden sm:block">
                 <NavLink to="/settings">
@@ -306,10 +318,16 @@ export function ScheduleRoute() {
             />
           </div>
 
-          {/* Task FAB */}
+          {/* Task FAB (Now Add Event FAB) */}
           <TaskFAB
-            taskCount={tasks.length}
-            onClick={() => setIsTaskSheetOpen(true)}
+            onClick={() => {
+              // Default to next hour block
+              const now = new Date()
+              now.setMinutes(0, 0, 0)
+              const start = new Date(now.getTime() + 60 * 60 * 1000) // Next hour
+              const end = new Date(start.getTime() + 60 * 60 * 1000) // 1 hour duration
+              setCreationSlot({ start, end })
+            }}
           />
 
           {/* Task Bottom Sheet */}
@@ -398,13 +416,14 @@ function AgendaBoard({
 
   // Dynamic step/timeslots based on zoom (timeSlotHeight)
   const { step, timeslots } = useMemo(() => {
-    // We always set timeslots to 1 so that every interval acts as a "Group" and gets a label in the gutter.
-    // timeSlotHeight: 5px (~60px/hr) -> Default
-    // 8px (~96px/hr) -> Medium Zoom
-    // 15px (~180px/hr) -> High Zoom
-    if (timeSlotHeight >= 15) return { step: 15, timeslots: 1 } // High zoom: 15 min intervals
-    if (timeSlotHeight >= 8) return { step: 30, timeslots: 1 } // Medium zoom: 30 min intervals
-    return { step: 60, timeslots: 1 } // Low zoom: 60 min intervals
+    // We set step to 15 to ensure dragging is always precise to 15 minutes.
+    // We adjust timeslots (rows per major slot) to control visual density of time labels.
+    // High zoom: 15min major slots (15*1)
+    if (timeSlotHeight >= 15) return { step: 15, timeslots: 1 }
+    // Medium zoom: 30min major slots (15*2)
+    if (timeSlotHeight >= 8) return { step: 15, timeslots: 2 }
+    // Low zoom: 60min major slots (15*4)
+    return { step: 15, timeslots: 4 }
   }, [timeSlotHeight])
 
   const TimeSlotWrapper = ({ children, value }: any) => {
