@@ -47,6 +47,7 @@ export const groupContactsByStage = (contacts: Contact[]) => {
     teaching: [],
     progressing: [],
     member: [],
+    family: [],
     dropped: [],
   }
   contacts.forEach((contact) => {

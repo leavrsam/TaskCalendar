@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Plus, Map as MapIcon, List, Upload, X } from 'lucide-react'
+import { Plus, Upload, X } from 'lucide-react'
 import type { Contact } from '@taskcalendar/core'
 
 import { ContactCard } from '@/components/contacts/contact-card'
 import { ContactForm } from '@/components/contacts/contact-form'
 import { ContactDetail } from '@/components/contacts/contact-detail'
-import { ContactsMap } from '@/components/contacts/contacts-map'
 import {
   useContactsQuery,
   useCreateContact,
@@ -19,7 +18,8 @@ const STAGE_LABELS: Record<string, string> = {
   teaching: 'Visiting',
   progressing: 'Building Relationship',
   member: 'Friend',
-  dropped: 'Archived',
+  family: 'Family',
+  dropped: 'Archived', // Moved family above
 }
 
 type ImportedContact = {
@@ -39,7 +39,8 @@ export function ContactsRoute() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [editingContact, setEditingContact] = useState<Contact | null>(null)
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
-  const [view, setView] = useState<'list' | 'map'>('list')
+  /* New: View state with 3 options */
+  const [view, setView] = useState<'stages' | 'alphabetical' | 'recent'>('stages')
   const [importPreview, setImportPreview] = useState<ImportedContact[]>([])
   const [isImporting, setIsImporting] = useState(false)
   const [supportsContactPicker, setSupportsContactPicker] = useState(false)
@@ -132,33 +133,34 @@ export function ContactsRoute() {
     <div className="space-y-6">
       <header className="flex flex-col gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm md:flex-row md:items-start md:justify-between">
         <div>
-
           <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">People & Relationships</h1>
           <p className="text-sm text-slate-600">
             Manage your contacts, track their progress, and build meaningful relationships.
           </p>
         </div>
         <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+          {/* New View Toggles */}
           <div className="flex rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 p-1">
             <button
-              onClick={() => setView('list')}
-              className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors sm:flex-none ${view === 'list' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-50 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+              onClick={() => setView('stages')}
+              className={`flex-1 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium transition-colors sm:flex-none ${view === 'stages' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-50 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                 }`}
             >
-              <div className="flex items-center justify-center gap-2">
-                <List className="h-5 w-5" />
-                List
-              </div>
+              Groups
             </button>
             <button
-              onClick={() => setView('map')}
-              className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors sm:flex-none ${view === 'map' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-50 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+              onClick={() => setView('alphabetical')}
+              className={`flex-1 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium transition-colors sm:flex-none ${view === 'alphabetical' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-50 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                 }`}
             >
-              <div className="flex items-center justify-center gap-2">
-                <MapIcon className="h-5 w-5" />
-                Map
-              </div>
+              A-Z
+            </button>
+            <button
+              onClick={() => setView('recent')}
+              className={`flex-1 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium transition-colors sm:flex-none ${view === 'recent' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-50 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                }`}
+            >
+              Recent
             </button>
           </div>
           {supportsContactPicker && (
@@ -180,17 +182,15 @@ export function ContactsRoute() {
         </div>
       </header>
 
-      {view === 'map' ? (
-        <ContactsMap contacts={contacts} />
-      ) : (
+      {/* Conditional Rendering based on View */}
+      {view === 'stages' && (
         <section className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-          {/* Render columns based on stages */}
           {Object.entries(STAGE_LABELS).map(([stageKey, label]) => {
             const stageContacts = contacts.filter((c) => c.stage === stageKey)
             return (
               <div key={stageKey} className="space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
-                  <h3 className="font-semibold text-slate-700">{label}</h3>
+                  <h3 className="font-semibold text-slate-700 dark:text-slate-300">{label}</h3>
                   <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-400">
                     {stageContacts.length}
                   </span>
@@ -218,6 +218,50 @@ export function ContactsRoute() {
               </div>
             )
           })}
+        </section>
+      )}
+
+      {view === 'alphabetical' && (
+        <section className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {[...contacts]
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((contact) => (
+              <div
+                key={contact.id}
+                onClick={() => setSelectedContact(contact)}
+                className="cursor-pointer"
+              >
+                <ContactCard
+                  contact={contact}
+                  onEdit={() => setEditingContact(contact)}
+                  onDelete={() => handleDelete(contact.id)}
+                />
+              </div>
+            ))}
+        </section>
+      )}
+
+      {view === 'recent' && (
+        <section className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {[...contacts]
+            .sort((a, b) => {
+              const dateA = a.lastContactedAt ? new Date(a.lastContactedAt).getTime() : 0
+              const dateB = b.lastContactedAt ? new Date(b.lastContactedAt).getTime() : 0
+              return dateB - dateA
+            })
+            .map((contact) => (
+              <div
+                key={contact.id}
+                onClick={() => setSelectedContact(contact)}
+                className="cursor-pointer"
+              >
+                <ContactCard
+                  contact={contact}
+                  onEdit={() => setEditingContact(contact)}
+                  onDelete={() => handleDelete(contact.id)}
+                />
+              </div>
+            ))}
         </section>
       )}
 

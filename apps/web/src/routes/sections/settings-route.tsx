@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { Moon, Sun, Monitor } from 'lucide-react'
+import { ConnectCalendarButton } from '@/components/settings/connect-calendar-button'
 
 import { ShareWorkspaceCard } from '@/components/sharing/share-workspace-card'
 import { DataManagementCard } from '@/components/settings/data-management-card'
@@ -12,6 +14,7 @@ import type { TaskEvent } from '@/features/tasks/api'
 import type { Task } from '@taskcalendar/core'
 import ICAL from 'ical.js'
 import { Calendar as CalendarIcon, Download } from 'lucide-react'
+import { useConnectedCalendars, useDisconnectCalendar } from '@/features/settings/api'
 
 export function SettingsRoute() {
   const { user } = useAuth()
@@ -57,6 +60,14 @@ export function SettingsRoute() {
       {tab === 'sharing' && <ShareWorkspaceCard />}
       {tab === 'notifications' && <NotificationsPlaceholder />}
       {tab === 'data' && <DataManagementCard />}
+
+      <footer className="mt-8 border-t border-slate-200 dark:border-slate-800 pt-6">
+        <div className="flex justify-center gap-6 text-xs text-slate-500 dark:text-slate-400">
+          <Link to="/privacy" className="hover:text-slate-800 dark:hover:text-slate-200 hover:underline">Privacy Policy</Link>
+          <span>•</span>
+          <Link to="/terms" className="hover:text-slate-800 dark:hover:text-slate-200 hover:underline">Terms of Service</Link>
+        </div>
+      </footer>
     </div>
   )
 }
@@ -148,6 +159,9 @@ function AppearanceSettings() {
 
 function IntegrationsSettings() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
+  const connectedCalendars = useConnectedCalendars()
+  const disconnect = useDisconnectCalendar()
+
   const addImportedEvents = useCalendarStore((state) => state.addImportedEvents)
   const importedEventsCount = useCalendarStore((state) => state.importedEvents.length)
   const clearImportedEvents = useCalendarStore((state) => state.clearImportedEvents)
@@ -222,17 +236,72 @@ function IntegrationsSettings() {
         </p>
 
         <div className="mt-6 space-y-4">
+          {/* Google Calendar (Direct Sync) */}
+          <div className="rounded-xl border border-brand-200 bg-white p-4 dark:border-brand-800 dark:bg-brand-900/50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <title>Google Calendar</title>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-medium text-brand-900 dark:text-brand-100">
+                    Google Calendar
+                  </h3>
+                  <p className="text-sm text-brand-500 dark:text-brand-400">
+                    Sync your schedule with Google Calendar
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {connectedCalendars.isLoading ? (
+              <div className="mt-4 text-sm text-brand-500">Loading connections...</div>
+            ) : (
+              <div className="mt-4 space-y-3">
+                {connectedCalendars.data && connectedCalendars.data.length > 0 ? (
+                  <div className="space-y-2">
+                    {connectedCalendars.data.map((cal) => (
+                      <div key={cal.id} className="flex items-center justify-between rounded-lg border border-brand-100 bg-brand-50/50 px-3 py-2 dark:border-brand-800 dark:bg-brand-900/30">
+                        <span className="text-sm font-medium text-brand-700 dark:text-brand-300">
+                          {cal.calendarEmail}
+                        </span>
+                        <DisconnectButton
+                          email={cal.calendarEmail}
+                          onDisconnect={() => disconnect.mutate(cal.id)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mb-4 text-sm text-brand-500 dark:text-brand-400">
+                    No accounts connected.
+                  </div>
+                )}
+
+                <div className="flex justify-end pt-2">
+                  {/* Always show Connect button to add MORE accounts */}
+                  <ConnectCalendarButton label={connectedCalendars.data?.length ? "Add Another Account" : "Connect Account"} />
+                </div>
+              </div>
+            )}
+          </div>
+
+
+          {/* Legacy iCal Import */}
           <div className="flex items-center justify-between rounded-xl border border-slate-200 p-4 dark:border-slate-700">
             <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
                 <CalendarIcon className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="font-medium text-slate-900 dark:text-slate-50">Google Calendar (iCal)</h3>
+                <h3 className="font-medium text-slate-900 dark:text-slate-50">iCal Import</h3>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   {importedEventsCount > 0
-                    ? `${importedEventsCount} events synced`
-                    : 'Sync via public or private iCal URL'}
+                    ? `${importedEventsCount} events imported`
+                    : 'One-time import via URL'}
                 </p>
               </div>
             </div>
@@ -263,6 +332,34 @@ function IntegrationsSettings() {
         onImport={handleImportCalendar}
       />
     </div>
+  )
+}
+
+function DisconnectButton({ onDisconnect }: { email?: string, onDisconnect: () => void }) {
+  const [isConfirming, setIsConfirming] = useState(false)
+  const timeoutRef = useRef<any>(null)
+
+  const handleClick = () => {
+    if (isConfirming) {
+      onDisconnect()
+      setIsConfirming(false)
+    } else {
+      setIsConfirming(true)
+      // Reset after 3 seconds if not confirmed
+      timeoutRef.current = setTimeout(() => setIsConfirming(false), 3000)
+    }
+  }
+
+  useEffect(() => () => clearTimeout(timeoutRef.current), [])
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      className={`text-xs font-medium hover:underline transition-colors ${isConfirming ? 'text-red-700 font-bold' : 'text-red-500 hover:text-red-600'}`}
+    >
+      {isConfirming ? 'Click to confirm' : 'Disconnect'}
+    </button>
   )
 }
 

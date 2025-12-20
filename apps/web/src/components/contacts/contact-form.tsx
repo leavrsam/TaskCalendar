@@ -29,6 +29,7 @@ const STAGE_LABELS: Record<ContactStage, string> = {
     teaching: 'Visiting',
     progressing: 'Building Relationship',
     member: 'Friend',
+    family: 'Family',
     dropped: 'Archived',
 }
 

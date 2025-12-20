@@ -1,10 +1,10 @@
+import { useMemo } from 'react'
 import {
   addDoc,
   collection,
   deleteDoc,
   doc,
   getDocs,
-  orderBy,
   query,
   updateDoc,
   where,
@@ -55,13 +55,36 @@ export const useTasksQuery = (filter?: { status?: Task['status'] | 'all' }) => {
           ? query(
             tasksCollection(uid),
             where('status', '==', filter.status),
-            orderBy('dueAt', 'asc'),
+            // Removed orderBy('dueAt') to prevent hiding tasks with null dueAt
           )
-          : query(tasksCollection(uid), orderBy('dueAt', 'asc'))
+          : query(tasksCollection(uid)) // Fetch all tasks, sort client-side if needed
+
       const snapshot = await getDocs(baseQuery)
-      return snapshot.docs.map((docSnap) =>
-        taskSchema.parse({ id: docSnap.id, ...docSnap.data() }),
-      )
+      const tasks: Task[] = []
+      for (const docSnap of snapshot.docs) {
+        const rawData = docSnap.data()
+
+        // Convert Firestore Timestamps to ISO strings for Zod validation
+        const processedData = {
+          ...rawData,
+          createdAt: rawData.createdAt?.toDate?.()?.toISOString?.() ?? rawData.createdAt ?? new Date().toISOString(),
+          updatedAt: rawData.updatedAt?.toDate?.()?.toISOString?.() ?? rawData.updatedAt ?? new Date().toISOString(),
+        }
+
+        const result = taskSchema.safeParse({ id: docSnap.id, ...processedData })
+        if (result.success) {
+          tasks.push(result.data)
+        } else {
+          // Log invalid documents for debugging but don't break the app
+          console.warn('Skipping invalid task document:', docSnap.id, result.error.issues)
+        }
+      }
+      return tasks.sort((a, b) => {
+        // Client-side sort similar to original
+        const dateA = a.dueAt ?? a.scheduledEnd ?? '9999-12-31'
+        const dateB = b.dueAt ?? b.scheduledEnd ?? '9999-12-31'
+        return dateA > dateB ? 1 : -1
+      })
     },
   })
 }
@@ -81,14 +104,55 @@ export const useTaskEvents = () => {
   // Expand recurring events
   const expandedTasks = expandRecurringEvents(tasksWithSchedule, viewStart, viewEnd)
 
-  const events: TaskEvent[] = expandedTasks.map((task) => ({
-    id: task.id,
-    title: task.title,
-    start: new Date(task.scheduledStart as string),
-    end: new Date(task.scheduledEnd as string),
-    allDay: task.isAllDay,
-    resource: task,
-  }))
+  const events: TaskEvent[] = useMemo(() => {
+    return expandedTasks.map((task) => {
+      const startStr = task.scheduledStart as string
+      const endStr = task.scheduledEnd as string
+
+      // Robust date parsing
+      const isDateOnly = (str: string) => str.length === 10 && !str.includes('T') && !str.includes(':')
+
+      let start: Date
+      let end: Date
+
+      if (task.isAllDay || (isDateOnly(startStr) && isDateOnly(endStr))) {
+        // All-day event: start "2023-01-01", end "2023-01-02" (non-inclusive)
+        // We want it to show on Jan 1st only.
+        // Parse as local time to avoid UTC shift.
+        start = new Date(startStr.split('T')[0] + 'T00:00:00')
+
+        // Google's end date for all-day events is non-inclusive (the day AFTER).
+        const endDateOnly = endStr.split('T')[0]
+        if (endDateOnly === startStr.split('T')[0]) {
+          // Same day case (though Google usually sends start+1 day)
+          end = new Date(endDateOnly + 'T23:59:59')
+        } else {
+          // It's a multi-day event or standard GCal end (next day at midnight).
+          // Subtract 1 second to keep it on the intended final day for UI.
+          const endDateObj = new Date(endDateOnly + 'T00:00:00')
+          endDateObj.setSeconds(endDateObj.getSeconds() - 1)
+          end = endDateObj
+        }
+      } else {
+        // Regular event: parse normally (handled correctly by JS Date for ISO strings)
+        start = new Date(startStr)
+        end = new Date(endStr)
+      }
+
+      // Safety check for Invalid Date
+      if (isNaN(start.getTime())) start = new Date()
+      if (isNaN(end.getTime())) end = new Date()
+
+      return {
+        id: task.id,
+        title: task.title,
+        start,
+        end,
+        allDay: task.isAllDay,
+        resource: task,
+      }
+    })
+  }, [expandedTasks])
 
   return { ...tasks, events }
 }
@@ -131,7 +195,7 @@ export const useCreateTask = () => {
           title: payload.title,
           status: payload.status ?? 'todo',
           priority: payload.priority ?? 'medium',
-          dueAt: payload.dueAt ?? null,
+          dueAt: payload.dueAt ?? payload.scheduledEnd ?? null,
           scheduledStart: payload.scheduledStart ?? null,
           scheduledEnd: payload.scheduledEnd ?? null,
           isAllDay: payload.isAllDay ?? false,

@@ -11,6 +11,8 @@ import { NotFoundRoute } from '@/routes/sections/not-found-route'
 import { SignInRoute } from '@/routes/sections/sign-in-route'
 import { CreateAccountRoute } from '@/routes/sections/create-account-route'
 import { InviteRoute } from '@/routes/sections/invite-route'
+import { PrivacyPolicyRoute } from '@/routes/sections/privacy-policy-route'
+import { TermsOfServiceRoute } from '@/routes/sections/terms-route'
 import { ProfileRoute } from '@/routes/sections/profile-route'
 import { SettingsRoute } from '@/routes/sections/settings-route'
 import { MapRoute } from '@/routes/sections/map-route'
@@ -31,6 +33,14 @@ export const router = createBrowserRouter([
   {
     path: '/invite',
     element: <InviteRoute />,
+  },
+  {
+    path: '/privacy',
+    element: <PrivacyPolicyRoute />,
+  },
+  {
+    path: '/terms',
+    element: <TermsOfServiceRoute />,
   },
   {
     path: '/',

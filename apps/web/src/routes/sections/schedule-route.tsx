@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState } from 'react'
+import { createContext, useContext, useMemo, useState, useEffect } from 'react'
 import { useOutletContext, NavLink } from 'react-router-dom'
 import clsx from 'clsx'
 import { DndProvider, useDrop } from 'react-dnd'
@@ -44,6 +44,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { CreationModal } from '@/components/calendar/creation-modal'
 import { EventActionSheet } from '@/routes/sections/event-action-sheet'
 import { useCalendarStore } from '@/stores/calendar-store'
+import { createGoogleEvent } from '@/lib/google-calendar'
 
 const CustomDateHeader = ({ date }: any) => {
   return (
@@ -83,15 +84,40 @@ export function ScheduleRoute() {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
 
   // Import State from Store
-  const importedEvents = useCalendarStore((state) => state.importedEvents)
+  // Legacy importedEvents removed - Firestore is now sole source of truth
+  const googleAccessToken = useCalendarStore((state) => state.googleAccessToken)
 
   const filteredTasks = useMemo(() => {
+    // ... logic remains
     if (filter === 'all') return tasks
     return tasks.filter((task) => task.status === filter)
   }, [tasks, filter])
 
   const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 })
   const [weekAnchor, setWeekAnchor] = useState(weekStart)
+
+  // (Deleted Client-Side Fetch)
+
+  // DEV ONLY: Simulate Webhook on Localhost
+  useEffect(() => {
+    if (window.location.hostname === 'localhost' && googleAccessToken) {
+      const simulateSync = async () => {
+        try {
+          const { getFunctions, httpsCallable } = await import('firebase/functions');
+          const { getApp } = await import('firebase/app');
+          const functions = getFunctions(getApp());
+          // Only trigger if we are unsure, but user asked 'always refreshes when I open it'
+          // This effect runs on mount (and token change).
+          const simulate = httpsCallable(functions, 'simulateWebhookEvent');
+          await simulate();
+          console.log('[DEV] Simulated Google Sync Triggered');
+        } catch (error) {
+          console.warn('[DEV] Failed to simulate sync (Function might not be ready)', error);
+        }
+      }
+      simulateSync()
+    }
+  }, [googleAccessToken])
 
   const selectedEvent = useMemo(
     () => eventsQuery.events.find((e) => e.id === selectedEventId) ?? null,
@@ -277,7 +303,7 @@ export function ScheduleRoute() {
             }}
           >
             <AgendaBoard
-              events={[...eventsQuery.events, ...importedEvents]}
+              events={eventsQuery.events}
               isLoading={eventsQuery.isLoading}
               view={view}
               onView={setView}
@@ -357,6 +383,25 @@ export function ScheduleRoute() {
                   scheduledEnd: values.scheduledEnd ?? creationSlot.end.toISOString(),
                   dueAt: values.scheduledEnd ?? creationSlot.end.toISOString(),
                 })
+
+                // Sync to Google if connected
+                if (googleAccessToken) {
+                  try {
+                    await createGoogleEvent(googleAccessToken, {
+                      title: values.title,
+                      notes: values.notes,
+                      address: values.address,
+                      scheduledStart: values.scheduledStart ?? creationSlot.start.toISOString(),
+                      scheduledEnd: values.scheduledEnd ?? creationSlot.end.toISOString(),
+                      // @ts-ignore
+                      isAllDay: false
+                    })
+                    // Ideally trigger a refetch here by changing a dependency or refetch function
+                  } catch (err) {
+                    console.error('Failed to sync to Google Calendar', err)
+                  }
+                }
+
                 setCreationSlot(null)
               }}
             />
@@ -776,8 +821,8 @@ const getCalendarEventStyles = (event: TaskEvent) => {
   return {
     style: {
       backgroundColor: glassColor,
-      backdropFilter: 'blur(8px)',
-      WebkitBackdropFilter: 'blur(8px)',
+      // Removed backdropFilter/WebkitBackdropFilter to fix visibility issues
+      transform: 'translateZ(0)', // Force hardware acceleration for immediate render
       border: overdue ? '2px solid rgba(239, 68, 68, 0.8)' : '1px solid rgba(255, 255, 255, 0.3)',
       borderRadius: '8px',
       color: '#fff',

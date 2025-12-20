@@ -14,6 +14,7 @@ import {
   updateProfile,
   GoogleAuthProvider,
   signInWithPopup,
+  linkWithPopup,
 } from 'firebase/auth'
 
 import { getFirebaseAuth, type AuthUser } from '@/lib/firebase'
@@ -23,6 +24,7 @@ type AuthContextValue = {
   loading: boolean
   signIn: (email: string, password: string) => Promise<void>
   signInWithGoogle: () => Promise<void>
+  connectGoogleCalendar: () => Promise<string | undefined>
   createAccount: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
   updateUserProfile: (data: { displayName?: string; photoURL?: string }) => Promise<void>
@@ -65,6 +67,38 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
   }, [auth])
 
+  const connectGoogleCalendar = useCallback(async () => {
+    setLoading(true)
+    try {
+      const provider = new GoogleAuthProvider()
+      provider.addScope('https://www.googleapis.com/auth/calendar.events')
+
+      let result
+      if (auth.currentUser) {
+        // If already logged in, try to link or re-auth
+        try {
+          result = await linkWithPopup(auth.currentUser, provider)
+        } catch (error: any) {
+          // If credential already exists or other error, fallback to re-auth popup which returns credentials
+          // Note: This might switch account context if not careful, but usually safer for token retrieval
+          if (error.code === 'auth/credential-already-in-use') {
+            // The google account is already linked, so we just sign in with it to get fresh tokens
+            result = await signInWithPopup(auth, provider)
+          } else {
+            throw error
+          }
+        }
+      } else {
+        result = await signInWithPopup(auth, provider)
+      }
+
+      const credential = GoogleAuthProvider.credentialFromResult(result)
+      return credential?.accessToken
+    } finally {
+      setLoading(false)
+    }
+  }, [auth])
+
   const createAccount = useCallback(
     async (email: string, password: string) => {
       setLoading(true)
@@ -102,11 +136,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
       loading,
       signIn,
       signInWithGoogle,
+      connectGoogleCalendar, // Exposed
       createAccount,
       signOut,
       updateUserProfile,
     }),
-    [user, loading, signIn, signInWithGoogle, createAccount, signOut, updateUserProfile],
+    [user, loading, signIn, signInWithGoogle, connectGoogleCalendar, createAccount, signOut, updateUserProfile],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

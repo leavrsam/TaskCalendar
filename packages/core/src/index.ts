@@ -15,6 +15,7 @@ export const contactStageSchema = z.enum([
   'teaching',
   'progressing',
   'member',
+  'family', // Moved before dropped
   'dropped',
 ])
 
@@ -25,6 +26,7 @@ export const CONTACT_STAGE_LABELS: Record<ContactStage, string> = {
   teaching: 'Teaching',
   progressing: 'Progressing',
   member: 'Member',
+  family: 'Family',
   dropped: 'Archived',
 }
 
@@ -33,6 +35,7 @@ export const CONTACT_STAGE_ORDER: ContactStage[] = [
   'teaching',
   'progressing',
   'member',
+  'family',
   'dropped',
 ]
 
@@ -171,6 +174,9 @@ export const taskSchema = z.object({
   originalStart: z.string().nullable().optional(),
   isRecurringInstance: z.boolean().default(false),
   isModified: z.boolean().default(false),
+  // Google Calendar sync fields
+  googleEventId: z.string().optional(),
+  calendarEmail: z.string().optional(),
   createdAt: timestampString,
   updatedAt: timestampString,
 })
