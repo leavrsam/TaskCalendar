@@ -61,6 +61,12 @@ export function DataManagementCard() {
                     Irreversible actions for your account and data.
                 </p>
                 <button
+                    onClick={() => {
+                        if (window.confirm('Are you sure you want to delete your account? This cannot be undone.')) {
+                            // TODO: Implement actual delete logic
+                            alert('Account deletion is not yet implemented.')
+                        }
+                    }}
                     className="mt-4 flex items-center gap-2 rounded-full bg-white dark:bg-slate-900 px-4 py-2 text-sm font-semibold text-red-600 shadow-sm hover:bg-red-50 ring-1 ring-inset ring-red-200"
                 >
                     <Trash2 className="h-4 w-4" />
