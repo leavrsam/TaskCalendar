@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { format, addMonths, subMonths, startOfMonth, startOfWeek, endOfMonth, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, isToday } from 'date-fns'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import clsx from 'clsx'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useTaskEvents } from '@/features/tasks/api'
 
 export function MiniCalendar() {
     const [currentMonth, setCurrentMonth] = useState(new Date())
     const { events } = useTaskEvents()
+    const navigate = useNavigate()
 
     const start = startOfWeek(startOfMonth(currentMonth))
     const end = endOfWeek(endOfMonth(currentMonth))
@@ -36,8 +37,8 @@ export function MiniCalendar() {
                 </div>
             </div>
             <div className="grid grid-cols-7 gap-y-2 text-center text-xs">
-                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => (
-                    <div key={day} className="text-slate-500 font-medium">
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                    <div key={`${day}-${i}`} className="text-slate-500 font-medium">
                         {day}
                     </div>
                 ))}
@@ -48,11 +49,17 @@ export function MiniCalendar() {
                     const hasEvents = events.some(e => isSameDay(e.start, day))
 
                     return (
-                        <Link
+                        <div
                             key={day.toISOString()}
-                            to={`/schedule?date=${day.toISOString()}`} // Note: Ideally pass state via context or URL params
+                            onClick={() => {
+                                navigate(`/schedule?date=${day.toISOString()}`)
+                            }}
+                            onDoubleClick={(e) => {
+                                e.stopPropagation() // Prevent single click from interfering too much?
+                                navigate(`/schedule?date=${day.toISOString()}&view=day`)
+                            }}
                             className={clsx(
-                                "h-7 w-7 flex items-center justify-center rounded-full mx-auto relative",
+                                "h-7 w-7 flex items-center justify-center rounded-full mx-auto relative cursor-pointer",
                                 !isCurrentMonth && "text-slate-300 dark:text-slate-600",
                                 isCurrentMonth && "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800",
                                 isTodayDate && "bg-brand-600 text-white hover:bg-brand-700 font-semibold"
@@ -62,7 +69,7 @@ export function MiniCalendar() {
                             {hasEvents && !isTodayDate && (
                                 <div className="absolute bottom-1 h-0.5 w-0.5 rounded-full bg-brand-500" />
                             )}
-                        </Link>
+                        </div>
                     )
                 })}
             </div>

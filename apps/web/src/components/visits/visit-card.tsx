@@ -1,18 +1,18 @@
 import { format } from 'date-fns'
 import { Edit2, Trash2, MessageSquare, Heart, Hand, Coffee, Brain } from 'lucide-react'
-import type { Lesson } from '@taskcalendar/core'
+import type { Visit } from '@taskcalendar/core'
 import { VISIT_TYPE_LABELS } from '@taskcalendar/core'
 
 import { CollaboratorStack } from '@/components/collaborators/collaborator-stack'
 
 type VisitCardProps = {
-    visit: Lesson
+    visit: Visit
     contactName: string
     onEdit?: () => void
     onDelete?: () => void
 }
 
-const TYPE_ICONS: Record<Lesson['type'], React.ElementType> = {
+const TYPE_ICONS: Record<Visit['type'], React.ElementType> = {
     social: Coffee,
     spiritual: Heart,
     service: Hand,
@@ -20,7 +20,7 @@ const TYPE_ICONS: Record<Lesson['type'], React.ElementType> = {
     deep: Brain,
 }
 
-const TYPE_COLORS: Record<Lesson['type'], string> = {
+const TYPE_COLORS: Record<Visit['type'], string> = {
     social: 'text-amber-600 bg-amber-50',
     spiritual: 'text-violet-600 bg-violet-50',
     service: 'text-emerald-600 bg-emerald-50',
@@ -48,7 +48,7 @@ export function VisitCard({ visit, contactName, onEdit, onDelete }: VisitCardPro
                     <div>
                         <h3 className="font-semibold text-slate-900">Visit with {contactName}</h3>
                         <p className="text-xs text-slate-500">
-                            {format(new Date(visit.taughtAt), 'MMM d, yyyy • h:mm a')}
+                            {format(new Date(visit.visitedAt), 'MMM d, yyyy • h:mm a')}
                         </p>
                     </div>
                 </div>

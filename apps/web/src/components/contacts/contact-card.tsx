@@ -1,5 +1,6 @@
+import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
-import { MapPin, Phone, Mail, Edit2, Trash2 } from 'lucide-react'
+import { MapPin, Phone, Mail, Edit2, Trash2, Star } from 'lucide-react'
 import type { Contact } from '@taskcalendar/core'
 import { CollaboratorStack } from '@/components/collaborators/collaborator-stack'
 
@@ -7,28 +8,61 @@ type ContactCardProps = {
   contact: Contact
   onEdit?: () => void
   onDelete?: () => void
+  onToggleFavorite?: () => void
 }
 
-export function ContactCard({ contact, onEdit, onDelete }: ContactCardProps) {
+export function ContactCard({ contact, onEdit, onDelete, onToggleFavorite }: ContactCardProps) {
+  const [isConfirming, setIsConfirming] = useState(false)
+
+  useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout>
+    if (isConfirming) {
+      timeout = setTimeout(() => {
+        setIsConfirming(false)
+      }, 3000)
+    }
+    return () => clearTimeout(timeout)
+  }, [isConfirming])
+
   const handleDelete = () => {
-    if (confirm(`Are you sure you want to delete ${contact.name}?`)) {
+    if (isConfirming) {
       onDelete?.()
+      setIsConfirming(false)
+    } else {
+      setIsConfirming(true)
     }
   }
 
   return (
     <div className="group relative flex flex-col gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm transition-all hover:shadow-md">
       <div className="flex items-start justify-between">
-        <div>
-          <h3 className="font-semibold text-slate-900 dark:text-slate-50">{contact.name}</h3>
-          {contact.address && (
-            <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-              <MapPin className="h-3.5 w-3.5 text-slate-400" />
-              <span>{contact.address}</span>
-            </div>
+        <div className="flex items-center gap-2">
+          {onToggleFavorite && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onToggleFavorite()
+              }}
+              className={`rounded-full p-1 transition-colors ${contact.isFavorite
+                ? 'text-amber-500 hover:text-amber-600'
+                : 'text-slate-300 hover:text-amber-400'
+                }`}
+              title={contact.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+            >
+              <Star className={`h-4 w-4 ${contact.isFavorite ? 'fill-current' : ''}`} />
+            </button>
           )}
+          <div>
+            <h3 className="font-semibold text-slate-900 dark:text-slate-50">{contact.name}</h3>
+            {contact.address && (
+              <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                <span>{contact.address}</span>
+              </div>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="flex items-center gap-1 opacity-100 sm:opacity-0 transition-opacity group-hover:opacity-100">
           {onEdit && (
             <button
               onClick={(e) => {
@@ -47,10 +81,14 @@ export function ContactCard({ contact, onEdit, onDelete }: ContactCardProps) {
                 e.stopPropagation()
                 handleDelete()
               }}
-              className="rounded-full p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+              className={`flex items-center gap-1 rounded-full p-1.5 transition-all ${isConfirming
+                ? 'bg-rose-600 text-white px-3 w-auto'
+                : 'text-slate-400 hover:bg-rose-50 hover:text-rose-600'
+                }`}
               title="Delete contact"
             >
               <Trash2 className="h-3.5 w-3.5" />
+              {isConfirming && <span className="text-xs font-bold whitespace-nowrap">Really Delete?</span>}
             </button>
           )}
         </div>
@@ -62,6 +100,7 @@ export function ContactCard({ contact, onEdit, onDelete }: ContactCardProps) {
             <a
               href={`tel:${contact.phone}`}
               className="flex items-center gap-1.5 hover:text-brand-600"
+              onClick={(e) => e.stopPropagation()}
             >
               <Phone className="h-3.5 w-3.5 text-slate-400" />
               {contact.phone}
@@ -71,6 +110,7 @@ export function ContactCard({ contact, onEdit, onDelete }: ContactCardProps) {
             <a
               href={`mailto:${contact.email}`}
               className="flex items-center gap-1.5 hover:text-brand-600"
+              onClick={(e) => e.stopPropagation()}
             >
               <Mail className="h-3.5 w-3.5 text-slate-400" />
               {contact.email}

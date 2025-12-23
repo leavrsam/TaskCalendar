@@ -22,6 +22,7 @@ const meta: Meta<typeof ContactCard> = {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       goals: [],
+      isFavorite: false,
     },
   },
 }

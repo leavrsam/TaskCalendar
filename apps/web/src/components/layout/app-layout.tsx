@@ -37,7 +37,8 @@ export function AppLayout() {
         "hidden w-64 flex-shrink-0 bg-white dark:bg-slate-900 transition-all duration-300 ease-in-out flex flex-col",
         isSidebarOpen ? "lg:flex" : "lg:hidden"
       )}>
-        <div className="h-16 flex items-center gap-2 px-3 pr-4">
+        {/* Fixed Header */}
+        <div className="h-16 flex items-center gap-2 px-3 pr-4 flex-shrink-0">
           <button
             onClick={() => setIsSidebarOpen(false)}
             className="rounded-full p-3 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
@@ -51,55 +52,62 @@ export function AppLayout() {
             <p className="text-xl font-semibold text-slate-900 dark:text-slate-50">TaskCalendar</p>
           </div>
         </div>
-        <nav className="mt-6 px-4 space-y-1 overflow-y-auto flex-1">
-          {mainNavigation.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) =>
-                clsx(
-                  'flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition',
-                  isActive
-                    ? 'bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-400'
-                    : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800',
-                )
-              }
-            >
-              {item.icon}
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
 
-        <div className="mt-8">
-          <MiniCalendar />
-        </div>
+        {/* Scrollable Content Area - entire content scrolls together */}
+        <div className="flex-1 overflow-y-auto px-4">
+          {/* Navigation - no longer scrolls independently */}
+          <nav className="mt-6 space-y-1">
+            {mainNavigation.map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className={({ isActive }) =>
+                  clsx(
+                    'flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition',
+                    isActive
+                      ? 'bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-400'
+                      : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800',
+                  )
+                }
+              >
+                {item.icon}
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
 
-        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800">
-          <div className="flex items-center gap-3">
-            <CollaboratorAvatar
-              collaborator={{
-                uid: user?.uid ?? 'me',
-                email: user?.email ?? '',
-                label: user?.displayName || user?.email || 'You',
-              }}
-              size="md"
-              photoURL={user?.photoURL ?? undefined}
-            />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Signed in</p>
-              <p className="text-sm font-semibold text-slate-900 truncate dark:text-slate-50">{user?.displayName || user?.email}</p>
-            </div>
+          {/* Mini Calendar */}
+          <div className="mt-8">
+            <MiniCalendar />
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              void signOut()
-            }}
-            className="mt-3 w-full text-sm font-semibold text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300"
-          >
-            Sign out
-          </button>
+
+          {/* User Card & Sign Out */}
+          <div className="mt-4 mb-4 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800">
+            <div className="flex items-center gap-3">
+              <CollaboratorAvatar
+                collaborator={{
+                  uid: user?.uid ?? 'me',
+                  email: user?.email ?? '',
+                  label: user?.displayName || user?.email || 'You',
+                }}
+                size="md"
+                photoURL={user?.photoURL ?? undefined}
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Signed in</p>
+                <p className="text-sm font-semibold text-slate-900 truncate dark:text-slate-50">{user?.displayName || user?.email}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                void signOut()
+              }}
+              className="mt-3 w-full text-sm font-semibold text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -141,34 +149,28 @@ export function AppLayout() {
               to={item.path}
               className={({ isActive }) =>
                 clsx(
-                  'flex flex-col items-center gap-0.5 p-3 min-w-[56px] transition-all duration-200 active:scale-95',
+                  'flex items-center justify-center p-3 min-w-[56px] transition-all duration-200 active:scale-95',
                   isActive
-                    ? 'text-brand-600 scale-105'
+                    ? 'text-brand-600 scale-110' // Increased scale slightly for active state since text is gone
                     : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200',
                 )
               }
             >
-              {({ isActive }) => (
-                <>
-                  <div className={clsx("transition-transform duration-200 [&>svg]:h-7 [&>svg]:w-7", isActive && "-translate-y-0.5")}>
-                    {item.icon}
-                  </div>
-                  <span className={clsx("text-[10px] font-medium", isActive ? 'text-brand-600' : 'text-slate-400 dark:text-slate-500')}>
-                    {item.label}
-                  </span>
-                </>
+              {() => (
+                <div className={clsx("transition-transform duration-200 [&>svg]:h-7 [&>svg]:w-7")}>
+                  {item.icon}
+                </div>
               )}
             </NavLink>
           ))}
           <button
             onClick={() => setIsMobileMenuOpen(true)}
             className={clsx(
-              'flex flex-col items-center gap-0.5 p-3 min-w-[56px] text-slate-500 transition-all duration-200 active:scale-95 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200',
+              'flex items-center justify-center p-3 min-w-[56px] text-slate-500 transition-all duration-200 active:scale-95 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200',
               isMobileMenuOpen && 'text-brand-600'
             )}
           >
             <Menu className="h-7 w-7" />
-            <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">More</span>
           </button>
         </nav>
 

@@ -281,7 +281,11 @@ function IntegrationsSettings() {
                   </div>
                 )}
 
-                <div className="flex justify-end pt-2">
+                <div className="flex justify-end gap-2 pt-2">
+                  {/* Sync Now button */}
+                  {connectedCalendars.data && connectedCalendars.data.length > 0 && (
+                    <SyncNowButton />
+                  )}
                   {/* Always show Connect button to add MORE accounts */}
                   <ConnectCalendarButton label={connectedCalendars.data?.length ? "Add Another Account" : "Connect Account"} />
                 </div>
@@ -358,7 +362,7 @@ function DisconnectButton({ onDisconnect }: { email?: string, onDisconnect: () =
       onClick={handleClick}
       className={`text-xs font-medium hover:underline transition-colors ${isConfirming ? 'text-red-700 font-bold' : 'text-red-500 hover:text-red-600'}`}
     >
-      {isConfirming ? 'Click to confirm' : 'Disconnect'}
+      {isConfirming ? 'Really Delete?' : 'Disconnect'}
     </button>
   )
 }
@@ -371,3 +375,51 @@ function NotificationsPlaceholder() {
   )
 }
 
+function SyncNowButton() {
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [result, setResult] = useState<string | null>(null)
+
+  const handleSync = async () => {
+    setIsSyncing(true)
+    setResult(null)
+    try {
+      const { getFunctions, httpsCallable } = await import('firebase/functions')
+      const { getApp } = await import('firebase/app')
+      const functions = getFunctions(getApp())
+      const triggerFullResync = httpsCallable(functions, 'triggerFullResync')
+      const response = await triggerFullResync()
+      setResult((response.data as any)?.message || 'Sync completed!')
+    } catch (error: any) {
+      console.error('Sync failed:', error)
+      setResult('Sync failed. See console for details.')
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={handleSync}
+        disabled={isSyncing}
+        className="flex items-center gap-2 rounded-xl border border-brand-500 bg-brand-50 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-100 disabled:opacity-50 dark:border-brand-600 dark:bg-brand-900/30 dark:text-brand-400 dark:hover:bg-brand-900/50"
+      >
+        {isSyncing ? (
+          <>
+            <span className="animate-spin">⏳</span>
+            Syncing...
+          </>
+        ) : (
+          <>
+            <Download className="h-4 w-4" />
+            Sync Now
+          </>
+        )}
+      </button>
+      {result && (
+        <span className="text-xs text-slate-500 dark:text-slate-400">{result}</span>
+      )}
+    </div>
+  )
+}

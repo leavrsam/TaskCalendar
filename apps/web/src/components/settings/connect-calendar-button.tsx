@@ -28,7 +28,7 @@ export function ConnectCalendarButton({ label = 'Connect Google Calendar' }: Con
             // We don't strictly need to pass arguments if the function uses auth context for state,
             // but the function implementation expects `request.auth.uid`. 
             // The Firebase SDK automatically attaches the ID token, so `request.auth` will be populated on the server.
-            const result = await getGoogleAuthURL()
+            const result = await getGoogleAuthURL({ origin: window.location.origin })
             const data = result.data as { url: string }
 
             if (data.url) {

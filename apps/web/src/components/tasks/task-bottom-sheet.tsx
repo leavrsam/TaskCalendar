@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { X } from 'lucide-react'
 import type { Task } from '@taskcalendar/core'
 
@@ -12,6 +12,14 @@ interface TaskBottomSheetProps {
     onDragTaskChange: (taskId: string | null) => void
 }
 
+// Snap points as percentages of viewport height
+const SNAP_POINTS = {
+    closed: 0,
+    peek: 25,
+    half: 50,
+    full: 85,
+}
+
 export function TaskBottomSheet({
     isOpen,
     onClose,
@@ -21,8 +29,18 @@ export function TaskBottomSheet({
     loading,
     onDragTaskChange,
 }: TaskBottomSheetProps) {
-    const [height, setHeight] = useState<'half' | 'full'>('half')
-    const [startY, setStartY] = useState<number | null>(null)
+    const [heightPercent, setHeightPercent] = useState(SNAP_POINTS.half)
+    const [isDragging, setIsDragging] = useState(false)
+    const startYRef = useRef<number | null>(null)
+    const startHeightRef = useRef<number>(SNAP_POINTS.half)
+    const sheetRef = useRef<HTMLDivElement>(null)
+
+    // Reset height when opened
+    useEffect(() => {
+        if (isOpen) {
+            setHeightPercent(SNAP_POINTS.half)
+        }
+    }, [isOpen])
 
     // Close on ESC key
     useEffect(() => {
@@ -35,39 +53,84 @@ export function TaskBottomSheet({
         return () => document.removeEventListener('keydown', handleEscape)
     }, [isOpen, onClose])
 
-    const handleDragStart = (e: React.TouchEvent | React.MouseEvent) => {
-        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
-        setStartY(clientY)
-    }
+    const handleDragStart = useCallback((clientY: number) => {
+        setIsDragging(true)
+        startYRef.current = clientY
+        startHeightRef.current = heightPercent
+    }, [heightPercent])
 
-    const handleDragMove = (e: React.TouchEvent | React.MouseEvent) => {
-        if (startY === null) return
-        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
-        const diff = clientY - startY
+    const handleDragMove = useCallback((clientY: number) => {
+        if (startYRef.current === null) return
 
-        // Swipe down to close or reduce height
-        if (diff > 100) {
-            if (height === 'full') {
-                setHeight('half')
-                setStartY(null)
-            } else {
-                onClose()
+        const vh = window.innerHeight
+        const deltaY = startYRef.current - clientY // Positive = dragging up
+        const deltaPercent = (deltaY / vh) * 100
+        const newHeight = Math.min(Math.max(startHeightRef.current + deltaPercent, SNAP_POINTS.peek), SNAP_POINTS.full)
+
+        setHeightPercent(newHeight)
+    }, [])
+
+    const handleDragEnd = useCallback(() => {
+        setIsDragging(false)
+        startYRef.current = null
+
+        // Snap to nearest point
+        const snapPoints = [SNAP_POINTS.peek, SNAP_POINTS.half, SNAP_POINTS.full]
+        let closestSnap = SNAP_POINTS.half
+        let minDistance = Infinity
+
+        for (const snap of snapPoints) {
+            const distance = Math.abs(heightPercent - snap)
+            if (distance < minDistance) {
+                minDistance = distance
+                closestSnap = snap
             }
         }
-        // Swipe up to expand
-        else if (diff < -100 && height === 'half') {
-            setHeight('full')
-            setStartY(null)
+
+        // If dragged below peek threshold, close
+        if (heightPercent < SNAP_POINTS.peek - 5) {
+            onClose()
+        } else {
+            setHeightPercent(closestSnap)
         }
+    }, [heightPercent, onClose])
+
+    // Touch handlers
+    const onTouchStart = (e: React.TouchEvent) => {
+        handleDragStart(e.touches[0].clientY)
+    }
+    const onTouchMove = (e: React.TouchEvent) => {
+        handleDragMove(e.touches[0].clientY)
+    }
+    const onTouchEnd = () => {
+        handleDragEnd()
     }
 
-    const handleDragEnd = () => {
-        setStartY(null)
+    // Mouse handlers (for desktop)
+    const onMouseDown = (e: React.MouseEvent) => {
+        e.preventDefault()
+        handleDragStart(e.clientY)
     }
+
+    useEffect(() => {
+        if (!isDragging) return
+
+        const onMouseMove = (e: MouseEvent) => {
+            handleDragMove(e.clientY)
+        }
+        const onMouseUp = () => {
+            handleDragEnd()
+        }
+
+        window.addEventListener('mousemove', onMouseMove)
+        window.addEventListener('mouseup', onMouseUp)
+        return () => {
+            window.removeEventListener('mousemove', onMouseMove)
+            window.removeEventListener('mouseup', onMouseUp)
+        }
+    }, [isDragging, handleDragMove, handleDragEnd])
 
     if (!isOpen) return null
-
-    const sheetHeight = height === 'full' ? 'h-[90vh]' : 'h-[50vh]'
 
     return (
         <>
@@ -79,17 +142,18 @@ export function TaskBottomSheet({
 
             {/* Bottom Sheet */}
             <div
-                className={`fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl glass-dock shadow-2xl transition-all duration-300 animate-in slide-in-from-bottom ${sheetHeight}`}
+                ref={sheetRef}
+                className={`fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl glass-dock shadow-2xl ${isDragging ? '' : 'transition-[height] duration-300 ease-out'
+                    }`}
+                style={{ height: `${heightPercent}vh` }}
             >
                 {/* Drag Handle */}
                 <div
-                    className="flex flex-col items-center py-3 cursor-grab active:cursor-grabbing"
-                    onTouchStart={handleDragStart}
-                    onTouchMove={handleDragMove}
-                    onTouchEnd={handleDragEnd}
-                    onMouseDown={handleDragStart}
-                    onMouseMove={handleDragMove}
-                    onMouseUp={handleDragEnd}
+                    className="flex flex-col items-center py-3 cursor-grab active:cursor-grabbing touch-none select-none"
+                    onTouchStart={onTouchStart}
+                    onTouchMove={onTouchMove}
+                    onTouchEnd={onTouchEnd}
+                    onMouseDown={onMouseDown}
                 >
                     <div className="w-12 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600 mb-2" />
                     <div className="flex items-center justify-between w-full px-6">

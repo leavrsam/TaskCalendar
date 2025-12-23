@@ -62,7 +62,7 @@ export function ShareWorkspaceCard() {
         <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Sharing</p>
         <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Workspace access</h2>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Invite collaborators to help plan lessons, contacts, and tasks. Pending invites can be revoked at any time.
+          Invite collaborators to help plan visits, contacts, and tasks. Pending invites can be revoked at any time.
         </p>
       </div>
       {avatarCollaborators.length > 0 && (

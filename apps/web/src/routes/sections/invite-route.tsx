@@ -173,7 +173,7 @@ export function InviteRoute() {
             Join {ownerProfile?.displayName ?? ownerProfile?.email ?? 'this workspace'}?
           </h1>
           <p className="mt-2 text-sm text-slate-600">
-            Accepting grants you access to contacts, lessons, tasks, and notes for this workspace.
+            Accepting grants you access to contacts, visits, tasks, and notes for this workspace.
             You can revoke access at any time.
           </p>
         </div>

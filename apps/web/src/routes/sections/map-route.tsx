@@ -64,7 +64,8 @@ export function MapRoute() {
                 sharedWith: [],
                 lastContactedAt: new Date().toISOString(),
                 nextVisitAt: null, // Pins don't need next visit
-                notes: ''
+                notes: '',
+                isFavorite: false,
             })
             setIsLocationModalOpen(false)
             setPendingLocation(null)
@@ -73,9 +74,7 @@ export function MapRoute() {
     }
 
     const handleDeleteLocation = async (id: string) => {
-        if (confirm('Are you sure you want to delete this location pin?')) {
-            await deleteContact.mutateAsync(id)
-        }
+        await deleteContact.mutateAsync(id)
     }
 
     // Helper to wrap raw Task into TaskEvent for the sheet

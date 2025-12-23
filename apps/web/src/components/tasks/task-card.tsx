@@ -27,7 +27,7 @@ export function TaskCard({ task, onStatusChange, onSchedule }: TaskCardProps) {
     <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm font-semibold text-slate-900">{task.title}</p>
+          <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">{task.title}</p>
           {contact && (
             <div className="flex items-center gap-1.5 text-xs text-slate-500">
               <User className="h-3 w-3" />
@@ -51,7 +51,7 @@ export function TaskCard({ task, onStatusChange, onSchedule }: TaskCardProps) {
       </div>
 
       {task.notes && (
-        <p className="mt-2 text-sm text-slate-600 line-clamp-3">{task.notes}</p>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 line-clamp-3">{task.notes}</p>
       )}
       {task.sharedWith && task.sharedWith.length > 0 && (
         <div className="mt-2 flex items-center gap-2">

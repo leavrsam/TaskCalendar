@@ -1,5 +1,6 @@
 import { createContext, useContext, useMemo, useState, useEffect } from 'react'
-import { useOutletContext, NavLink } from 'react-router-dom'
+import { createPortal } from 'react-dom'
+import { useOutletContext, NavLink, useSearchParams } from 'react-router-dom'
 import clsx from 'clsx'
 import { DndProvider, useDrop } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
@@ -7,11 +8,15 @@ import { HTML5Backend } from 'react-dnd-html5-backend'
 // Context for child components to access schedule state (bypassing RBC props limitation)
 type ScheduleContextType = {
   setSelectedEventId: (id: string | null) => void
+  events: TaskEvent[]
 }
-const ScheduleContext = createContext<ScheduleContextType>({ setSelectedEventId: () => { } })
+const ScheduleContext = createContext<ScheduleContextType>({
+  setSelectedEventId: () => { },
+  events: []
+})
 const useScheduleContext = () => useContext(ScheduleContext)
 
-import { addMonths, subMonths, format, startOfWeek, addDays, subDays, addWeeks, subWeeks, isToday } from 'date-fns'
+import { addMonths, subMonths, format, startOfWeek, addDays, subDays, addWeeks, subWeeks, isToday, startOfDay } from 'date-fns'
 import type { View } from 'react-big-calendar'
 import { Calendar } from 'react-big-calendar'
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop'
@@ -19,6 +24,12 @@ import 'react-big-calendar/lib/addons/dragAndDrop/styles.css'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import { useLongPress } from 'use-long-press'
 import { CustomDragLayer } from '@/components/calendar/custom-drag-layer'
+import { AnimatePresence, motion } from 'framer-motion'
+
+// ... (imports)
+
+
+
 
 const DnDCalendar = withDragAndDrop<TaskEvent, TaskEvent>(Calendar)
 
@@ -62,6 +73,89 @@ const CustomDateHeader = ({ date }: any) => {
   )
 }
 
+const DayViewHeader = ({ date }: any) => {
+  const { events, setSelectedEventId } = useScheduleContext()
+
+  const dayEvents = useMemo(() => {
+    const startOfHeaderDay = startOfDay(date)
+
+
+    return events.filter(e => {
+      // Only show actual all-day events
+      if (!e.allDay) return false
+
+      const eventStart = startOfDay(e.start)
+      const eventEnd = startOfDay(e.end)
+
+      return (eventStart <= startOfHeaderDay && eventEnd >= startOfHeaderDay)
+    })
+  }, [events, date])
+
+  /* Portal Logic to lock date header into the Time Gutter Box */
+  const [gutterNode, setGutterNode] = useState<Element | null>(null)
+
+  useEffect(() => {
+    // Locate the Time Gutter element in the header row
+    const gutter = document.querySelector('.rbc-time-header-gutter')
+    if (gutter) {
+      // Force relative positioning on the gutter so we can absolute center inside it if needed
+      // Or just append to it. React Portal appends.
+      // We might need to clear existing text content if any? Usually it's empty space.
+      // Actually RBC renders a label there sometimes.
+      setGutterNode(gutter)
+    }
+  }, [])
+
+  return (
+    <div className="flex items-start gap-4 p-2 h-full min-h-[60px] border-b border-slate-200 dark:border-slate-800">
+      {/* Date Header: Rendered via Portal into the top-left Time Gutter Box */}
+      {gutterNode && createPortal(
+        <div className="flex flex-col items-center justify-center w-full h-full pt-4">
+          <span className="text-[11px] font-medium text-slate-500 uppercase tracking-widest leading-none mb-1">{format(date, 'EEE')}</span>
+          <div className={clsx(
+            "flex items-center justify-center h-10 w-10 rounded-full text-2xl font-normal transition-colors",
+            isToday(date)
+              ? "bg-brand-600 text-white shadow-md"
+              : "text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800"
+          )}>
+            {format(date, 'd')}
+          </div>
+        </div>,
+        gutterNode
+      )}
+
+
+      {/* All Day Events Section */}
+      <div className="flex-1 flex flex-col gap-1 overflow-y-auto max-h-[120px]">
+        {dayEvents.length > 0 ? (
+          dayEvents.map(event => (
+            <button
+              key={event.id}
+              onClick={(e) => {
+                e.stopPropagation()
+                setSelectedEventId(event.id)
+              }}
+              className={clsx(
+                "text-xs px-2 py-1 rounded-md text-left truncate transition-colors w-full border border-transparent hover:border-black/5 dark:hover:border-white/10",
+                event.resource.status === 'done' ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 line-through opacity-70" :
+                  event.resource.status === 'inProgress' ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" :
+                    "bg-brand-100 text-brand-800 dark:bg-brand-900/40 dark:text-brand-300"
+              )}
+              title={event.title}
+            >
+              {event.title}
+            </button>
+          ))
+        ) : (
+          <div className="h-full flex items-center">
+            <span className="text-xs text-slate-400 italic px-2">No all-day events</span>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export function ScheduleRoute() {
   const { user } = useAuth()
   const { toggleSidebar, isSidebarOpen } = useOutletContext<{ toggleSidebar: () => void; isSidebarOpen: boolean }>()
@@ -95,6 +189,25 @@ export function ScheduleRoute() {
 
   const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 })
   const [weekAnchor, setWeekAnchor] = useState(weekStart)
+
+  // Sync with URL params
+  const [searchParams] = useSearchParams()
+
+  useEffect(() => {
+    const dateParam = searchParams.get('date')
+    const viewParam = searchParams.get('view') as View | null
+
+    if (dateParam) {
+      const newDate = new Date(dateParam)
+      if (!isNaN(newDate.getTime())) {
+        setWeekAnchor(newDate)
+      }
+    }
+
+    if (viewParam && ['day', 'week', 'month', 'agenda'].includes(viewParam)) {
+      setView(viewParam)
+    }
+  }, [searchParams])
 
   // (Deleted Client-Side Fetch)
 
@@ -193,7 +306,7 @@ export function ScheduleRoute() {
   }
 
   return (
-    <ScheduleContext.Provider value={{ setSelectedEventId }}>
+    <ScheduleContext.Provider value={{ setSelectedEventId, events: eventsQuery.events }}>
       <DndProvider backend={HTML5Backend}>
         <div className="flex h-screen flex-col overflow-x-hidden">
           {/* Header */}
@@ -459,7 +572,6 @@ function AgendaBoard({
     }
   }, [draggingTask])
 
-  // Dynamic step/timeslots based on zoom (timeSlotHeight)
   const { step, timeslots } = useMemo(() => {
     // We set step to 15 to ensure dragging is always precise to 15 minutes.
     // We adjust timeslots (rows per major slot) to control visual density of time labels.
@@ -470,6 +582,46 @@ function AgendaBoard({
     // Low zoom: 60min major slots (15*4)
     return { step: 15, timeslots: 4 }
   }, [timeSlotHeight])
+
+  // Track direction for animation
+  const [direction, setDirection] = useState<'left' | 'right'>('right')
+  const [prevDate, setPrevDate] = useState(anchorDate)
+
+  // Use a ref to hold the previous date during the render cycle comparison if needed, 
+  // but simpler: compare current anchorDate with state prevDate in useEffect or during render?
+  // Actually, we need the direction *before* valid render?
+  // Let's use useMemo/useEffect to update direction when anchorDate changes.
+  if (anchorDate !== prevDate) {
+    if (anchorDate > prevDate) setDirection('right')
+    else setDirection('left')
+    setPrevDate(anchorDate)
+  }
+
+  const variants = {
+    enter: (direction: 'left' | 'right') => ({
+      x: direction === 'right' ? '100%' : '-100%',
+      opacity: 0,
+      position: 'absolute' as const,
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+      zIndex: 1,
+      position: 'relative' as const, // Actually relative usually works for the active one if others are absolute? 
+      // Problem: To overlap, BOTH need to be absolute initially? 
+      // If we use popLayout mode, exiting element is popped out.
+      // Let's use standard relative for center, but ensure container allows overlap?
+      // Actually standard way: container relative, children absolute.
+      // But RBC needs to fill space.
+      // Let's try absolute for both, with width/height 100%.
+    },
+    exit: (direction: 'left' | 'right') => ({
+      x: direction === 'right' ? '-100%' : '100%',
+      opacity: 0,
+      zIndex: 0,
+      position: 'absolute' as const,
+    }),
+  }
 
   const TimeSlotWrapper = ({ children, value }: any) => {
     // Magnetic Snapping Logic
@@ -489,7 +641,6 @@ function AgendaBoard({
 
     const combinedRef = (element: HTMLDivElement) => {
       drop(element)
-      // Any other refs if needed
     }
 
     return (
@@ -506,13 +657,33 @@ function AgendaBoard({
     )
   }
 
+  const components = useMemo(() => ({
+    event: CalendarEvent,
+    timeSlotWrapper: TimeSlotWrapper,
+    header: view === 'day' ? DayViewHeader : CustomDateHeader,
+  }), [view, TimeSlotWrapper])
+
   return (
-    <div className="flex h-full flex-col">
+    <div className={clsx("flex h-full flex-col", view === 'day' ? "day-view-mode" : "")}>
       <DndProvider backend={HTML5Backend}>
         <CustomDragLayer />
-        <div className="h-full">
-          <style>
-            {`
+        <div className="h-full relative overflow-hidden">
+          <AnimatePresence initial={false} custom={direction} mode="popLayout">
+            <motion.div
+              key={anchorDate.toISOString() + view} // Transition when date or view changes
+              custom={direction}
+              variants={variants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{
+                x: { type: "spring", stiffness: 300, damping: 30 },
+                opacity: { duration: 0.2 }
+              }}
+              className="h-full w-full absolute inset-0 bg-slate-100 dark:bg-zinc-900" // Ensure background is opaque to hide content behind
+            >
+              <style>
+                {`
             .rbc-time-slot {
               min-height: ${timeSlotHeight * (step / 5)}px !important;
               border-top: none !important;
@@ -520,6 +691,34 @@ function AgendaBoard({
             .rbc-timeslot-group {
               min-height: ${timeSlotHeight * (step / 5)}px !important;
               border-bottom: 1px solid rgba(226, 232, 240, 0.4) !important; /* light border for sub-slots */
+            }
+            
+            /* Day View Specific Overrides */
+            .day-view-mode .rbc-allday-cell {
+              display: none !important;
+            }
+            .day-view-mode .rbc-time-header-cell {
+              display: block !important;
+            }
+            .day-view-mode .rbc-time-header-content {
+              border-left: none !important;
+              margin-left: 0 !important;
+            }
+            .day-view-mode .rbc-time-header {
+               min-height: 80px !important;
+            }
+            .day-view-mode .rbc-header {
+              padding: 0 !important;
+              height: 100% !important; 
+              overflow: visible !important;
+              border-bottom: 1px solid rgba(226, 232, 240, 0.8) !important;
+              width: 100% !important;
+            }
+            .day-view-mode .rbc-time-header.rbc-overflowing-header {
+                margin-right: 0 !important;
+            }
+            .dark .day-view-mode .rbc-header {
+              border-bottom: 1px solid rgba(51, 65, 85, 0.4) !important;
             }
             
             /* Darker border for hour lines (every 2nd at 30m, every 4th at 15m) */
@@ -581,78 +780,77 @@ function AgendaBoard({
               border-bottom: none !important;
             }
           `}
-          </style>
-          <DnDCalendar
-            localizer={calendarLocalizer}
-            events={events}
-            view={view}
-            onView={onView}
-            date={anchorDate}
-            onNavigate={onAnchorChange}
-            toolbar={false}
-            culture="en-US"
-            step={step}
-            timeslots={timeslots}
-            popup
-            resizable
-            selectable
-            style={{ height: '100%' }}
-            formats={{
-              eventTimeRangeFormat: () => '',
-              timeGutterFormat: (date: Date, culture: any, localizer: any) => {
-                const stepVal = step; // capture value - force refresh
-                if (stepVal === 60) return localizer.format(date, 'h a', culture)
-                if (date.getMinutes() === 0) return localizer.format(date, 'h a', culture)
-                return localizer.format(date, 'mm', culture) // just minutes for sub-slots to save space
-              }
-            }}
-            components={{
-              event: CalendarEvent,
-              timeSlotWrapper: TimeSlotWrapper,
-              header: CustomDateHeader,
-            }}
+              </style>
+              <DnDCalendar
+                key={view}
+                localizer={calendarLocalizer}
+                events={events}
+                view={view}
+                onView={onView}
+                date={anchorDate}
+                onNavigate={onAnchorChange}
+                toolbar={false}
+                culture="en-US"
+                step={step}
+                timeslots={timeslots}
+                popup
+                resizable
+                selectable
+                style={{ height: '100%' }}
+                formats={{
+                  eventTimeRangeFormat: () => '',
+                  timeGutterFormat: (date: Date, culture: any, localizer: any) => {
+                    const stepVal = step; // capture value - force refresh
+                    if (stepVal === 60) return localizer.format(date, 'h a', culture)
+                    if (date.getMinutes() === 0) return localizer.format(date, 'h a', culture)
+                    return localizer.format(date, 'mm', culture) // just minutes for sub-slots to save space
+                  }
+                }}
+                components={components}
 
-            eventPropGetter={(calendarEvent) =>
-              getCalendarEventStyles(calendarEvent as TaskEvent)
-            }
-            dragFromOutsideItem={
-              dragPreviewEvent ? (() => dragPreviewEvent) : undefined
-            }
-            onDropFromOutside={
-              draggingTask
-                ? ({ start: dropStart, end: dropEnd }) => {
-                  onEventMove({
-                    id: draggingTask.id,
-                    start: dropStart as Date,
-                    end: dropEnd as Date,
-                  })
-                  onOutsideDropComplete()
+                eventPropGetter={(calendarEvent) =>
+                  getCalendarEventStyles(calendarEvent as TaskEvent)
                 }
-                : undefined
-            }
-            onSelectSlot={(slotInfo) =>
-              onSlotSelect({
-                start: slotInfo.start as Date,
-                end: slotInfo.end as Date,
-              })
-            }
-            onSelectEvent={(event) => onEventClick(event as TaskEvent)}
-            onEventDrop={({ event, start, end }) =>
-              onEventMove({
-                id: (event as TaskEvent).id,
-                start: start as Date,
-                end: end as Date,
-              })
-            }
-            onEventResize={({ event, start, end }) =>
-              onEventMove({
-                id: (event as TaskEvent).id,
-                start: start as Date,
-                end: end as Date,
-              })
-            }
-            scrollToTime={scrollToTime}
-          />
+                dragFromOutsideItem={
+                  dragPreviewEvent ? (() => dragPreviewEvent) : undefined
+                }
+                onDropFromOutside={
+                  draggingTask
+                    ? ({ start: dropStart, end: dropEnd }) => {
+                      onEventMove({
+                        id: draggingTask.id,
+                        start: dropStart as Date,
+                        end: dropEnd as Date,
+                      })
+                      onOutsideDropComplete()
+                    }
+                    : undefined
+                }
+                onSelectSlot={(slotInfo) =>
+                  onSlotSelect({
+                    start: slotInfo.start as Date,
+                    end: slotInfo.end as Date,
+                  })
+                }
+                onSelectEvent={(event) => onEventClick(event as TaskEvent)}
+                onEventDrop={({ event, start, end }) =>
+                  onEventMove({
+                    id: (event as TaskEvent).id,
+                    start: start as Date,
+                    end: end as Date,
+                  })
+                }
+                onEventResize={({ event, start, end }) =>
+                  onEventMove({
+                    id: (event as TaskEvent).id,
+                    start: start as Date,
+                    end: end as Date,
+                  })
+                }
+                scrollToTime={scrollToTime}
+              />
+            </motion.div>
+          </AnimatePresence>
         </div>
       </DndProvider>
     </div>
@@ -726,24 +924,28 @@ export function CalendarEvent({ event }: { event: TaskEvent }) {
           <button
             type="button"
             onClick={handleToggleStatus}
-            className={clsx(
-              'flex h-3 w-3 flex-shrink-0 items-center justify-center rounded-full border transition-colors',
-              getStatusPillStyle(event.resource.status)
-            )}
+            className="group relative -m-2 p-2 focus:outline-none"
             aria-label="Toggle task status"
-          />
+          >
+            <div className={clsx(
+              'h-3 w-3 rounded-full border transition-colors',
+              getStatusPillStyle(event.resource.status)
+            )} />
+          </button>
         )}
         {showContact && (
           <button
             type="button"
             onClick={handleToggleStatus}
-            className={clsx(
-              'flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border transition-colors',
-              getStatusPillStyle(event.resource.status)
-            )}
+            className="group relative -m-2 p-2 focus:outline-none"
             aria-label="Toggle task status"
           >
-            {event.resource.status === 'done' && <span className="text-[10px]">✓</span>}
+            <div className={clsx(
+              'flex h-4 w-4 items-center justify-center rounded-full border transition-colors',
+              getStatusPillStyle(event.resource.status)
+            )}>
+              {event.resource.status === 'done' && <span className="text-[10px]">✓</span>}
+            </div>
           </button>
         )}
       </div>
@@ -764,13 +966,15 @@ export function CalendarEvent({ event }: { event: TaskEvent }) {
         <button
           type="button"
           onClick={handleToggleStatus}
-          className={clsx(
-            'flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border transition-colors',
-            getStatusPillStyle(event.resource.status)
-          )}
+          className="group relative -m-2 p-2 focus:outline-none"
           aria-label="Toggle task status"
         >
-          {event.resource.status === 'done' && <span className="text-[10px]">✓</span>}
+          <div className={clsx(
+            'flex h-4 w-4 items-center justify-center rounded-full border transition-colors',
+            getStatusPillStyle(event.resource.status)
+          )}>
+            {event.resource.status === 'done' && <span className="text-[10px]">✓</span>}
+          </div>
         </button>
       </div>
       {firstContact && (

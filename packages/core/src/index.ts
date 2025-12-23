@@ -4,7 +4,8 @@ export const uid = z.string().min(6, 'uid must be at least 6 characters')
 export const contactId = z.string().min(4)
 export const taskId = z.string().min(4)
 export const goalId = z.string().min(4)
-export const lessonId = z.string().min(4)
+export const visitId = z.string().min(4)
+export const lessonId = visitId
 export const noteId = z.string().min(4)
 export const inviteId = z.string().min(6)
 
@@ -75,34 +76,36 @@ export const contactSchema = z.object({
   }).nullable().optional(),
   tags: z.array(z.string()).default([]),
   notes: z.string().optional(),
+  birthday: z.string().optional(), // YYYY-MM-DD format
   goals: z.array(contactGoalSchema).default([]),
   lastContactedAt: z.string().nullable(),
   nextVisitAt: z.string().nullable(),
   sharedWith: z.array(uid).default([]),
+  isFavorite: z.boolean().default(false),
   createdAt: timestampString,
   updatedAt: timestampString,
 })
 
 export type Contact = z.infer<typeof contactSchema>
 
-export const lessonSchema = z.object({
-  id: lessonId,
+export const visitSchema = z.object({
+  id: visitId,
   ownerUid: uid,
   contactId,
-  taughtAt: timestampString,
+  visitedAt: timestampString,
   type: z.enum(['social', 'spiritual', 'service', 'casual', 'deep']),
   commitments: z.array(z.string()).default([]),
   notes: z.string().optional(),
-  taughtBy: z.array(z.string()),
+  visitedBy: z.array(z.string()),
   followUpAt: z.string().nullable(),
   sharedWith: z.array(uid).default([]),
   createdAt: timestampString,
   updatedAt: timestampString,
 })
 
-export type Lesson = z.infer<typeof lessonSchema>
+export type Visit = z.infer<typeof visitSchema>
 
-export const VISIT_TYPE_LABELS: Record<Lesson['type'], string> = {
+export const VISIT_TYPE_LABELS: Record<Visit['type'], string> = {
   social: 'Social',
   spiritual: 'Spiritual',
   service: 'Service',
@@ -222,10 +225,13 @@ export const userProfileSchema = z.object({
 
 export type UserProfile = z.infer<typeof userProfileSchema>
 
+export const lessonSchema = visitSchema
+export type Lesson = Visit
+
 export const previewSeed = z.object({
   owner: userProfileSchema,
   contacts: z.array(contactSchema),
-  lessons: z.array(lessonSchema),
+  visits: z.array(visitSchema),
   contactNotes: z.array(contactNoteSchema),
   goals: z.array(goalSchema),
   tasks: z.array(taskSchema),

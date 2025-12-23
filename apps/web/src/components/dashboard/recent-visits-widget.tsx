@@ -1,14 +1,14 @@
 import { formatDistanceToNow } from 'date-fns'
 import { ArrowRight, Coffee, Heart, Hand, MessageSquare, Brain } from 'lucide-react'
-import type { Lesson } from '@taskcalendar/core'
+import type { Visit } from '@taskcalendar/core'
 import { VISIT_TYPE_LABELS } from '@taskcalendar/core'
 
 type RecentVisitsWidgetProps = {
-    visits: Lesson[]
+    visits: Visit[]
     contacts: { id: string; name: string }[]
 }
 
-const TYPE_ICONS: Record<Lesson['type'], React.ElementType> = {
+const TYPE_ICONS: Record<Visit['type'], React.ElementType> = {
     social: Coffee,
     spiritual: Heart,
     service: Hand,
@@ -16,7 +16,7 @@ const TYPE_ICONS: Record<Lesson['type'], React.ElementType> = {
     deep: Brain,
 }
 
-const TYPE_COLORS: Record<Lesson['type'], string> = {
+const TYPE_COLORS: Record<Visit['type'], string> = {
     social: 'text-amber-600 bg-amber-50',
     spiritual: 'text-violet-600 bg-violet-50',
     service: 'text-emerald-600 bg-emerald-50',
@@ -29,14 +29,14 @@ export function RecentVisitsWidget({ visits, contacts }: RecentVisitsWidgetProps
         contacts.find((c) => c.id === id)?.name ?? 'Unknown Person'
 
     const recentVisits = [...visits]
-        .sort((a, b) => new Date(b.taughtAt).getTime() - new Date(a.taughtAt).getTime())
+        .sort((a, b) => new Date(b.visitedAt).getTime() - new Date(a.visitedAt).getTime())
         .slice(0, 3)
 
     return (
         <div className="glass-panel p-5">
             <div className="flex items-center justify-between">
                 <p className="text-xs uppercase tracking-wide text-slate-500">Recent Visits</p>
-                <a href="/lessons" className="flex items-center gap-1 text-xs font-medium text-brand-600 hover:text-brand-700">
+                <a href="/visits" className="flex items-center gap-1 text-xs font-medium text-brand-600 hover:text-brand-700">
                     View all <ArrowRight className="h-3 w-3" />
                 </a>
             </div>
@@ -60,7 +60,7 @@ export function RecentVisitsWidget({ visits, contacts }: RecentVisitsWidgetProps
                                             {getContactName(visit.contactId)}
                                         </p>
                                         <span className="text-xs text-slate-500">
-                                            {formatDistanceToNow(new Date(visit.taughtAt), { addSuffix: true })}
+                                            {formatDistanceToNow(new Date(visit.visitedAt), { addSuffix: true })}
                                         </span>
                                     </div>
                                     <p className="text-xs text-slate-500">

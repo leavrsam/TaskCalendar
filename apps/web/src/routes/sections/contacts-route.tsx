@@ -39,19 +39,29 @@ export function ContactsRoute() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [editingContact, setEditingContact] = useState<Contact | null>(null)
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
-  /* New: View state with 3 options */
-  const [view, setView] = useState<'stages' | 'alphabetical' | 'recent'>('stages')
+  /* View state with 4 options, persisted to localStorage */
+  const [view, setView] = useState<'stages' | 'alphabetical' | 'recent' | 'favorites'>(() => {
+    const saved = localStorage.getItem('contacts-view')
+    return (saved as 'stages' | 'alphabetical' | 'recent' | 'favorites') || 'stages'
+  })
   const [importPreview, setImportPreview] = useState<ImportedContact[]>([])
   const [isImporting, setIsImporting] = useState(false)
   const [supportsContactPicker, setSupportsContactPicker] = useState(false)
 
-  const contacts = contactsQuery.data ?? []
+  const contactsRaw = contactsQuery.data ?? []
+  // Filter out location pins from the people list
+  const contacts = contactsRaw.filter(c => !c.tags.includes('pinned-location'))
   console.log('Contacts loaded:', contacts)
 
   useEffect(() => {
     // Check if Contact Picker API is available
     setSupportsContactPicker('contacts' in navigator)
   }, [])
+
+  useEffect(() => {
+    // Persist view preference to localStorage
+    localStorage.setItem('contacts-view', view)
+  }, [view])
 
   const handleCreate = async (data: Omit<Contact, 'id' | 'ownerUid' | 'createdAt' | 'updatedAt'>) => {
     await createContact.mutateAsync(data)
@@ -69,6 +79,13 @@ export function ContactsRoute() {
   const handleDelete = async (id: string) => {
     await deleteContact.mutateAsync(id)
     showSuccessToast({ title: 'Contact deleted', description: 'Removed from your contacts.' })
+  }
+
+  const handleToggleFavorite = async (contact: Contact) => {
+    await updateContact.mutateAsync({
+      id: contact.id,
+      data: { isFavorite: !contact.isFavorite }
+    })
   }
 
   const handleImportClick = async () => {
@@ -110,6 +127,7 @@ export function ContactsRoute() {
           nextVisitAt: null,
           sharedWith: [],
           goals: [],
+          isFavorite: false,
         })
         successCount++
       }
@@ -132,12 +150,7 @@ export function ContactsRoute() {
   return (
     <div className="space-y-6">
       <header className="flex flex-col gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm md:flex-row md:items-start md:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">People & Relationships</h1>
-          <p className="text-sm text-slate-600">
-            Manage your contacts, track their progress, and build meaningful relationships.
-          </p>
-        </div>
+        <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">People & Relationships</h1>
         <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
           {/* New View Toggles */}
           <div className="flex rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 p-1">
@@ -147,6 +160,13 @@ export function ContactsRoute() {
                 }`}
             >
               Groups
+            </button>
+            <button
+              onClick={() => setView('favorites')}
+              className={`flex-1 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium transition-colors sm:flex-none ${view === 'favorites' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-50 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                }`}
+            >
+              ★ Favorites
             </button>
             <button
               onClick={() => setView('alphabetical')}
@@ -206,6 +226,7 @@ export function ContactsRoute() {
                         contact={contact}
                         onEdit={() => setEditingContact(contact)}
                         onDelete={() => handleDelete(contact.id)}
+                        onToggleFavorite={() => handleToggleFavorite(contact)}
                       />
                     </div>
                   ))}
@@ -235,6 +256,7 @@ export function ContactsRoute() {
                   contact={contact}
                   onEdit={() => setEditingContact(contact)}
                   onDelete={() => handleDelete(contact.id)}
+                  onToggleFavorite={() => handleToggleFavorite(contact)}
                 />
               </div>
             ))}
@@ -259,9 +281,38 @@ export function ContactsRoute() {
                   contact={contact}
                   onEdit={() => setEditingContact(contact)}
                   onDelete={() => handleDelete(contact.id)}
+                  onToggleFavorite={() => handleToggleFavorite(contact)}
                 />
               </div>
             ))}
+        </section>
+      )}
+
+      {view === 'favorites' && (
+        <section className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {contacts.filter((c) => c.isFavorite).length === 0 ? (
+            <div className="col-span-full rounded-lg border border-dashed border-slate-200 dark:border-slate-800 p-8 text-center">
+              <p className="text-sm text-slate-500">No favorites yet. Star some contacts to see them here!</p>
+            </div>
+          ) : (
+            contacts
+              .filter((c) => c.isFavorite)
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map((contact) => (
+                <div
+                  key={contact.id}
+                  onClick={() => setSelectedContact(contact)}
+                  className="cursor-pointer"
+                >
+                  <ContactCard
+                    contact={contact}
+                    onEdit={() => setEditingContact(contact)}
+                    onDelete={() => handleDelete(contact.id)}
+                    onToggleFavorite={() => handleToggleFavorite(contact)}
+                  />
+                </div>
+              ))
+          )}
         </section>
       )}
 

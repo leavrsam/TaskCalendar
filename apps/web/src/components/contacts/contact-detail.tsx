@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
-import { User, Calendar, CheckCircle2, Clock, Plus, CalendarPlus, Target, Check } from 'lucide-react'
+import { User, Calendar, CheckCircle2, Clock, Plus, CalendarPlus, Target, Check, MessageSquare, Send, Trash2 } from 'lucide-react'
 import type { Contact } from '@taskcalendar/core'
 
 import { useTasksQuery, useCreateTask } from '@/features/tasks/api'
-import { useLessonsQuery, useCreateVisit } from '@/features/lessons/api'
+import { useVisitsQuery, useCreateVisit } from '@/features/visits/api'
+import { useContactNotesQuery, useCreateContactNote, useDeleteContactNote } from '@/features/contact-notes/api'
 import { TaskCard } from '@/components/tasks/task-card'
 import { CreationModal } from '@/components/calendar/creation-modal'
 import { VisitForm } from '@/components/visits/visit-form'
@@ -20,35 +21,61 @@ export function ContactDetail({ contact, onClose }: ContactDetailProps) {
     const [isTaskModalOpen, setIsTaskModalOpen] = useState(false)
     const [isVisitModalOpen, setIsVisitModalOpen] = useState(false)
     const [showGoalsPopup, setShowGoalsPopup] = useState(false)
+    const [newNote, setNewNote] = useState('')
+    const [isAddingNote, setIsAddingNote] = useState(false)
 
     const tasksQuery = useTasksQuery()
-    const lessonsQuery = useLessonsQuery()
+    const visitsQuery = useVisitsQuery()
+    const notesQuery = useContactNotesQuery(contact.id)
     const createTask = useCreateTask()
     const createVisit = useCreateVisit()
+    const createNote = useCreateContactNote()
+    const deleteNote = useDeleteContactNote()
     const { success: showSuccessToast } = useToast()
 
     const tasks = tasksQuery.data ?? []
-    const lessons = lessonsQuery.data ?? []
+    const visits = visitsQuery.data ?? []
+    const notes = notesQuery.data ?? []
 
-    // Filter tasks related to this contact
-    const contactTasks = tasks.filter((task) => task.contactId === contact.id)
+    // Filter tasks related to this contact (check both legacy contactId and contactIds array)
+    const contactTasks = tasks.filter((task) =>
+        task.contactId === contact.id ||
+        (task.contactIds && task.contactIds.includes(contact.id))
+    )
 
-    // Filter lessons related to this contact
-    const contactLessons = lessons.filter((lesson) => lesson.contactId === contact.id)
+    // Filter visits related to this contact
+    const contactVisits = visits.filter((visit) => visit.contactId === contact.id)
 
-    // Combine and sort by date
+    // Combine and sort by date (tasks, visits, and notes)
     const timeline = [
         ...contactTasks.map((task) => ({
             type: 'task' as const,
             date: task.scheduledStart || task.dueAt || task.createdAt,
             data: task,
         })),
-        ...contactLessons.map((lesson) => ({
-            type: 'lesson' as const,
-            date: lesson.taughtAt,
-            data: lesson,
+        ...contactVisits.map((visit) => ({
+            type: 'visit' as const,
+            date: visit.visitedAt,
+            data: visit,
+        })),
+        ...notes.map((note) => ({
+            type: 'note' as const,
+            date: note.createdAt,
+            data: note,
         })),
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+    const handleAddNote = async () => {
+        if (!newNote.trim()) return
+        setIsAddingNote(true)
+        try {
+            await createNote.mutateAsync({ contactId: contact.id, content: newNote.trim() })
+            setNewNote('')
+            showSuccessToast({ title: 'Note added', description: 'Added to timeline.' })
+        } finally {
+            setIsAddingNote(false)
+        }
+    }
 
     const handleCreateTask = async (values: any) => {
         await createTask.mutateAsync({
@@ -143,6 +170,14 @@ export function ContactDetail({ contact, onClose }: ContactDetailProps) {
                                 <span className="text-slate-600 dark:text-slate-400">{contact.address}</span>
                             </div>
                         )}
+                        {contact.birthday && (
+                            <div>
+                                <span className="font-semibold text-slate-700 dark:text-slate-300">Birthday:</span>{' '}
+                                <span className="text-slate-600 dark:text-slate-400">
+                                    {new Date(contact.birthday + 'T00:00:00').toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}
+                                </span>
+                            </div>
+                        )}
                         {contact.notes && (
                             <div>
                                 <span className="font-semibold text-slate-700 dark:text-slate-300">Notes:</span>{' '}
@@ -199,11 +234,30 @@ export function ContactDetail({ contact, onClose }: ContactDetailProps) {
                 <div className="flex-1 overflow-y-auto p-6">
                     <h3 className="mb-4 text-lg font-semibold text-slate-900 dark:text-slate-50">Activity Timeline</h3>
 
+                    {/* Add Note Form */}
+                    <div className="mb-4 flex gap-2">
+                        <input
+                            type="text"
+                            value={newNote}
+                            onChange={(e) => setNewNote(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleAddNote()}
+                            placeholder="Add a note..."
+                            className="flex-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-50 focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                        />
+                        <button
+                            onClick={handleAddNote}
+                            disabled={isAddingNote || !newNote.trim()}
+                            className="rounded-lg bg-brand-600 px-4 py-2 text-white hover:bg-brand-700 disabled:opacity-50"
+                        >
+                            <Send className="h-4 w-4" />
+                        </button>
+                    </div>
+
                     {timeline.length === 0 ? (
                         <div className="rounded-lg border border-dashed border-slate-200 dark:border-slate-800 p-8 text-center">
                             <Calendar className="mx-auto h-12 w-12 text-slate-300" />
                             <p className="mt-2 text-sm text-slate-500">
-                                No activities yet. Create a task or lesson to get started.
+                                No activities yet. Create a task or visit to get started.
                             </p>
                         </div>
                     ) : (
@@ -221,7 +275,7 @@ export function ContactDetail({ contact, onClose }: ContactDetailProps) {
                                             </div>
                                             <TaskCard task={item.data} />
                                         </div>
-                                    ) : (
+                                    ) : item.type === 'visit' ? (
                                         <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
                                             <div className="flex items-center gap-2 text-xs text-slate-500">
                                                 <Clock className="h-4 w-4" />
@@ -244,6 +298,24 @@ export function ContactDetail({ contact, onClose }: ContactDetailProps) {
                                                     </ul>
                                                 </div>
                                             )}
+                                        </div>
+                                    ) : (
+                                        <div className="group rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2 text-xs text-slate-500">
+                                                    <MessageSquare className="h-4 w-4" />
+                                                    <span>Note</span>
+                                                    <span>• {format(new Date(item.date), 'MMM d, yyyy h:mm a')}</span>
+                                                </div>
+                                                <button
+                                                    onClick={() => deleteNote.mutate({ noteId: item.data.id, contactId: contact.id })}
+                                                    className="rounded-full p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+                                                    title="Delete note"
+                                                >
+                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                </button>
+                                            </div>
+                                            <p className="mt-2 text-sm text-slate-900 dark:text-slate-50">{item.data.content}</p>
                                         </div>
                                     )}
                                 </div>

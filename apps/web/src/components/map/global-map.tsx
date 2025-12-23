@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef, useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import type { Contact, Task } from '@taskcalendar/core'
@@ -65,6 +65,47 @@ function MapClickHandler({ onLocationSelect }: { onLocationSelect: (lat: number,
         },
     })
     return null
+}
+
+// Helper component for Pin Popup to manage confirmation state
+function LocationPinPopup({ pin, onDelete }: { pin: any, onDelete?: (id: string) => void }) {
+    const [isConfirming, setIsConfirming] = useState(false)
+    const timeoutRef = useRef<any>(null)
+
+    useEffect(() => {
+        return () => {
+            if (timeoutRef.current) clearTimeout(timeoutRef.current)
+        }
+    }, [])
+
+    const handleDeleteClick = (e: React.MouseEvent) => {
+        e.stopPropagation() // Prevent map click
+
+        if (isConfirming) {
+            onDelete?.(pin.id)
+            setIsConfirming(false)
+        } else {
+            setIsConfirming(true)
+            timeoutRef.current = setTimeout(() => setIsConfirming(false), 3000)
+        }
+    }
+
+    return (
+        <div className="min-w-[150px] p-1 text-center">
+            <h3 className="font-semibold text-slate-900 mb-1">{pin.name}</h3>
+            <p className="text-xs text-slate-500 mb-3">{pin.address}</p>
+
+            <button
+                onClick={handleDeleteClick}
+                className={`w-full rounded-md px-3 py-1.5 text-xs font-semibold border transition-colors ${isConfirming
+                    ? 'bg-red-600 text-white border-red-600 hover:bg-red-700 shadow-sm'
+                    : 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100'
+                    }`}
+            >
+                {isConfirming ? 'Really Delete?' : 'Delete Pin'}
+            </button>
+        </div>
+    )
 }
 
 type GlobalMapProps = {
@@ -255,17 +296,7 @@ export function GlobalMap({
                 {locationPinMarkers.map((pin) => (
                     <Marker key={`pin-${pin.id}`} position={pin.position} icon={LocationPinIcon}>
                         <Popup>
-                            <div className="min-w-[150px] p-1 text-center">
-                                <h3 className="font-semibold text-slate-900 mb-1">{pin.name}</h3>
-                                <p className="text-xs text-slate-500 mb-3">{pin.address}</p>
-
-                                <button
-                                    onClick={() => onDeleteLocation?.(pin.id)}
-                                    className="w-full rounded-md bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-100 border border-red-100"
-                                >
-                                    Delete Pin
-                                </button>
-                            </div>
+                            <LocationPinPopup pin={pin} onDelete={onDeleteLocation} />
                         </Popup>
                     </Marker>
                 ))}

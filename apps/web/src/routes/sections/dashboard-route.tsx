@@ -5,7 +5,7 @@ import { QuickActions } from '@/components/dashboard/quick-actions'
 import { RecentVisitsWidget } from '@/components/dashboard/recent-visits-widget'
 import { CollaboratorAvatar } from '@/components/collaborators/collaborator-avatar'
 import { useContactsQuery } from '@/features/contacts/api'
-import { useLessonsQuery } from '@/features/lessons/api'
+import { useVisitsQuery } from '@/features/visits/api'
 import { useTasksQuery } from '@/features/tasks/api'
 import { useGoalsQuery } from '@/features/goals/api'
 import { useAuth } from '@/hooks/use-auth'
@@ -14,7 +14,7 @@ export function DashboardRoute() {
   const { user } = useAuth()
   const tasksQuery = useTasksQuery()
   const contactsQuery = useContactsQuery()
-  const lessonsQuery = useLessonsQuery()
+  const visitsQuery = useVisitsQuery()
   const goalsQuery = useGoalsQuery()
 
   const upcomingTask = tasksQuery.data?.find((task) => task.scheduledStart)
@@ -27,11 +27,11 @@ export function DashboardRoute() {
       ; (contactsQuery.data ?? []).forEach((contact) =>
         contact.sharedWith?.forEach((uid) => shared.add(uid)),
       )
-      ; (lessonsQuery.data ?? []).forEach((lesson) =>
-        lesson.sharedWith?.forEach((uid) => shared.add(uid)),
+      ; (visitsQuery.data ?? []).forEach((visit) =>
+        visit.sharedWith?.forEach((uid) => shared.add(uid)),
       )
     return shared.size
-  }, [tasksQuery.data, contactsQuery.data, lessonsQuery.data])
+  }, [tasksQuery.data, contactsQuery.data, visitsQuery.data])
 
   const goalStats = useMemo(() => {
     const goals = goalsQuery.data ?? []
@@ -90,7 +90,7 @@ export function DashboardRoute() {
         <div className="min-w-[160px] md:min-w-0">
           <StatCard
             label="Visits this week"
-            value={lessonsQuery.data?.length ?? 0}
+            value={visitsQuery.data?.length ?? 0}
             hint="Interactions logged"
           />
         </div>
@@ -121,7 +121,7 @@ export function DashboardRoute() {
             )}
           </div>
 
-          <RecentVisitsWidget visits={lessonsQuery.data ?? []} contacts={contacts} />
+          <RecentVisitsWidget visits={visitsQuery.data ?? []} contacts={contacts} />
         </div>
 
         <div className="space-y-4">

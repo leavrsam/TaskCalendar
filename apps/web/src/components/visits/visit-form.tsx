@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react'
 import { X, Plus, Trash2 } from 'lucide-react'
 import { formatISO } from 'date-fns'
-import type { Lesson } from '@taskcalendar/core'
+import type { Visit } from '@taskcalendar/core'
 import { VISIT_TYPE_LABELS } from '@taskcalendar/core'
 
 type VisitFormProps = {
-    initialData?: Lesson
+    initialData?: Visit
     contacts: { id: string; name: string }[]
-    onSubmit: (data: Omit<Lesson, 'id' | 'ownerUid' | 'createdAt' | 'updatedAt'>) => Promise<void>
+    onSubmit: (data: Omit<Visit, 'id' | 'ownerUid' | 'createdAt' | 'updatedAt'>) => Promise<void>
     onClose: () => void
     title: string
 }
@@ -15,8 +15,8 @@ type VisitFormProps = {
 export function VisitForm({ initialData, contacts, onSubmit, onClose, title }: VisitFormProps) {
     const [form, setForm] = useState({
         contactId: '',
-        taughtAt: formatISO(new Date()).slice(0, 16), // YYYY-MM-DDTHH:mm
-        type: 'social' as Lesson['type'],
+        visitedAt: formatISO(new Date()).slice(0, 16), // YYYY-MM-DDTHH:mm
+        type: 'social' as Visit['type'],
         notes: '',
         commitments: [] as string[],
     })
@@ -27,7 +27,7 @@ export function VisitForm({ initialData, contacts, onSubmit, onClose, title }: V
         if (initialData) {
             setForm({
                 contactId: initialData.contactId,
-                taughtAt: initialData.taughtAt.slice(0, 16),
+                visitedAt: initialData.visitedAt.slice(0, 16),
                 type: initialData.type,
                 notes: initialData.notes || '',
                 commitments: initialData.commitments || [],
@@ -60,8 +60,8 @@ export function VisitForm({ initialData, contacts, onSubmit, onClose, title }: V
         try {
             await onSubmit({
                 ...form,
-                taughtAt: new Date(form.taughtAt).toISOString(),
-                taughtBy: initialData?.taughtBy || [],
+                visitedAt: new Date(form.visitedAt).toISOString(),
+                visitedBy: initialData?.visitedBy || [],
                 followUpAt: initialData?.followUpAt || null,
                 sharedWith: initialData?.sharedWith || [],
             })
@@ -110,8 +110,8 @@ export function VisitForm({ initialData, contacts, onSubmit, onClose, title }: V
                             <input
                                 type="datetime-local"
                                 required
-                                value={form.taughtAt}
-                                onChange={(e) => setForm({ ...form, taughtAt: e.target.value })}
+                                value={form.visitedAt}
+                                onChange={(e) => setForm({ ...form, visitedAt: e.target.value })}
                                 className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                             />
                         </div>
@@ -119,7 +119,7 @@ export function VisitForm({ initialData, contacts, onSubmit, onClose, title }: V
                             <label className="block text-xs font-semibold uppercase text-slate-500">Type</label>
                             <select
                                 value={form.type}
-                                onChange={(e) => setForm({ ...form, type: e.target.value as Lesson['type'] })}
+                                onChange={(e) => setForm({ ...form, type: e.target.value as Visit['type'] })}
                                 className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                             >
                                 {Object.entries(VISIT_TYPE_LABELS).map(([value, label]) => (

@@ -50,6 +50,7 @@ export function ContactForm({ initialData, onSubmit, onClose, title }: ContactFo
         address: '',
         phone: '',
         email: '',
+        birthday: '',
         notes: '',
         location: null as { lat: number; lng: number } | null,
         goals: [] as ContactGoal[],
@@ -65,6 +66,7 @@ export function ContactForm({ initialData, onSubmit, onClose, title }: ContactFo
                 address: initialData.address || '',
                 phone: initialData.phone || '',
                 email: initialData.email || '',
+                birthday: initialData.birthday || '',
                 notes: initialData.notes || '',
                 location: initialData.location || null,
                 goals: initialData.goals || [],
@@ -98,6 +100,7 @@ export function ContactForm({ initialData, onSubmit, onClose, title }: ContactFo
                 email: form.email || undefined,
                 phone: form.phone || undefined,
                 address: form.address || undefined,
+                birthday: form.birthday || undefined,
                 notes: form.notes || undefined,
                 location: form.location || null,
                 goals: form.goals,
@@ -105,6 +108,7 @@ export function ContactForm({ initialData, onSubmit, onClose, title }: ContactFo
                 lastContactedAt: initialData?.lastContactedAt || null,
                 nextVisitAt: initialData?.nextVisitAt || null,
                 sharedWith: initialData?.sharedWith || [],
+                isFavorite: initialData?.isFavorite || false,
             })
             onClose()
         } catch (error) {
@@ -211,6 +215,59 @@ export function ContactForm({ initialData, onSubmit, onClose, title }: ContactFo
                                 className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-50 focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                                 placeholder="john@example.com"
                             />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Birthday</label>
+                        <div className="mt-1 grid grid-cols-2 gap-2">
+                            <select
+                                value={form.birthday ? form.birthday.slice(5, 7) : ''}
+                                onChange={(e) => {
+                                    const month = e.target.value
+                                    const day = form.birthday ? form.birthday.slice(8, 10) : '01'
+                                    if (month) {
+                                        setForm({ ...form, birthday: `2000-${month}-${day}` })
+                                    } else {
+                                        setForm({ ...form, birthday: '' })
+                                    }
+                                }}
+                                className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-50 focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                            >
+                                <option value="">Month</option>
+                                <option value="01">January</option>
+                                <option value="02">February</option>
+                                <option value="03">March</option>
+                                <option value="04">April</option>
+                                <option value="05">May</option>
+                                <option value="06">June</option>
+                                <option value="07">July</option>
+                                <option value="08">August</option>
+                                <option value="09">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+                            <select
+                                value={form.birthday ? form.birthday.slice(8, 10) : ''}
+                                onChange={(e) => {
+                                    const day = e.target.value
+                                    const month = form.birthday ? form.birthday.slice(5, 7) : '01'
+                                    if (day) {
+                                        setForm({ ...form, birthday: `2000-${month}-${day}` })
+                                    } else {
+                                        setForm({ ...form, birthday: '' })
+                                    }
+                                }}
+                                className="w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-50 focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                            >
+                                <option value="">Day</option>
+                                {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                                    <option key={day} value={String(day).padStart(2, '0')}>
+                                        {day}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                     </div>
 

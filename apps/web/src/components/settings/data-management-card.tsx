@@ -2,13 +2,13 @@ import { Download, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
 import { useContactsQuery } from '@/features/contacts/api'
-import { useLessonsQuery } from '@/features/lessons/api'
+import { useVisitsQuery } from '@/features/visits/api'
 import { useTasksQuery } from '@/features/tasks/api'
 import { useGoalsQuery } from '@/features/goals/api'
 
 export function DataManagementCard() {
     const contactsQuery = useContactsQuery()
-    const lessonsQuery = useLessonsQuery()
+    const visitsQuery = useVisitsQuery()
     const tasksQuery = useTasksQuery()
     const goalsQuery = useGoalsQuery()
     const [isExporting, setIsExporting] = useState(false)
@@ -18,7 +18,7 @@ export function DataManagementCard() {
         try {
             const data = {
                 contacts: contactsQuery.data ?? [],
-                lessons: lessonsQuery.data ?? [],
+                visits: visitsQuery.data ?? [],
                 tasks: tasksQuery.data ?? [],
                 goals: goalsQuery.data ?? [],
                 exportedAt: new Date().toISOString(),
