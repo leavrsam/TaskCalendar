@@ -58,7 +58,7 @@ const GhostEvent = ({ item }: { item: any }) => {
 
     // Fallback if item structure varies
     const title = item.title || item.resource?.title || 'Event'
-    const color = item.resource?.color || item.color || '#3b82f6' // Default blue
+    const color = item.resource?.color || item.color || '#039be5' // Default blue (Peacock)
 
     return (
         <div

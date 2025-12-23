@@ -66,7 +66,7 @@ export function CreationModal({ slot, defaultContactId, defaultLocation, onClose
     const [status] = useState<Task['status']>('todo')
     const [priority, setPriority] = useState<Task['priority']>('medium')
     const [notes, setNotes] = useState('')
-    const [color, setColor] = useState<string>('#3b82f6')
+    const [color, setColor] = useState<string>('#039be5')
     const [contactIds, setContactIds] = useState<string[]>(defaultContactId ? [defaultContactId] : [])
     const [recurrence, setRecurrence] = useState<Task['recurrence']>(null)
     const [isAllDay, setIsAllDay] = useState(false)

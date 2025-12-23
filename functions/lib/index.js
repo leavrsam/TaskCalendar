@@ -45,6 +45,9 @@ const GOOGLE_COLOR_MAP = {
     '10': '#0b8043',
     '11': '#d50000', // Tomato
 };
+// Reverse map for lookup (Hex -> Google ID)
+const HEX_TO_GOOGLE_COLOR_MAP = Object.entries(GOOGLE_COLOR_MAP)
+    .reduce((acc, [id, hex]) => (Object.assign(Object.assign({}, acc), { [hex.toLowerCase()]: id })), {});
 // Initialize OAuth2 Client using process.env
 const getOAuthClient = () => {
     return new googleapis_1.google.auth.OAuth2(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, process.env.GOOGLE_REDIRECT_URI);
@@ -87,7 +90,7 @@ exports.healthCheck = (0, https_1.onRequest)({ cors: true }, (req, res) => {
     });
 });
 // 2. Handle Google Callback (Redirect URI)
-exports.handleGoogleCallback = (0, https_1.onRequest)({ cors: true }, async (req, res) => {
+exports.handleGoogleCallback = (0, https_1.onRequest)({ cors: true, invoker: 'public' }, async (req, res) => {
     try {
         console.info('--- STARTING AUTH FLOW ---');
         // 1. Strict Config Validation
@@ -155,6 +158,11 @@ exports.handleGoogleCallback = (0, https_1.onRequest)({ cors: true }, async (req
         console.info(`Triggering initial sync for ${email} (background)`);
         performCalendarSync(userId, email).catch(e => {
             console.error('Initial background sync failed', e);
+        });
+        // Register Webhook - Fire and Forget
+        console.info(`Registering webhook for ${email} (background)`);
+        registerWebhookWatch(userId, email, tokens.access_token, tokens.refresh_token).catch(e => {
+            console.error('Initial webhook registration failed', e);
         });
         console.info('--- AUTH FLOW COMPLETE, REDIRECTING ---');
         const appUrl = origin || process.env.APP_URL || 'http://localhost:5173';
@@ -336,7 +344,40 @@ exports.exportToGoogle = (0, firestore_1.onDocumentWritten)('users/{userId}/task
     const db = admin.firestore();
     const isDelete = !change.after.exists;
     const isCreate = !change.before.exists;
+    const beforeData = change.before.exists ? change.before.data() : null;
     const data = (change.after.exists ? change.after.data() : change.before.data()) || {};
+    // LOOP PREVENTION: Skip if this event originated from Google Calendar sync
+    // Events synced from Google will have a calendarEmail field
+    if (data.calendarEmail && !isDelete) {
+        // Check if this is just an update from sync (not a deliberate user edit)
+        // If the before data also had calendarEmail and key fields haven't changed, skip
+        if (beforeData === null || beforeData === void 0 ? void 0 : beforeData.calendarEmail) {
+            const titleSame = beforeData.title === data.title;
+            const startSame = String(beforeData.scheduledStart) === String(data.scheduledStart);
+            const endSame = String(beforeData.scheduledEnd) === String(data.scheduledEnd);
+            const notesSame = beforeData.notes === data.notes;
+            const colorSame = beforeData.color === data.color;
+            // If nothing important changed, this was likely just a sync update
+            if (titleSame && startSame && endSame && notesSame && colorSame) {
+                console.info('Skipping export: no user-facing changes detected (likely sync update)');
+                return;
+            }
+        }
+        else if (isCreate) {
+            // New document with calendarEmail means it came from sync - don't re-export
+            console.info('Skipping export: new event came from Google sync');
+            return;
+        }
+    }
+    // LOOP PREVENTION: Skip if only change was adding googleEventId (from our own export)
+    if (!isCreate && !isDelete && beforeData && !beforeData.googleEventId && data.googleEventId) {
+        const beforeKeys = Object.keys(beforeData).filter(k => k !== 'googleEventId' && k !== 'updatedAt');
+        const afterKeys = Object.keys(data).filter(k => k !== 'googleEventId' && k !== 'updatedAt');
+        if (beforeKeys.length === afterKeys.length) {
+            console.info('Skipping export: only googleEventId was added');
+            return;
+        }
+    }
     const calendarsRef = db.collection('users').doc(userId).collection('connected_calendars');
     const calendarSnap = await calendarsRef.limit(1).get();
     if (calendarSnap.empty)
@@ -360,7 +401,8 @@ exports.exportToGoogle = (0, firestore_1.onDocumentWritten)('users/{userId}/task
                 summary: data.title,
                 description: data.notes,
                 start: { dateTime: startVal.toISOString() },
-                end: { dateTime: endVal.toISOString() }
+                end: { dateTime: endVal.toISOString() },
+                colorId: data.color ? HEX_TO_GOOGLE_COLOR_MAP[data.color.toLowerCase()] : undefined
             };
             if (isCreate || !data.googleEventId) {
                 const res = await calendar.events.insert({ calendarId: 'primary', requestBody: resource });
@@ -405,8 +447,8 @@ const registerWebhookWatch = async (userId, calendarEmail, accessToken, refreshT
     });
     return { channelId, expiration: res.data.expiration };
 };
-exports.startWebhookWatch = (0, https_1.onCall)({ cors: true }, async (request) => {
-    var _a;
+exports.startWebhookWatch = (0, https_1.onCall)({ cors: true, invoker: 'public' }, async (request) => {
+    var _a, _b;
     const userId = (_a = request.auth) === null || _a === void 0 ? void 0 : _a.uid;
     if (!userId)
         throw new https_1.HttpsError('unauthenticated', 'User must be signed in');
@@ -422,7 +464,10 @@ exports.startWebhookWatch = (0, https_1.onCall)({ cors: true }, async (request) 
     }
     catch (error) {
         console.error('Failed to start watch', error);
-        throw new https_1.HttpsError('internal', 'Failed to register webhook');
+        // Expose the real error message to the client
+        const msg = error.message || 'Unknown error';
+        const details = ((_b = error.response) === null || _b === void 0 ? void 0 : _b.data) || {};
+        throw new https_1.HttpsError('unknown', `GCal API: ${msg}`, details);
     }
 });
 exports.handleCalendarWebhook = (0, https_1.onRequest)(async (req, res) => {

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Moon, Sun, Monitor } from 'lucide-react'
+import { Moon, Sun, Monitor, Calendar as CalendarIcon, Download } from 'lucide-react'
 import { ConnectCalendarButton } from '@/components/settings/connect-calendar-button'
 
 import { ShareWorkspaceCard } from '@/components/sharing/share-workspace-card'
@@ -13,12 +13,24 @@ import { useCalendarStore } from '@/stores/calendar-store'
 import type { TaskEvent } from '@/features/tasks/api'
 import type { Task } from '@taskcalendar/core'
 import ICAL from 'ical.js'
-import { Calendar as CalendarIcon, Download } from 'lucide-react'
 import { useConnectedCalendars, useDisconnectCalendar } from '@/features/settings/api'
+import { StatusModal } from '@/components/ui/status-modal'
+import { themeColors, type ThemeColor } from '@/lib/themes'
 
 export function SettingsRoute() {
   const { user } = useAuth()
   const [tab, setTab] = useState<'sharing' | 'notifications' | 'data' | 'appearance' | 'integrations'>('appearance')
+  const [statusModal, setStatusModal] = useState<{
+    isOpen: boolean
+    title: string
+    message: string
+    type: 'success' | 'error'
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'success'
+  })
 
   return (
     <div className="space-y-6">
@@ -55,11 +67,24 @@ export function SettingsRoute() {
           </button>
         ))}
       </div>
+
       {tab === 'appearance' && <AppearanceSettings />}
-      {tab === 'integrations' && <IntegrationsSettings />}
+      {tab === 'integrations' && (
+        <IntegrationsSettings
+          onShowStatus={(title, message, type) => setStatusModal({ isOpen: true, title, message, type })}
+        />
+      )}
       {tab === 'sharing' && <ShareWorkspaceCard />}
       {tab === 'notifications' && <NotificationsPlaceholder />}
       {tab === 'data' && <DataManagementCard />}
+
+      <StatusModal
+        isOpen={statusModal.isOpen}
+        onClose={() => setStatusModal(prev => ({ ...prev, isOpen: false }))}
+        title={statusModal.title}
+        message={statusModal.message}
+        type={statusModal.type}
+      />
 
       <footer className="mt-8 border-t border-slate-200 dark:border-slate-800 pt-6">
         <div className="flex justify-center gap-6 text-xs text-slate-500 dark:text-slate-400">
@@ -71,8 +96,6 @@ export function SettingsRoute() {
     </div>
   )
 }
-
-import { themeColors, type ThemeColor } from '@/lib/themes'
 
 function AppearanceSettings() {
   const { theme, setTheme, themeColor, setThemeColor } = useTheme()
@@ -124,8 +147,6 @@ function AppearanceSettings() {
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
           {Object.entries(themeColors).map(([key, value]) => {
             const isSelected = themeColor === key
-            // Construct the background color string based on the theme definition (500 shade)
-            // Since we know the format is "R G B", we can stick it in rgb()
             const colorStyle = { backgroundColor: `rgb(${value.colors[500]})` }
 
             return (
@@ -157,7 +178,7 @@ function AppearanceSettings() {
   )
 }
 
-function IntegrationsSettings() {
+function IntegrationsSettings({ onShowStatus }: { onShowStatus: (title: string, message: string, type: 'success' | 'error') => void }) {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
   const connectedCalendars = useConnectedCalendars()
   const disconnect = useDisconnectCalendar()
@@ -168,7 +189,6 @@ function IntegrationsSettings() {
 
   const handleImportCalendar = async (url: string) => {
     try {
-      // Proxy via allorigins to bypass CORS for demo purposes
       const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`
       const response = await fetch(proxyUrl)
       if (!response.ok) throw new Error('Failed to fetch calendar')
@@ -199,7 +219,6 @@ function IntegrationsSettings() {
           location: event.location ? { lat: 0, lng: 0 } : undefined,
           address: event.location,
           notes: event.description,
-          // tags: ['imported'], // Removed to fix type error
           recurrence: null,
           sharedWith: [],
           isBackup: true,
@@ -236,7 +255,6 @@ function IntegrationsSettings() {
         </p>
 
         <div className="mt-6 space-y-4">
-          {/* Google Calendar (Direct Sync) */}
           <div className="rounded-xl border border-brand-200 bg-white p-4 dark:border-brand-800 dark:bg-brand-900/50">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -282,19 +300,18 @@ function IntegrationsSettings() {
                 )}
 
                 <div className="flex justify-end gap-2 pt-2">
-                  {/* Sync Now button */}
                   {connectedCalendars.data && connectedCalendars.data.length > 0 && (
-                    <SyncNowButton />
+                    <>
+                      <DebugWebhookButton onShowStatus={onShowStatus} />
+                      <SyncNowButton />
+                    </>
                   )}
-                  {/* Always show Connect button to add MORE accounts */}
                   <ConnectCalendarButton label={connectedCalendars.data?.length ? "Add Another Account" : "Connect Account"} />
                 </div>
               </div>
             )}
           </div>
 
-
-          {/* Legacy iCal Import */}
           <div className="flex items-center justify-between rounded-xl border border-slate-200 p-4 dark:border-slate-700">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
@@ -421,5 +438,46 @@ function SyncNowButton() {
         <span className="text-xs text-slate-500 dark:text-slate-400">{result}</span>
       )}
     </div>
+  )
+}
+
+function DebugWebhookButton({ onShowStatus }: { onShowStatus: (title: string, message: string, type: 'success' | 'error') => void }) {
+  const [loading, setLoading] = useState(false)
+
+  const handleDebug = async () => {
+    setLoading(true)
+    try {
+      const { getFunctions, httpsCallable } = await import('firebase/functions')
+      const { getApp } = await import('firebase/app')
+      const functions = getFunctions(getApp())
+      const startWebhookWatch = httpsCallable(functions, 'startWebhookWatch')
+      const result = await startWebhookWatch()
+      console.log('Webhook Debug Result:', result)
+
+      onShowStatus(
+        'Webhook Registered',
+        `Success! Channel ID:\n${(result.data as any).channelId}`,
+        'success'
+      )
+    } catch (error: any) {
+      console.error('Webhook Debug Error:', error)
+      onShowStatus(
+        'Registration Failed',
+        `Error registering webhook:\n\n${error.message}`,
+        'error'
+      )
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <button
+      onClick={handleDebug}
+      disabled={loading}
+      className="text-xs text-slate-400 hover:text-brand-600 underline"
+    >
+      {loading ? 'Testing...' : 'Debug Webhooks'}
+    </button>
   )
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { format } from 'date-fns'
+import { format, differenceInDays } from 'date-fns'
 import { MapPin, Phone, Mail, Edit2, Trash2, Star } from 'lucide-react'
 import type { Contact } from '@taskcalendar/core'
 import { CollaboratorStack } from '@/components/collaborators/collaborator-stack'
@@ -33,8 +33,25 @@ export function ContactCard({ contact, onEdit, onDelete, onToggleFavorite }: Con
     }
   }
 
+  // Recency Logic for Favorites
+  let ringClass = ''
+  if (contact.isFavorite) {
+    const lastContact = contact.lastContactedAt ? new Date(contact.lastContactedAt) : null
+    const daysSince = lastContact ? differenceInDays(new Date(), lastContact) : Infinity
+
+    if (daysSince < 30) {
+      ringClass = 'ring-2 ring-emerald-500/70 dark:ring-emerald-500/70 ring-offset-2 ring-offset-white dark:ring-offset-slate-900'
+    } else if (daysSince < 90) {
+      ringClass = 'ring-2 ring-amber-400/80 dark:ring-amber-400/80 ring-offset-2 ring-offset-white dark:ring-offset-slate-900'
+    } else if (daysSince < 120) {
+      ringClass = 'ring-2 ring-orange-500/80 dark:ring-orange-500/80 ring-offset-2 ring-offset-white dark:ring-offset-slate-900'
+    } else {
+      ringClass = 'ring-2 ring-rose-500/70 dark:ring-rose-500/70 ring-offset-2 ring-offset-white dark:ring-offset-slate-900'
+    }
+  }
+
   return (
-    <div className="group relative flex flex-col gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm transition-all hover:shadow-md">
+    <div className={`group relative flex flex-col gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm transition-all hover:shadow-md ${ringClass}`}>
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2">
           {onToggleFavorite && (
