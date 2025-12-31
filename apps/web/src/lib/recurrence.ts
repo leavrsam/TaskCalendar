@@ -163,7 +163,8 @@ function getNextOccurrence(
             return addMonths(current, interval)
         }
 
-        case 'annually': {
+        case 'annually':
+        case 'yearly': {
             if (recurrence.byMonth !== null && recurrence.byMonth !== undefined && recurrence.byMonthDay !== null && recurrence.byMonthDay !== undefined) {
                 let next = addYears(current, interval)
                 next.setMonth(recurrence.byMonth)
@@ -224,7 +225,8 @@ export function getRecurrenceDescription(
             return `Monthly on the ${ordinal} ${dayName}`
         }
 
-        case 'annually': {
+        case 'annually':
+        case 'yearly': {
             const month = monthNames[getMonth(start)]
             const day = getDate(start)
             return `Annually on ${month} ${day}`

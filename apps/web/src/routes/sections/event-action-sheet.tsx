@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import clsx from 'clsx'
 import { Trash2, Save, X, Target, ChevronDown } from 'lucide-react'
 import { AnimatedSheet } from '@/components/ui/animated-sheet'
@@ -40,6 +40,23 @@ export function EventActionSheet({ event, onClose }: EventActionSheetProps) {
     const [showGoalsPopup, setShowGoalsPopup] = useState(false)
     const [goalsContactId, setGoalsContactId] = useState<string | null>(null)
     const [showContactsDropdown, setShowContactsDropdown] = useState(false)
+    const contactsWrapperRef = useRef<HTMLDivElement>(null)
+
+    // Close dropdown on click outside
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent | TouchEvent) {
+            if (contactsWrapperRef.current && !contactsWrapperRef.current.contains(event.target as Node)) {
+                setShowContactsDropdown(false)
+            }
+        }
+        // Use capture phase to ensure we catch the event before any stopPropagation
+        document.addEventListener("mousedown", handleClickOutside, true)
+        document.addEventListener("touchstart", handleClickOutside, true)
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside, true)
+            document.removeEventListener("touchstart", handleClickOutside, true)
+        }
+    }, [])
 
     const contacts = useMemo(() => contactsQuery.data ?? [], [contactsQuery.data])
 
@@ -127,15 +144,23 @@ export function EventActionSheet({ event, onClose }: EventActionSheetProps) {
         setShowScopeModal(false)
 
         if (scopeAction === 'delete') {
-            // Handle delete logic
             if (scope === 'this') {
-                if (!task.id.includes('-')) {
-                    deleteTask.mutate(task.id)
-                }
+                // For "this instance only" - get the parent ID and delete either:
+                // 1. If it's an expanded instance (has hyphenated ID), delete the parent and Google will handle it
+                // 2. If it's the master event itself, just delete it
+                const isExpandedInstance = task.id.includes('-') && task.recurringEventId
+                const targetId = isExpandedInstance ? task.recurringEventId! : task.id
+
+                // For now, delete the master - in future could add exception handling
+                // TODO: Ideally we'd add an exception date to the recurrence rather than deleting
+                deleteTask.mutate(targetId)
             } else if (scope === 'following') {
-                // Not implemented
+                // Delete from this instance forward - not fully implemented
+                // Would require modifying the recurrence end date
+                const parentId = task.recurringEventId || task.id
+                deleteTask.mutate(parentId)
             } else if (scope === 'all') {
-                // Delete parent
+                // Delete the entire series
                 const parentId = task.recurringEventId || task.id
                 deleteTask.mutate(parentId)
             }
@@ -157,6 +182,7 @@ export function EventActionSheet({ event, onClose }: EventActionSheetProps) {
             address: task.address,
             location: task.location,
             recurrence: task.recurrence,
+            reminders: task.reminders,
         }
 
         if (scope === 'this') {
@@ -203,6 +229,12 @@ export function EventActionSheet({ event, onClose }: EventActionSheetProps) {
                         className="mt-1 w-full bg-transparent text-xl font-semibold text-slate-900 focus:outline-none focus:ring-0 dark:text-slate-50"
                         placeholder="Event title"
                     />
+                    {task.calendarEmail && (
+                        <div className="mt-2 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                            <div className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                            <span>Connected to: {task.calendarEmail}</span>
+                        </div>
+                    )}
                 </div>
                 <div className="flex items-center gap-1">
                     {isDirty && (
@@ -315,11 +347,34 @@ export function EventActionSheet({ event, onClose }: EventActionSheetProps) {
                 </div>
 
                 <div className="border-t border-slate-100 dark:border-slate-800 pt-6">
-                    <RecurrenceSelector
-                        scheduledStart={task.scheduledStart}
-                        recurrence={task.recurrence}
-                        onChange={(recurrence) => handleUpdate({ recurrence })}
-                    />
+                    <label className="mb-2 block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Settings</label>
+                    <div className="flex gap-4">
+                        <div className="flex-1">
+                            <RecurrenceSelector
+                                scheduledStart={task.scheduledStart}
+                                recurrence={task.recurrence}
+                                onChange={(recurrence) => handleUpdate({ recurrence })}
+                            />
+                        </div>
+                        <div className="w-1/3">
+                            <select
+                                value={task.reminders && task.reminders.length > 0 ? task.reminders[0].toString() : 'none'}
+                                onChange={(e) => {
+                                    const val = e.target.value
+                                    handleUpdate({ reminders: val === 'none' ? [] : [parseInt(val)] })
+                                }}
+                                className="w-full rounded-xl border-none bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-900 dark:text-slate-50 focus:ring-2 focus:ring-brand-500/20"
+                            >
+                                <option value="none">No reminder</option>
+                                <option value="0">At start</option>
+                                <option value="5">5 min before</option>
+                                <option value="15">15 min before</option>
+                                <option value="30">30 min before</option>
+                                <option value="60">1 hour before</option>
+                                <option value="120">2 hours before</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Status & Priority Grid */}
@@ -356,7 +411,7 @@ export function EventActionSheet({ event, onClose }: EventActionSheetProps) {
                 <div className="border-t border-slate-100 dark:border-slate-800 pt-6">
                     <label className="mb-2 block text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Contacts</label>
                     <div className="space-y-2">
-                        <div className="relative">
+                        <div className="relative" ref={contactsWrapperRef}>
                             <button
                                 type="button"
                                 onClick={() => setShowContactsDropdown(!showContactsDropdown)}

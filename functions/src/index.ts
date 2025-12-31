@@ -151,21 +151,23 @@ export const handleGoogleCallback = onRequest({ cors: true, invoker: 'public' },
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
 
-        // Immediate Initial Sync - Fire and Forget
-        console.info(`Triggering initial sync for ${email} (background)`);
-        performCalendarSync(userId, email).catch(e => {
-            console.error('Initial background sync failed', e);
-        });
-
-        // Register Webhook - Fire and Forget
-        console.info(`Registering webhook for ${email} (background)`);
-        registerWebhookWatch(userId, email, tokens.access_token, tokens.refresh_token).catch(e => {
+        // Register Webhook - AWAIT this to ensure it happens before function termination
+        console.info(`Registering webhook for ${email}`);
+        try {
+            await registerWebhookWatch(userId, email, tokens.access_token, tokens.refresh_token);
+        } catch (e) {
             console.error('Initial webhook registration failed', e);
-        });
+            // Non-fatal, frontend will trigger full sync anyway
+        }
+
+        // REMOVED: performCalendarSync(userId, email) 
+        // We now rely on the frontend to trigger 'triggerFullResync' via checking ?new_connection=true
+        // This avoids the issue where this background process gets killed by Cloud Functions.
 
         console.info('--- AUTH FLOW COMPLETE, REDIRECTING ---');
         const appUrl = origin || process.env.APP_URL || 'http://localhost:5173';
-        res.redirect(`${appUrl}/settings?success=true`);
+        // Add new_connection flag so frontend knows to trigger the robust full sync
+        res.redirect(`${appUrl}/settings?success=true&new_connection=true`);
 
     } catch (error: any) {
         console.error("Critical Callback Error:", error);
@@ -180,6 +182,86 @@ const toDate = (val: any): Date | null => {
     if (val instanceof admin.firestore.Timestamp) return val.toDate();
     return new Date(val);
 };
+
+
+// Helper to parse RRULE strings into our internal format
+function parseRecurrence(recurrence: string[] | null | undefined): any {
+    if (!recurrence || recurrence.length === 0) return null;
+
+    try {
+        const ruleStr = recurrence.find(r => r.startsWith('RRULE:'));
+        if (!ruleStr) return null;
+
+        const cleanRule = ruleStr.replace(/^RRULE:/, '');
+
+        // Simple regex-based parsing as fallback since ical.js has issues in Cloud Functions
+        const parts: Record<string, string> = {};
+        cleanRule.split(';').forEach((part) => {
+            const [key, value] = part.split('=');
+            if (key && value) parts[key] = value;
+        });
+
+        if (!parts.FREQ) return null;
+
+        const result: any = {
+            frequency: parts.FREQ.toLowerCase(),
+            interval: parts.INTERVAL ? parseInt(parts.INTERVAL) : 1,
+            count: parts.COUNT ? parseInt(parts.COUNT) : null,
+        };
+
+        // Parse UNTIL (end date)
+        if (parts.UNTIL) {
+            // Format: 20250101T060000Z or 20250101
+            const until = parts.UNTIL;
+            if (until.length >= 8) {
+                const year = until.slice(0, 4);
+                const month = until.slice(4, 6);
+                const day = until.slice(6, 8);
+                let isoDate = `${year}-${month}-${day}`;
+                if (until.length >= 15) {
+                    const hour = until.slice(9, 11);
+                    const minute = until.slice(11, 13);
+                    const second = until.slice(13, 15);
+                    isoDate = `${year}-${month}-${day}T${hour}:${minute}:${second}Z`;
+                } else {
+                    isoDate += 'T23:59:59Z';
+                }
+                result.endDate = isoDate;
+            }
+        }
+
+        // Parse BYDAY (e.g., "MO,WE,FR" or "2SU" for 2nd Sunday)
+        if (parts.BYDAY) {
+            const dayMap: Record<string, number> = { 'SU': 0, 'MO': 1, 'TU': 2, 'WE': 3, 'TH': 4, 'FR': 5, 'SA': 6 };
+            const days = parts.BYDAY.split(',')
+                .map((d: string) => {
+                    // Strip any numeric prefix (e.g., "2SU" -> "SU")
+                    const dayCode = d.replace(/^-?\d+/, '');
+                    return dayMap[dayCode];
+                })
+                .filter((n: number | undefined): n is number => n !== undefined);
+            if (days.length > 0) {
+                result.byDay = days;
+            }
+        }
+
+        // Parse BYMONTHDAY
+        if (parts.BYMONTHDAY) {
+            result.byMonthDay = parseInt(parts.BYMONTHDAY);
+        }
+
+        // Parse BYMONTH (1-12 in RRULE, we store as 0-11)
+        if (parts.BYMONTH) {
+            result.byMonth = parseInt(parts.BYMONTH) - 1;
+        }
+
+        return result;
+
+    } catch (e) {
+        console.warn('Failed to parse recurrence rule:', recurrence, e);
+        return null;
+    }
+}
 
 const performCalendarSync = async (userId: string, calendarEmail: string, fullSync: boolean = false): Promise<void> => {
     const db = admin.firestore();
@@ -196,25 +278,26 @@ const performCalendarSync = async (userId: string, calendarEmail: string, fullSy
     const listEvents = async (useSyncToken: string | null, pageToken: string | null = null) => {
         const params: any = {
             calendarId: 'primary',
-            singleEvents: true,
+            singleEvents: false, // Changed to FALSE to retrieve Master + Exception events
             maxResults: 500,
             pageToken: pageToken || undefined
         };
 
         if (fullSync) {
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-            params.timeMin = thirtyDaysAgo.toISOString();
-            const oneYearFromNow = new Date();
-            oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
-            params.timeMax = oneYearFromNow.toISOString();
+            // For full sync of master events, we typically don't set strict time bounds 
+            // because a master event could have started years ago but still be active.
+            // Google recommends NOT setting timeMin for syncs if possible, or setting it very far back.
+            // However, to keep it sane, let's look back 5 years.
+            const past = new Date();
+            past.setFullYear(past.getFullYear() - 5);
+            params.timeMin = past.toISOString();
         } else if (useSyncToken) {
             params.syncToken = useSyncToken;
             params.showDeleted = true;
         } else {
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-            params.timeMin = thirtyDaysAgo.toISOString();
+            const past = new Date();
+            past.setFullYear(past.getFullYear() - 1);
+            params.timeMin = past.toISOString();
         }
         return await calendar.events.list(params);
     };
@@ -260,9 +343,20 @@ const performCalendarSync = async (userId: string, calendarEmail: string, fullSy
             });
         }
 
-        const batch = db.batch();
+        let batch = db.batch();
+        let operationCount = 0;
         const eventsCol = db.collection('users').doc(userId).collection('tasks');
         const googleEventIds = new Set<string>();
+
+        const commitBatchIfNeeded = async () => {
+            // 400 writes limit per batch for safety
+            if (operationCount >= 400) {
+                console.info(`Committing batch checkpoint (${operationCount} ops)...`);
+                await batch.commit();
+                batch = db.batch(); // Reset batch
+                operationCount = 0;
+            }
+        };
 
         for (const ev of events) {
             googleEventIds.add(ev.id);
@@ -270,7 +364,9 @@ const performCalendarSync = async (userId: string, calendarEmail: string, fullSy
                 const querySnap = await eventsCol.where('googleEventId', '==', ev.id).limit(1).get();
                 if (!querySnap.empty) {
                     batch.delete(querySnap.docs[0].ref);
+                    operationCount++;
                 }
+                await commitBatchIfNeeded();
                 continue;
             }
 
@@ -278,7 +374,15 @@ const performCalendarSync = async (userId: string, calendarEmail: string, fullSy
             const start = ev.start?.dateTime || ev.start?.date;
             const end = ev.end?.dateTime || ev.end?.date;
 
-            const eventData = {
+            // Parse Recurrence (Safe Mode)
+            let recurrence = null;
+            try {
+                recurrence = parseRecurrence(ev.recurrence);
+            } catch (err) {
+                console.warn(`Failed to parse recurrence for ${ev.id}`, err);
+            }
+
+            const eventData: any = {
                 title: ev.summary || '(No Title)',
                 scheduledStart: start,
                 scheduledEnd: end,
@@ -288,6 +392,11 @@ const performCalendarSync = async (userId: string, calendarEmail: string, fullSy
                 color: ev.colorId ? GOOGLE_COLOR_MAP[ev.colorId] || null : null,
                 googleEventId: ev.id,
                 calendarEmail: calendarEmail,
+                recurrence: recurrence,
+                recurringEventId: ev.recurringEventId || null,
+                originalStart: ev.originalStartTime ? (ev.originalStartTime.dateTime || ev.originalStartTime.date) : null,
+                isRecurringInstance: !!ev.recurringEventId, // It's an exception if it has a parent ID
+                isModified: !!ev.recurringEventId, // Exceptions are implicitly modified
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             };
 
@@ -303,23 +412,38 @@ const performCalendarSync = async (userId: string, calendarEmail: string, fullSy
                     assignedTo: [userId],
                     sharedWith: [],
                     contactIds: [],
-                    recurrence: null,
                     createdAt: admin.firestore.FieldValue.serverTimestamp()
                 });
             }
+            operationCount++;
+            await commitBatchIfNeeded();
         }
 
         if (fullSync) {
+            // In a full sync, we must be careful. 
+            // If we are switching from "expanded" (singleEvents: true) to "master" (singleEvents: false),
+            // the old text-based "Testttttttt" duplicates are gone, 
+            // BUT strict cleanup validation is needed.
+            // We should NOT auto-delete everything not in the list unless we are sure.
+            // However, with `singleEvents: false`, we *expect* fewer events.
+            // Any event in DB that has this `calendarEmail` but is NOT in `googleEventIds` 
+            // implies it was deleted from Google OR it was an old 'expanded' instance.
+            // Safest bet for the transition is to delete them.
+
             const allSnap = await eventsCol.where('calendarEmail', '==', calendarEmail).get();
             for (const doc of allSnap.docs) {
                 const gid = doc.data().googleEventId;
                 if (gid && !googleEventIds.has(gid)) {
                     batch.delete(doc.ref);
+                    operationCount++;
+                    await commitBatchIfNeeded();
                 }
             }
         }
 
-        await batch.commit();
+        if (operationCount > 0) {
+            await batch.commit();
+        }
 
     } catch (error: any) {
         console.error(`SYNC ERROR for ${calendarEmail}:`, error.message || error);
@@ -519,8 +643,26 @@ export const handleCalendarWebhook = onRequest(async (req, res) => {
         }
 
         const doc = query.docs[0];
+        const data = doc.data();
         const userId = doc.ref.parent.parent!.id;
-        const { calendarEmail } = doc.data();
+        const { calendarEmail, lastSyncAt } = data;
+
+        // DEBOUNCE: Skip if last sync was less than 5 seconds ago
+        const DEBOUNCE_MS = 5000;
+        const now = Date.now();
+        if (lastSyncAt) {
+            const lastSyncTime = typeof lastSyncAt.toMillis === 'function'
+                ? lastSyncAt.toMillis()
+                : new Date(lastSyncAt).getTime();
+            if (now - lastSyncTime < DEBOUNCE_MS) {
+                console.info(`Debouncing sync for ${calendarEmail}, last sync was ${now - lastSyncTime}ms ago`);
+                res.status(200).send('Debounced');
+                return;
+            }
+        }
+
+        // Update lastSyncAt before starting sync to prevent parallel syncs
+        await doc.ref.update({ lastSyncAt: admin.firestore.FieldValue.serverTimestamp() });
 
         await performCalendarSync(userId, calendarEmail);
     }
@@ -611,6 +753,7 @@ export const triggerFullResync = onCall({
         await performCalendarSync(userId!, calendarEmail, true);
         results.push(calendarEmail);
     }
+
 
     return { success: true, message: `Full re-sync completed for: ${results.join(', ')}` };
 });

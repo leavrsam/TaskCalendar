@@ -145,6 +145,7 @@ export const taskSchema = z.object({
   contactId: contactId.optional(), // Legacy single contact (for backward compatibility)
   contactIds: z.array(contactId).default([]), // Multiple contacts
   title: z.string(),
+  reminders: z.array(z.number()).default([]), // Minutes before event
   status: z.enum(['todo', 'inProgress', 'done']),
   priority: z.enum(['low', 'medium', 'high']).default('medium'),
   dueAt: z.string().nullable(),
@@ -164,7 +165,7 @@ export const taskSchema = z.object({
   }).nullable().optional(),
   // Recurrence fields
   recurrence: z.object({
-    frequency: z.enum(['none', 'daily', 'weekly', 'monthly', 'annually', 'weekday', 'custom']),
+    frequency: z.enum(['none', 'daily', 'weekly', 'monthly', 'annually', 'yearly', 'weekday', 'custom']),
     interval: z.number().default(1),
     endDate: z.string().nullable().optional(),
     count: z.number().nullable().optional(),
@@ -185,7 +186,7 @@ export const taskSchema = z.object({
 })
 
 export type Task = z.infer<typeof taskSchema>
-export type RecurrenceFrequency = 'none' | 'daily' | 'weekly' | 'monthly' | 'annually' | 'weekday' | 'custom'
+export type RecurrenceFrequency = 'none' | 'daily' | 'weekly' | 'monthly' | 'annually' | 'yearly' | 'weekday' | 'custom'
 
 const inviteRoleSchema = z.enum(['viewer', 'editor'])
 const inviteStatusSchema = z.enum(['pending', 'accepted', 'declined', 'revoked'])

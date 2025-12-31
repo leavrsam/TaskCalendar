@@ -13,9 +13,10 @@ import { useCalendarStore } from '@/stores/calendar-store'
 import type { TaskEvent } from '@/features/tasks/api'
 import type { Task } from '@taskcalendar/core'
 import ICAL from 'ical.js'
-import { useConnectedCalendars, useDisconnectCalendar } from '@/features/settings/api'
+import { useConnectedCalendars, useDisconnectCalendar, useSyncCalendars } from '@/features/settings/api'
 import { StatusModal } from '@/components/ui/status-modal'
 import { themeColors, type ThemeColor } from '@/lib/themes'
+import { useSearchParams } from 'react-router-dom'
 
 export function SettingsRoute() {
   const { user } = useAuth()
@@ -31,6 +32,51 @@ export function SettingsRoute() {
     message: '',
     type: 'success'
   })
+
+  // Auto-trigger sync if redirected from Google Auth with ?new_connection=true
+  const [searchParams, setSearchParams] = useSearchParams()
+  const syncCalendars = useSyncCalendars()
+  const hasTriggeredSync = useRef(false)
+
+  useEffect(() => {
+    const isNewConnection = searchParams.get('new_connection') === 'true'
+    const success = searchParams.get('success') === 'true'
+
+    if (success && isNewConnection && !hasTriggeredSync.current) {
+      hasTriggeredSync.current = true; // Prevent double firing
+
+      // Remove param so it doesn't fire again on refresh
+      const newParams = new URLSearchParams(searchParams)
+      newParams.delete('new_connection')
+      setSearchParams(newParams, { replace: true })
+
+      setStatusModal({
+        isOpen: true,
+        title: 'Finalizing Connection',
+        message: 'We are performing an initial full sync of your calendar. This may take a minute...',
+        type: 'success' // Using success type for neutral/progress
+      })
+
+      syncCalendars.mutate(undefined, {
+        onSuccess: (data) => {
+          setStatusModal({
+            isOpen: true,
+            title: 'Sync Complete',
+            message: data.message || 'Your events have been synced successfully.',
+            type: 'success'
+          })
+        },
+        onError: () => {
+          setStatusModal({
+            isOpen: true,
+            title: 'Sync Failed',
+            message: 'Automatic sync failed. Please try "Sync Now" in the Integrations tab.',
+            type: 'error'
+          })
+        }
+      })
+    }
+  }, [searchParams])
 
   return (
     <div className="space-y-6">
@@ -75,7 +121,7 @@ export function SettingsRoute() {
         />
       )}
       {tab === 'sharing' && <ShareWorkspaceCard />}
-      {tab === 'notifications' && <NotificationsPlaceholder />}
+      {tab === 'notifications' && <NotificationsSettings />}
       {tab === 'data' && <DataManagementCard />}
 
       <StatusModal
@@ -384,34 +430,89 @@ function DisconnectButton({ onDisconnect }: { email?: string, onDisconnect: () =
   )
 }
 
-function NotificationsPlaceholder() {
+function NotificationsSettings() {
+  const [permission, setPermission] = useState(Notification.permission)
+
+  const requestPermission = async () => {
+    const result = await Notification.requestPermission()
+    setPermission(result)
+  }
+
   return (
-    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
-      Notification preferences coming soon.
+    <div className="space-y-6">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Browser Notifications</h2>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+              Allow the app to send you reminders and alerts.
+            </p>
+          </div>
+          <div>
+            {permission === 'granted' ? (
+              <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
+                Enabled
+              </span>
+            ) : permission === 'denied' ? (
+              <span className="inline-flex items-center rounded-full bg-rose-100 px-3 py-1 text-xs font-medium text-rose-800 dark:bg-rose-900/30 dark:text-rose-400">
+                Blocked
+              </span>
+            ) : (
+              <button
+                onClick={requestPermission}
+                className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+              >
+                Enable Notifications
+              </button>
+            )}
+          </div>
+        </div>
+
+        {permission === 'denied' && (
+          <div className="mt-4 rounded-lg bg-rose-50 p-4 text-sm text-rose-700 dark:bg-rose-900/20 dark:text-rose-300">
+            Notifications are blocked by your browser settings. You need to reset permissions for this site in your browser settings to enable them.
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 opacity-75">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Preferences</h2>
+        <div className="mt-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium text-slate-900 dark:text-slate-50">Event Reminders</p>
+              <p className="text-xs text-slate-500">Get notified before events start</p>
+            </div>
+            <input type="checkbox" checked readOnly className="rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium text-slate-900 dark:text-slate-50">Contact Alerts</p>
+              <p className="text-xs text-slate-500">Get notified when contact frequency drops</p>
+            </div>
+            <input type="checkbox" checked readOnly className="rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
 
 function SyncNowButton() {
-  const [isSyncing, setIsSyncing] = useState(false)
+  const syncCalendars = useSyncCalendars()
   const [result, setResult] = useState<string | null>(null)
 
-  const handleSync = async () => {
-    setIsSyncing(true)
+  const handleSync = () => {
     setResult(null)
-    try {
-      const { getFunctions, httpsCallable } = await import('firebase/functions')
-      const { getApp } = await import('firebase/app')
-      const functions = getFunctions(getApp())
-      const triggerFullResync = httpsCallable(functions, 'triggerFullResync')
-      const response = await triggerFullResync()
-      setResult((response.data as any)?.message || 'Sync completed!')
-    } catch (error: any) {
-      console.error('Sync failed:', error)
-      setResult('Sync failed. See console for details.')
-    } finally {
-      setIsSyncing(false)
-    }
+    syncCalendars.mutate(undefined, {
+      onSuccess: (data) => {
+        setResult(data.message || 'Sync completed!')
+      },
+      onError: (error: any) => {
+        console.error('Sync failed:', error)
+        setResult('Sync failed. See console for details.')
+      }
+    })
   }
 
   return (
@@ -419,10 +520,10 @@ function SyncNowButton() {
       <button
         type="button"
         onClick={handleSync}
-        disabled={isSyncing}
+        disabled={syncCalendars.isPending}
         className="flex items-center gap-2 rounded-xl border border-brand-500 bg-brand-50 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-100 disabled:opacity-50 dark:border-brand-600 dark:bg-brand-900/30 dark:text-brand-400 dark:hover:bg-brand-900/50"
       >
-        {isSyncing ? (
+        {syncCalendars.isPending ? (
           <>
             <span className="animate-spin">⏳</span>
             Syncing...

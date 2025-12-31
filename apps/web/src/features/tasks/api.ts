@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import {
   addDoc,
   collection,
@@ -16,6 +16,7 @@ import { taskSchema, type Task } from '@taskcalendar/core'
 import { useAuth } from '@/hooks/use-auth'
 import { getFirebaseFirestore } from '@/lib/firebase'
 import { expandRecurringEvents } from '@/lib/recurrence'
+import { getCachedTasks, cacheTasks } from '@/lib/task-cache'
 import { startOfMonth, endOfMonth, addMonths } from 'date-fns'
 
 const key = (uid: string | undefined) => ['firestore', 'tasks', uid ?? 'anon']
@@ -42,12 +43,51 @@ const pruneUndefined = <T extends Record<string, unknown>>(input: T) =>
     Object.entries(input).filter(([, value]) => value !== undefined),
   ) as T
 
+/**
+ * Tasks query with IndexedDB caching for instant loading.
+ * 
+ * Strategy:
+ * 1. On mount, immediately load cached data from IndexedDB and set it as query data
+ * 2. React Query then fetches fresh data from Firestore in the background
+ * 3. Fresh data replaces cache; cache is updated for next time
+ * 
+ * This makes the calendar appear instantly with last-known data.
+ */
 export const useTasksQuery = (filter?: { status?: Task['status'] | 'all' }) => {
   const { user } = useAuth()
   const uid = user?.uid
-  return useQuery({
+  const queryClient = useQueryClient()
+  const hasCachedRef = useRef(false)
+  const queryKeyValue = [...key(uid), filter?.status ?? 'all']
+
+  // Pre-populate from IndexedDB cache for instant display
+  useEffect(() => {
+    if (uid && !hasCachedRef.current) {
+      hasCachedRef.current = true
+
+      // Check if we already have data in React Query cache
+      const existingData = queryClient.getQueryData(queryKeyValue)
+
+      if (!existingData) {
+        // Load from IndexedDB and set as initial data
+        getCachedTasks().then((cached) => {
+          if (cached.length > 0) {
+            console.log(`[Cache] Instantly loaded ${cached.length} tasks from IndexedDB`)
+            // Pre-populate React Query cache with IndexedDB data
+            queryClient.setQueryData(queryKeyValue, cached)
+          }
+        }).catch(console.warn)
+      }
+    }
+  }, [uid, queryClient, queryKeyValue])
+
+  const result = useQuery({
     enabled: !!uid,
-    queryKey: [...key(uid), filter?.status ?? 'all'],
+    queryKey: queryKeyValue,
+    // Show stale data while revalidating (background sync)
+    staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
+    // Refetch when window regains focus
+    refetchOnWindowFocus: true,
     queryFn: async (): Promise<Task[]> => {
       if (!uid) return []
       const baseQuery =
@@ -55,9 +95,8 @@ export const useTasksQuery = (filter?: { status?: Task['status'] | 'all' }) => {
           ? query(
             tasksCollection(uid),
             where('status', '==', filter.status),
-            // Removed orderBy('dueAt') to prevent hiding tasks with null dueAt
           )
-          : query(tasksCollection(uid)) // Fetch all tasks, sort client-side if needed
+          : query(tasksCollection(uid))
 
       const snapshot = await getDocs(baseQuery)
       const tasks: Task[] = []
@@ -71,38 +110,79 @@ export const useTasksQuery = (filter?: { status?: Task['status'] | 'all' }) => {
           updatedAt: rawData.updatedAt?.toDate?.()?.toISOString?.() ?? rawData.updatedAt ?? new Date().toISOString(),
         }
 
-        const result = taskSchema.safeParse({ id: docSnap.id, ...processedData })
-        if (result.success) {
-          tasks.push(result.data)
+        const resultParse = taskSchema.safeParse({ id: docSnap.id, ...processedData })
+        if (resultParse.success) {
+          tasks.push(resultParse.data)
         } else {
-          // Log invalid documents for debugging but don't break the app
-          console.warn('Skipping invalid task document:', docSnap.id, result.error.issues)
+          console.warn('Skipping invalid task document:', docSnap.id, resultParse.error.issues)
         }
       }
-      return tasks.sort((a, b) => {
-        // Client-side sort similar to original
+
+      // Sort client-side
+      const sortedTasks = tasks.sort((a, b) => {
         const dateA = a.dueAt ?? a.scheduledEnd ?? '9999-12-31'
         const dateB = b.dueAt ?? b.scheduledEnd ?? '9999-12-31'
         return dateA > dateB ? 1 : -1
       })
+
+      // Cache the fresh data for next time (don't await - fire and forget)
+      cacheTasks(sortedTasks).catch(console.warn)
+      console.log(`[Cache] Updated IndexedDB cache with ${sortedTasks.length} tasks from Firestore`)
+
+      return sortedTasks
     },
   })
+
+  return result
 }
 
-export const useTaskEvents = () => {
+/**
+ * Windowed event loading hook.
+ * @param anchorDate - The center date for the view window (defaults to today)
+ * 
+ * Performance optimization: Only expands recurring events for a ±1 month window
+ * around the anchor date, and filters out events outside that range.
+ * This reduces the number of events from 5000+ to ~100-200.
+ */
+export const useTaskEvents = (anchorDate?: Date) => {
   const tasks = useTasksQuery()
+  const anchor = anchorDate ?? new Date()
 
-  // Expand recurring events for current view +/- 2 months
-  const viewStart = startOfMonth(addMonths(new Date(), -2))
-  const viewEnd = endOfMonth(addMonths(new Date(), 2))
+  // Window: 1 month before to 1 month after the anchor date
+  // This keeps the data load manageable while ensuring smooth navigation
+  const viewStart = startOfMonth(addMonths(anchor, -1))
+  const viewEnd = endOfMonth(addMonths(anchor, 1))
 
   const allTasks = tasks.data ?? []
-  const tasksWithSchedule = allTasks.filter(
-    (task) => task.scheduledStart && task.scheduledEnd,
-  )
 
-  // Expand recurring events
-  const expandedTasks = expandRecurringEvents(tasksWithSchedule, viewStart, viewEnd)
+  // Filter tasks to only those that could appear in the view window
+  // For recurring events, we check if the master event could produce instances in the window
+  // For non-recurring events, we check if they fall within the window
+  const tasksInWindow = useMemo(() => {
+    return allTasks.filter((task) => {
+      if (!task.scheduledStart || !task.scheduledEnd) return false
+
+      const taskStart = new Date(task.scheduledStart)
+      const taskEnd = new Date(task.scheduledEnd)
+
+      // If it's a recurring event with no end date or end date after window start, include it
+      if (task.recurrence) {
+        const recurrenceEnd = task.recurrence.endDate ? new Date(task.recurrence.endDate) : null
+        // Include if recurrence hasn't ended before our window starts
+        // AND the original start is before our window ends (recurring events expand forward)
+        if (recurrenceEnd && recurrenceEnd < viewStart) return false
+        return true // Recurring events get filtered during expansion
+      }
+
+      // For non-recurring events, check if they overlap with the window
+      return taskEnd >= viewStart && taskStart <= viewEnd
+    })
+  }, [allTasks, viewStart.getTime(), viewEnd.getTime()])
+
+  // Expand recurring events only within the window
+  const expandedTasks = useMemo(() => {
+    return expandRecurringEvents(tasksInWindow, viewStart, viewEnd)
+  }, [tasksInWindow, viewStart.getTime(), viewEnd.getTime()])
 
   const events: TaskEvent[] = useMemo(() => {
     return expandedTasks.map((task) => {

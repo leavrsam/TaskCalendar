@@ -35,7 +35,8 @@ const DnDCalendar = withDragAndDrop<TaskEvent, TaskEvent>(Calendar)
 
 import type { Task } from '@taskcalendar/core'
 
-import { ChevronLeft, ChevronRight, Menu } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Menu, ChevronDown } from 'lucide-react'
+import { SwipeableMiniCalendar } from '@/components/calendar/swipeable-mini-calendar'
 import { CollaboratorAvatar } from '@/components/collaborators/collaborator-avatar'
 import { TaskFAB } from '@/components/fab/task-fab'
 import { TaskBottomSheet } from '@/components/tasks/task-bottom-sheet'
@@ -160,8 +161,13 @@ export function ScheduleRoute() {
   const { user } = useAuth()
   const { toggleSidebar, isSidebarOpen } = useOutletContext<{ toggleSidebar: () => void; isSidebarOpen: boolean }>()
 
+  // Define weekAnchor first so it can be used for windowed event loading
+  const weekStart = startOfWeek(new Date(), { weekStartsOn: 0 })
+  const [weekAnchor, setWeekAnchor] = useState(weekStart)
+
   const tasksQuery = useTasksQuery()
-  const eventsQuery = useTaskEvents()
+  // Pass weekAnchor to useTaskEvents for windowed loading (±1 month around anchor)
+  const eventsQuery = useTaskEvents(weekAnchor)
   const updateTask = useUpdateTask()
   const updateRecurringInstance = useUpdateRecurringInstance()
   const createTask = useCreateTask()
@@ -186,9 +192,6 @@ export function ScheduleRoute() {
     if (filter === 'all') return tasks
     return tasks.filter((task) => task.status === filter)
   }, [tasks, filter])
-
-  const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 })
-  const [weekAnchor, setWeekAnchor] = useState(weekStart)
 
   // Sync with URL params
   const [searchParams] = useSearchParams()
@@ -250,9 +253,9 @@ export function ScheduleRoute() {
     }
   }
 
-  // Pinch-to-zoom for vertical calendar scaling
-  // Default to 5px per 5-min slot (which is 60px per hour - good density)
-  const [timeSlotHeight, setTimeSlotHeight] = useState(5)
+  // Default to 4px per 5-min slot (compact but readable, similar to Google Calendar)
+  const [timeSlotHeight, setTimeSlotHeight] = useState(4)
+  const [isMiniCalendarOpen, setIsMiniCalendarOpen] = useState(false)
   const [initialPinchDistance, setInitialPinchDistance] = useState<number | null>(null)
   const [initialHeight, setInitialHeight] = useState(5)
 
@@ -310,7 +313,7 @@ export function ScheduleRoute() {
       <DndProvider backend={HTML5Backend}>
         <div className="flex h-screen flex-col overflow-x-hidden">
           {/* Header */}
-          <header className={`flex items-center justify-between gap-2 bg-white dark:bg-slate-900 p-2 pr-3 flex-shrink-0 transition-all h-14 sm:h-16 overflow-x-auto ${!isSidebarOpen ? 'pl-2' : 'pl-3'}`}>
+          <header className={`flex items-center justify-between gap-2 bg-white dark:bg-slate-900 p-2 pr-3 flex-shrink-0 transition-all h-14 sm:h-16 relative z-20 ${!isSidebarOpen ? 'pl-2' : 'pl-3'}`}>
             {/* Left: Menu, Nav, Date */}
             <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               {/* Menu button - Only visible if sidebar is closed */}
@@ -347,9 +350,39 @@ export function ScheduleRoute() {
                   <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
               </div>
-              <h2 className="text-xs sm:text-base font-medium text-slate-700 dark:text-slate-200 whitespace-nowrap">
-                {format(weekAnchor, 'MMM yyyy')}
-              </h2>
+
+              {/* Month Dropdown Trigger */}
+              <div className="relative">
+                <button
+                  onClick={() => setIsMiniCalendarOpen(!isMiniCalendarOpen)}
+                  className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <h2 className="text-sm sm:text-base font-medium text-slate-700 dark:text-slate-200 whitespace-nowrap">
+                    {format(weekAnchor, 'MMMM')}
+                  </h2>
+                  <ChevronDown
+                    className={clsx(
+                      "h-4 w-4 text-slate-500 transition-transform duration-200",
+                      isMiniCalendarOpen && "rotate-180"
+                    )}
+                  />
+                </button>
+
+                {/* Dropdown Content */}
+                <AnimatePresence>
+                  {isMiniCalendarOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute top-full left-0 mt-2 z-50 w-[320px] shadow-2xl rounded-xl ring-1 ring-black/5"
+                    >
+                      <SwipeableMiniCalendar onClose={() => setIsMiniCalendarOpen(false)} />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
 
             {/* Right: View toggle */}
@@ -545,6 +578,52 @@ type AgendaBoardProps = {
   timeSlotHeight: number
 }
 
+// Context for callbacks to avoid prop drilling through RBC components
+type CalendarActionsContextType = {
+  onSlotSelect: (slot: { start: Date; end: Date }) => void
+}
+const CalendarActionsContext = createContext<CalendarActionsContextType>({
+  onSlotSelect: () => { }
+})
+const useCalendarActions = () => useContext(CalendarActionsContext)
+
+// Stable TimeSlotWrapper component defined OUTSIDE the render loop
+const TimeSlotWrapper = ({ children, value }: any) => {
+  const { onSlotSelect } = useCalendarActions()
+
+  // Magnetic Snapping Logic
+  const [{ isOver }, drop] = useDrop(() => ({
+    accept: 'event', // RBC default type
+    collect: (monitor) => ({
+      isOver: !!monitor.isOver(),
+    }),
+  }), [])
+
+  const bind = useLongPress(() => {
+    if (navigator.vibrate) navigator.vibrate(50)
+    const start = value
+    const end = new Date(start.getTime() + 5 * 60 * 1000)
+    onSlotSelect({ start, end })
+  }, { threshold: 400, captureEvent: true })
+
+  const combinedRef = (element: HTMLDivElement) => {
+    drop(element)
+  }
+
+  return (
+    <div
+      ref={combinedRef}
+      {...bind()}
+      className={clsx(
+        "rbc-time-slot h-full w-full transition-colors duration-200",
+        isOver && "bg-brand-500/20 shadow-[inset_0_0_0_2px_rgba(59,130,246,0.5)]" // Magnetic glow
+      )}
+    >
+      {children}
+    </div>
+  )
+}
+
 function AgendaBoard({
   events,
   view,
@@ -559,6 +638,9 @@ function AgendaBoard({
   timeSlotHeight,
 }: AgendaBoardProps) {
   const scrollToTime = useMemo(() => new Date(), [])
+
+  // Memoize actions context value
+  const actionsContextValue = useMemo(() => ({ onSlotSelect }), [onSlotSelect])
 
   const dragPreviewEvent = useMemo(() => {
     if (!draggingTask) return null
@@ -587,10 +669,6 @@ function AgendaBoard({
   const [direction, setDirection] = useState<'left' | 'right'>('right')
   const [prevDate, setPrevDate] = useState(anchorDate)
 
-  // Use a ref to hold the previous date during the render cycle comparison if needed, 
-  // but simpler: compare current anchorDate with state prevDate in useEffect or during render?
-  // Actually, we need the direction *before* valid render?
-  // Let's use useMemo/useEffect to update direction when anchorDate changes.
   if (anchorDate !== prevDate) {
     if (anchorDate > prevDate) setDirection('right')
     else setDirection('left')
@@ -607,13 +685,7 @@ function AgendaBoard({
       x: 0,
       opacity: 1,
       zIndex: 1,
-      position: 'relative' as const, // Actually relative usually works for the active one if others are absolute? 
-      // Problem: To overlap, BOTH need to be absolute initially? 
-      // If we use popLayout mode, exiting element is popped out.
-      // Let's use standard relative for center, but ensure container allows overlap?
-      // Actually standard way: container relative, children absolute.
-      // But RBC needs to fill space.
-      // Let's try absolute for both, with width/height 100%.
+      position: 'relative' as const,
     },
     exit: (direction: 'left' | 'right') => ({
       x: direction === 'right' ? '-100%' : '100%',
@@ -623,67 +695,16 @@ function AgendaBoard({
     }),
   }
 
-  const TimeSlotWrapper = ({ children, value }: any) => {
-    // Magnetic Snapping Logic
-    const [{ isOver }, drop] = useDrop(() => ({
-      accept: 'event', // RBC default type
-      collect: (monitor) => ({
-        isOver: !!monitor.isOver(),
-      }),
-    }), [])
-
-    const bind = useLongPress(() => {
-      if (navigator.vibrate) navigator.vibrate(50)
-      const start = value
-      const end = new Date(start.getTime() + 5 * 60 * 1000)
-      onSlotSelect({ start, end })
-    }, { threshold: 400, captureEvent: true })
-
-    const combinedRef = (element: HTMLDivElement) => {
-      drop(element)
-    }
-
-    return (
-      <div
-        ref={combinedRef}
-        {...bind()}
-        className={clsx(
-          "rbc-time-slot h-full w-full transition-colors duration-200",
-          isOver && "bg-brand-500/20 shadow-[inset_0_0_0_2px_rgba(59,130,246,0.5)]" // Magnetic glow
-        )}
-      >
-        {children}
-      </div>
-    )
-  }
-
+  // Memoize components object so it's stable across renders
+  // IMPORTANT: Dependencies must be minimal to prevent re-creation
   const components = useMemo(() => ({
     event: CalendarEvent,
     timeSlotWrapper: TimeSlotWrapper,
     header: view === 'day' ? DayViewHeader : CustomDateHeader,
-  }), [view, TimeSlotWrapper])
+  }), [view])
 
-  return (
-    <div className={clsx("flex h-full flex-col", view === 'day' ? "day-view-mode" : "")}>
-      <DndProvider backend={HTML5Backend}>
-        <CustomDragLayer />
-        <div className="h-full relative overflow-hidden">
-          <AnimatePresence initial={false} custom={direction} mode="popLayout">
-            <motion.div
-              key={anchorDate.toISOString() + view} // Transition when date or view changes
-              custom={direction}
-              variants={variants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{
-                x: { type: "spring", stiffness: 300, damping: 30 },
-                opacity: { duration: 0.2 }
-              }}
-              className="h-full w-full absolute inset-0 bg-slate-100 dark:bg-zinc-900" // Ensure background is opaque to hide content behind
-            >
-              <style>
-                {`
+  // Memoize the dynamic style content to avoid recalculation
+  const dynamicStyle = useMemo(() => `
             .rbc-time-slot {
               min-height: ${timeSlotHeight * (step / 5)}px !important;
               border-top: none !important;
@@ -779,8 +800,29 @@ function AgendaBoard({
             .rbc-time-gutter .rbc-timeslot-group {
               border-bottom: none !important;
             }
-          `}
-              </style>
+  `, [timeSlotHeight, step])
+
+  return (
+    <CalendarActionsContext.Provider value={actionsContextValue}>
+      <div className={clsx("flex h-full flex-col", view === 'day' ? "day-view-mode" : "")}>
+        {/* Removed redundant DndProvider - provided by parent ScheduleRoute */}
+        <CustomDragLayer />
+        <div className="h-full relative overflow-hidden">
+          <AnimatePresence initial={false} custom={direction} mode="popLayout">
+            <motion.div
+              key={anchorDate.toISOString() + view} // Transition when date or view changes
+              custom={direction}
+              variants={variants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{
+                x: { type: "spring", stiffness: 300, damping: 30 },
+                opacity: { duration: 0.2 }
+              }}
+              className="h-full w-full absolute inset-0 bg-slate-100 dark:bg-zinc-900" // Ensure background is opaque to hide content behind
+            >
+              <style>{dynamicStyle}</style>
               <DnDCalendar
                 key={view}
                 localizer={calendarLocalizer}
@@ -852,8 +894,8 @@ function AgendaBoard({
             </motion.div>
           </AnimatePresence>
         </div>
-      </DndProvider>
-    </div>
+      </div>
+    </CalendarActionsContext.Provider>
   )
 }
 

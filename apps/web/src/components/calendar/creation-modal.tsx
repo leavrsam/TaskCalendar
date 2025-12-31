@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { Task } from '@taskcalendar/core'
 import { useContactsQuery } from '@/features/contacts/api'
 import { RecurrenceSelector } from '@/components/calendar/recurrence-selector'
@@ -72,7 +72,25 @@ export function CreationModal({ slot, defaultContactId, defaultLocation, onClose
     const [isAllDay, setIsAllDay] = useState(false)
     const [address, setAddress] = useState('')
     const [location, setLocation] = useState<{ lat: number; lng: number } | null>(defaultLocation ?? null)
+    const [reminders, setReminders] = useState<number[]>([]) // Minutes
     const [showContactDropdown, setShowContactDropdown] = useState(false)
+    const contactsWrapperRef = useRef<HTMLDivElement>(null)
+
+    // Close dropdown on click outside
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent | TouchEvent) {
+            if (contactsWrapperRef.current && !contactsWrapperRef.current.contains(event.target as Node)) {
+                setShowContactDropdown(false)
+            }
+        }
+        // Use capture phase to ensure we catch the event before any stopPropagation
+        document.addEventListener("mousedown", handleClickOutside, true)
+        document.addEventListener("touchstart", handleClickOutside, true)
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside, true)
+            document.removeEventListener("touchstart", handleClickOutside, true)
+        }
+    }, [])
 
     // Date/Time State
     const [startDate, setStartDate] = useState(slot?.start ?? defaultStart)
@@ -266,18 +284,41 @@ export function CreationModal({ slot, defaultContactId, defaultLocation, onClose
                     </div>
 
                     <div className="grid gap-3">
-                        <RecurrenceSelector
-                            scheduledStart={startDate.toISOString()}
-                            recurrence={recurrence}
-                            onChange={setRecurrence}
-                        />
+                        <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                                <RecurrenceSelector
+                                    scheduledStart={startDate.toISOString()}
+                                    recurrence={recurrence}
+                                    onChange={setRecurrence}
+                                />
+                            </div>
+                            <div className="w-32">
+                                <CustomSelect
+                                    value={reminders.length > 0 ? reminders[0].toString() : 'none'}
+                                    onChange={(val) => {
+                                        if (val === 'none') setReminders([])
+                                        else setReminders([parseInt(val)])
+                                    }}
+                                    options={[
+                                        { label: 'No reminder', value: 'none' },
+                                        { label: 'At start', value: '0' },
+                                        { label: '5 min before', value: '5' },
+                                        { label: '15 min before', value: '15' },
+                                        { label: '30 min before', value: '30' },
+                                        { label: '1 hour before', value: '60' },
+                                        { label: '2 hours before', value: '120' },
+                                    ]}
+                                    placeholder="Reminder"
+                                />
+                            </div>
+                        </div>
 
                         {/* Contact Multi-Select */}
                         <div className="space-y-2">
                             <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
                                 Contacts
                             </label>
-                            <div className="relative">
+                            <div className="relative" ref={contactsWrapperRef}>
                                 <button
                                     type="button"
                                     onClick={() => setShowContactDropdown(!showContactDropdown)}
@@ -418,6 +459,7 @@ export function CreationModal({ slot, defaultContactId, defaultLocation, onClose
                                 isAllDay,
                                 address: address || undefined,
                                 location,
+                                reminders,
                             })
                         } catch (err) {
                             setError(err instanceof Error ? err.message : 'Error saving')
