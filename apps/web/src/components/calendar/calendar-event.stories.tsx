@@ -29,6 +29,8 @@ const baseEvent: TaskEvent = {
     originalStart: null,
     isRecurringInstance: false,
     isModified: false,
+    isTask: true,
+    reminders: [],
   },
 }
 

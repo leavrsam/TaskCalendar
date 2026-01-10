@@ -43,7 +43,6 @@ import { TaskBottomSheet } from '@/components/tasks/task-bottom-sheet'
 
 import { isOverdueEvent } from '@/components/calendar/event-badge.utils'
 import {
-  useCreateTask,
   useTaskEvents,
   useTasksQuery,
   useUpdateTask,
@@ -53,10 +52,8 @@ import {
 import { useContactsQuery } from '@/features/contacts/api'
 import { calendarLocalizer } from '@/lib/calendar'
 import { useAuth } from '@/hooks/use-auth'
-import { CreationModal } from '@/components/calendar/creation-modal'
-import { EventActionSheet } from '@/routes/sections/event-action-sheet'
+import { EventModal } from '@/components/calendar/event-modal'
 import { useCalendarStore } from '@/stores/calendar-store'
-import { createGoogleEvent } from '@/lib/google-calendar'
 
 const CustomDateHeader = ({ date }: any) => {
   return (
@@ -127,7 +124,7 @@ const DayViewHeader = ({ date }: any) => {
 
 
       {/* All Day Events Section */}
-      <div className="flex-1 flex flex-col gap-1 overflow-y-auto max-h-[120px]">
+      <div className="flex-1 flex flex-col gap-1 overflow-y-auto max-h-[120px] no-scrollbar">
         {dayEvents.length > 0 ? (
           dayEvents.map(event => (
             <button
@@ -138,9 +135,10 @@ const DayViewHeader = ({ date }: any) => {
               }}
               className={clsx(
                 "text-xs px-2 py-1 rounded-md text-left truncate transition-colors w-full border border-transparent hover:border-black/5 dark:hover:border-white/10",
-                event.resource.status === 'done' ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 line-through opacity-70" :
-                  event.resource.status === 'inProgress' ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" :
-                    "bg-brand-100 text-brand-800 dark:bg-brand-900/40 dark:text-brand-300"
+                event.resource.isTask && event.resource.status === 'done' ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 line-through opacity-70" :
+                  event.resource.isTask && event.resource.status === 'inProgress' ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" :
+                    "bg-brand-100 text-brand-800 dark:bg-brand-900/40 dark:text-brand-300",
+                event.resource.isBackup && "opacity-40"
               )}
               title={event.title}
             >
@@ -170,7 +168,6 @@ export function ScheduleRoute() {
   const eventsQuery = useTaskEvents(weekAnchor)
   const updateTask = useUpdateTask()
   const updateRecurringInstance = useUpdateRecurringInstance()
-  const createTask = useCreateTask()
   const tasks = useMemo(() => tasksQuery.data ?? [], [tasksQuery.data])
 
   // View state
@@ -514,48 +511,20 @@ export function ScheduleRoute() {
           />
 
           {creationSlot && (
-            <CreationModal
+            <EventModal
+              isOpen={true}
               slot={creationSlot}
-              onClose={() => {
-                setCreationSlot(null)
-              }}
-              onSave={async (values) => {
-                if (!creationSlot) return
-                await createTask.mutateAsync({
-                  ...values,
-                  ...(values.contactIds && values.contactIds.length > 0 ? { contactIds: values.contactIds } : {}),
-                  // Use modal's dates if provided (for all-day multi-day events), otherwise use slot
-                  scheduledStart: values.scheduledStart ?? creationSlot.start.toISOString(),
-                  scheduledEnd: values.scheduledEnd ?? creationSlot.end.toISOString(),
-                  dueAt: values.scheduledEnd ?? creationSlot.end.toISOString(),
-                })
-
-                // Sync to Google if connected
-                if (googleAccessToken) {
-                  try {
-                    await createGoogleEvent(googleAccessToken, {
-                      title: values.title,
-                      notes: values.notes,
-                      address: values.address,
-                      scheduledStart: values.scheduledStart ?? creationSlot.start.toISOString(),
-                      scheduledEnd: values.scheduledEnd ?? creationSlot.end.toISOString(),
-                      // @ts-ignore
-                      isAllDay: false
-                    })
-                    // Ideally trigger a refetch here by changing a dependency or refetch function
-                  } catch (err) {
-                    console.error('Failed to sync to Google Calendar', err)
-                  }
-                }
-
-                setCreationSlot(null)
-              }}
+              onClose={() => setCreationSlot(null)}
             />
           )}
-          <EventActionSheet
-            event={selectedEvent}
-            onClose={() => setSelectedEventId(null)}
-          />
+
+          {selectedEvent && (
+            <EventModal
+              isOpen={true}
+              event={selectedEvent}
+              onClose={() => setSelectedEventId(null)}
+            />
+          )}
 
         </div>
       </DndProvider >
@@ -962,7 +931,7 @@ export function CalendarEvent({ event }: { event: TaskEvent }) {
             </p>
           )}
         </div>
-        {!showContact && (
+        {!showContact && event.resource.isTask && (
           <button
             type="button"
             onClick={handleToggleStatus}
@@ -975,7 +944,7 @@ export function CalendarEvent({ event }: { event: TaskEvent }) {
             )} />
           </button>
         )}
-        {showContact && (
+        {showContact && event.resource.isTask && (
           <button
             type="button"
             onClick={handleToggleStatus}
@@ -1005,19 +974,21 @@ export function CalendarEvent({ event }: { event: TaskEvent }) {
     >
       <div className="flex items-start justify-between gap-2">
         <p className="truncate text-xs font-semibold leading-tight pt-0.5">{event.title}</p>
-        <button
-          type="button"
-          onClick={handleToggleStatus}
-          className="group relative -m-2 p-2 focus:outline-none"
-          aria-label="Toggle task status"
-        >
-          <div className={clsx(
-            'flex h-4 w-4 items-center justify-center rounded-full border transition-colors',
-            getStatusPillStyle(event.resource.status)
-          )}>
-            {event.resource.status === 'done' && <span className="text-[10px]">✓</span>}
-          </div>
-        </button>
+        {event.resource.isTask && (
+          <button
+            type="button"
+            onClick={handleToggleStatus}
+            className="group relative -m-2 p-2 focus:outline-none"
+            aria-label="Toggle task status"
+          >
+            <div className={clsx(
+              'flex h-4 w-4 items-center justify-center rounded-full border transition-colors',
+              getStatusPillStyle(event.resource.status)
+            )}>
+              {event.resource.status === 'done' && <span className="text-[10px]">✓</span>}
+            </div>
+          </button>
+        )}
       </div>
       {firstContact && (
         <p className="truncate text-[10px] opacity-90">
@@ -1076,7 +1047,7 @@ const getCalendarEventStyles = (event: TaskEvent) => {
       display: 'flex',
       flexDirection: 'column' as const,
       boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-      opacity: event.resource.isBackup ? 0.6 : 1,
+      opacity: event.resource.isBackup ? 0.4 : 1,
       fontWeight: 500,
       fontSize: '12px',
       alignItems: 'flex-start',

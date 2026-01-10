@@ -6,7 +6,7 @@
  */
 
 import Dexie, { type Table } from 'dexie'
-import type { Task } from '@task-calendar/core'
+import type { Task } from '@taskcalendar/core'
 
 // Define our database schema
 class TaskCalendarDB extends Dexie {

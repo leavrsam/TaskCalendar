@@ -1,19 +1,16 @@
 import { useState } from 'react'
 import { GlobalMap } from '@/components/map/global-map'
 import { useContactsQuery, useCreateContact, useDeleteContact } from '@/features/contacts/api'
-import { useTasksQuery, useCreateTask, type TaskEvent } from '@/features/tasks/api'
-import { CreationModal } from '@/components/calendar/creation-modal'
-import { EventActionSheet } from '@/routes/sections/event-action-sheet'
+import { useTasksQuery, type TaskEvent } from '@/features/tasks/api'
+import { EventModal } from '@/components/calendar/event-modal'
 import { LocationNameModal } from '@/components/map/location-name-modal'
 import type { Task } from '@taskcalendar/core'
 
 export function MapRoute() {
     const contactsQuery = useContactsQuery()
     const tasksQuery = useTasksQuery()
-    const createTask = useCreateTask()
     const createContact = useCreateContact()
     const deleteContact = useDeleteContact()
-
     // Creation Modal State
     const [isCreationModalOpen, setIsCreationModalOpen] = useState(false)
     const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | undefined>(undefined)
@@ -39,17 +36,6 @@ export function MapRoute() {
     const handleCreateLocation = (lat: number, lng: number) => {
         setPendingLocation({ lat, lng })
         setIsLocationModalOpen(true)
-    }
-
-    const handleSaveEvent = async (data: any) => {
-        await createTask.mutateAsync({
-            ...data,
-            scheduledStart: data.scheduledStart,
-            scheduledEnd: data.scheduledEnd,
-        })
-        setIsCreationModalOpen(false)
-        setSelectedLocation(undefined)
-        setDraftPosition(null) // Clear draft pin
     }
 
     const handleSaveLocation = async (name: string) => {
@@ -103,18 +89,20 @@ export function MapRoute() {
             />
 
             {isCreationModalOpen && (
-                <CreationModal
+                <EventModal
+                    isOpen={true}
                     onClose={() => {
                         setIsCreationModalOpen(false)
                         setSelectedLocation(undefined)
+                        setDraftPosition(null)
                     }}
-                    onSave={handleSaveEvent}
                     defaultLocation={selectedLocation}
                 />
             )}
 
             {editEvent && (
-                <EventActionSheet
+                <EventModal
+                    isOpen={true}
                     event={editEvent}
                     onClose={() => setEditEvent(null)}
                 />

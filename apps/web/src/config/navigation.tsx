@@ -1,14 +1,13 @@
-import type { ReactNode } from 'react'
 import {
   CalendarDays,
   ClipboardList,
-  NotebookText,
   Users,
   House,
   Map,
   UserCircle,
   Settings,
 } from 'lucide-react'
+import type { ReactNode } from 'react'
 
 export type NavItem = {
   label: string
@@ -19,7 +18,6 @@ export type NavItem = {
 export const mainNavigation: NavItem[] = [
   { label: 'Dashboard', path: '/', icon: <House className="h-4 w-4" /> },
   { label: 'People', path: '/contacts', icon: <Users className="h-4 w-4" /> },
-  { label: 'Visits', path: '/visits', icon: <NotebookText className="h-4 w-4" /> },
   { label: 'Calendar', path: '/schedule', icon: <CalendarDays className="h-4 w-4" /> },
   { label: 'Goals', path: '/goals', icon: <ClipboardList className="h-4 w-4" /> },
   { label: 'Map', path: '/map', icon: <Map className="h-4 w-4" /> },

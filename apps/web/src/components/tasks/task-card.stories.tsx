@@ -27,6 +27,8 @@ const baseTask: Task = {
   originalStart: null,
   isRecurringInstance: false,
   isModified: false,
+  isTask: true,
+  reminders: [],
 }
 
 const meta: Meta<typeof TaskCard> = {

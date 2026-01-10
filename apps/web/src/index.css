@@ -25,6 +25,31 @@
     @apply backdrop-blur-xl bg-white/70 dark:bg-slate-900/60 border border-white/50 dark:border-white/10 shadow-xl;
   }
 
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  html,
+  body,
+  * {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+  }
+
+  /* Utility class to reinforce hiding if needed */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
   .glass-panel {
     @apply glass rounded-3xl;
   }
@@ -135,6 +160,16 @@ body.dark {
 .dark .rbc-time-content {
   border-top-color: #334155;
   /* slate-700 */
+}
+
+/* Hide scrollbar in RBC time view */
+.rbc-time-content::-webkit-scrollbar {
+  display: none;
+}
+
+.rbc-time-content {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 .dark .rbc-time-content>*+*>* {

@@ -54,7 +54,7 @@ export function AppLayout() {
         </div>
 
         {/* Scrollable Content Area - entire content scrolls together */}
-        <div className="flex-1 overflow-y-auto px-4">
+        <div className="flex-1 overflow-y-auto px-4 no-scrollbar">
           {/* Navigation - no longer scrolls independently */}
           <nav className="mt-6 space-y-1">
             {mainNavigation.map((item) => (
@@ -135,6 +135,17 @@ export function AppLayout() {
           // For others, we allow main to scroll.
           isSchedule ? "overflow-hidden p-0" : "overflow-y-auto p-4 pb-24 lg:p-8 lg:pb-8"
         )}>
+          {/* Desktop Sidebar Toggle - Visible when sidebar is closed - EXCEPT on schedule page which has its own */}
+          {!isSidebarOpen && !isSchedule && (
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="hidden lg:flex absolute top-4 left-4 z-50 rounded-full bg-white p-2 text-slate-500 shadow-md hover:bg-slate-50 hover:text-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-700"
+              aria-label="Open sidebar"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+          )}
+
           <Outlet context={{ isSidebarOpen, toggleSidebar: () => setIsSidebarOpen(prev => !prev) }} />
         </main>
 

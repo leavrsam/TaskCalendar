@@ -273,6 +273,8 @@ function IntegrationsSettings({ onShowStatus }: { onShowStatus: (title: string, 
           assignedTo: [],
           isRecurringInstance: false,
           isModified: false,
+          reminders: [],
+          isTask: false,
         }
 
         return {

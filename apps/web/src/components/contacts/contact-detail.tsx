@@ -3,11 +3,11 @@ import { format } from 'date-fns'
 import { User, Calendar, CheckCircle2, Clock, Plus, CalendarPlus, Target, Check, MessageSquare, Send, Trash2 } from 'lucide-react'
 import type { Contact } from '@taskcalendar/core'
 
-import { useTasksQuery, useCreateTask } from '@/features/tasks/api'
+import { useTasksQuery } from '@/features/tasks/api'
 import { useVisitsQuery, useCreateVisit } from '@/features/visits/api'
 import { useContactNotesQuery, useCreateContactNote, useDeleteContactNote } from '@/features/contact-notes/api'
 import { TaskCard } from '@/components/tasks/task-card'
-import { CreationModal } from '@/components/calendar/creation-modal'
+import { EventModal } from '@/components/calendar/event-modal'
 import { VisitForm } from '@/components/visits/visit-form'
 import { GoalProgressPopup } from '@/components/contacts/goal-progress-popup'
 import { useToast } from '@/hooks/use-toast'
@@ -27,7 +27,7 @@ export function ContactDetail({ contact, onClose }: ContactDetailProps) {
     const tasksQuery = useTasksQuery()
     const visitsQuery = useVisitsQuery()
     const notesQuery = useContactNotesQuery(contact.id)
-    const createTask = useCreateTask()
+    // const createTask = useCreateTask() // Removed, handled by EventModal
     const createVisit = useCreateVisit()
     const createNote = useCreateContactNote()
     const deleteNote = useDeleteContactNote()
@@ -75,16 +75,6 @@ export function ContactDetail({ contact, onClose }: ContactDetailProps) {
         } finally {
             setIsAddingNote(false)
         }
-    }
-
-    const handleCreateTask = async (values: any) => {
-        await createTask.mutateAsync({
-            ...values,
-            scheduledStart: new Date().toISOString(),
-            scheduledEnd: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-        })
-        showSuccessToast({ title: 'Task created', description: 'Added to your schedule.' })
-        setIsTaskModalOpen(false)
     }
 
     const handleCreateVisit = async (data: any) => {
@@ -326,10 +316,10 @@ export function ContactDetail({ contact, onClose }: ContactDetailProps) {
             </div>
 
             {isTaskModalOpen && (
-                <CreationModal
+                <EventModal
+                    isOpen={true}
                     defaultContactId={contact.id}
                     onClose={() => setIsTaskModalOpen(false)}
-                    onSave={handleCreateTask}
                 />
             )}
 

@@ -115,7 +115,7 @@ function checkReminders(events: any[], contacts: Contact[], fired: Set<string>) 
             return // Green, no alert
         }
 
-        const key = `contact-${contact.id}-${status}`
+
         // We also want to ensure we don't spam. Maybe only once per status transition.
         // Or simpler: persist this permanently in localStorage so we don't nag every reload.
         const storageKey = `notified_contact_${contact.id}_${status}`

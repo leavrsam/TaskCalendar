@@ -249,6 +249,7 @@ type CreateTaskInput = {
   scheduledEnd?: string | null
   isAllDay?: boolean
   isBackup?: boolean
+  isTask?: boolean
   color?: string | null
   sharedWith?: string[]
   address?: string
@@ -258,6 +259,7 @@ type CreateTaskInput = {
   originalStart?: string | null
   isRecurringInstance?: boolean
   isModified?: boolean
+  reminders?: number[]
 }
 
 export const useCreateTask = () => {
@@ -267,7 +269,7 @@ export const useCreateTask = () => {
     mutationFn: async (payload: CreateTaskInput) => {
       if (!user) throw new Error('You must be signed in to create tasks')
       const now = nowIso()
-      await addDoc(
+      const docRef = await addDoc(
         tasksCollection(user.uid),
         pruneUndefined({
           ownerUid: user.uid,
@@ -280,6 +282,7 @@ export const useCreateTask = () => {
           scheduledEnd: payload.scheduledEnd ?? null,
           isAllDay: payload.isAllDay ?? false,
           isBackup: payload.isBackup ?? false,
+          isTask: payload.isTask ?? false,
           color: payload.color ?? null,
           assignedTo: [user.uid],
           sharedWith: payload.sharedWith ?? [],
@@ -292,10 +295,64 @@ export const useCreateTask = () => {
           originalStart: payload.originalStart ?? null,
           isRecurringInstance: payload.isRecurringInstance ?? false,
           isModified: payload.isModified ?? false,
+          reminders: payload.reminders ?? [],
           createdAt: now,
           updatedAt: now,
         }),
       )
+      return docRef.id
+    },
+    onMutate: async (payload) => {
+      await queryClient.cancelQueries({ queryKey: key(user?.uid) })
+      const previousTasks = queryClient.getQueriesData({
+        queryKey: key(user?.uid),
+      })
+
+      const now = nowIso()
+      const tempId = `temp-${Date.now()}`
+      const optimisticTask: Task = {
+        id: tempId,
+        ownerUid: user?.uid ?? '',
+        title: payload.title,
+        status: payload.status ?? 'todo',
+        priority: payload.priority ?? 'medium',
+        dueAt: payload.dueAt ?? payload.scheduledEnd ?? null,
+        scheduledStart: payload.scheduledStart ?? null,
+        scheduledEnd: payload.scheduledEnd ?? null,
+        isAllDay: payload.isAllDay ?? false,
+        isBackup: payload.isBackup ?? false,
+        isTask: payload.isTask ?? false,
+        color: payload.color ?? null,
+        assignedTo: [user?.uid ?? ''],
+        sharedWith: payload.sharedWith ?? [],
+        address: payload.address,
+        location: payload.location ?? null,
+        notes: payload.notes,
+        contactIds: payload.contactIds ?? [],
+        recurrence: payload.recurrence ?? null,
+        recurringEventId: payload.recurringEventId ?? null,
+        originalStart: payload.originalStart ?? null,
+        isRecurringInstance: payload.isRecurringInstance ?? false,
+        isModified: payload.isModified ?? false,
+        reminders: payload.reminders ?? [],
+        createdAt: now,
+        updatedAt: now,
+      } as Task
+
+      queryClient.setQueriesData(
+        { queryKey: key(user?.uid) },
+        (old: Task[] | undefined) => {
+          return [...(old ?? []), optimisticTask]
+        },
+      )
+      return { previousTasks }
+    },
+    onError: (_err, _newTodo, context) => {
+      if (context?.previousTasks) {
+        context.previousTasks.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data)
+        })
+      }
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: key(user?.uid) })
@@ -316,6 +373,7 @@ type UpdateTaskInput = {
       | 'scheduledEnd'
       | 'isAllDay'
       | 'isBackup'
+      | 'isTask'
       | 'color'
       | 'notes'
       | 'sharedWith'
@@ -325,6 +383,7 @@ type UpdateTaskInput = {
       | 'isModified'
       | 'contactId'
       | 'contactIds'
+      | 'reminders'
     >
   >
 }

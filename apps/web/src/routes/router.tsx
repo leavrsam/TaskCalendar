@@ -1,6 +1,5 @@
 import { DashboardRoute } from '@/routes/sections/dashboard-route'
 import { ContactsRoute } from '@/routes/sections/contacts-route'
-import { VisitsRoute } from '@/routes/sections/visits-route'
 import { ScheduleRoute } from '@/routes/sections/schedule-route'
 import { GoalsRoute } from '@/routes/sections/goals-route'
 import { MapRoute } from '@/routes/sections/map-route'
@@ -30,10 +29,6 @@ export const router = createBrowserRouter([
       {
         path: 'contacts',
         element: <ContactsRoute />,
-      },
-      {
-        path: 'visits',
-        element: <VisitsRoute />,
       },
       {
         path: 'schedule',

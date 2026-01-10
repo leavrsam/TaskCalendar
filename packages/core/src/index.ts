@@ -155,6 +155,7 @@ export const taskSchema = z.object({
   scheduledEnd: z.string().nullable().optional(),
   isAllDay: z.boolean().default(false),
   isBackup: z.boolean().default(false),
+  isTask: z.boolean().default(false),
   color: z.string().nullable().optional(),
   sharedWith: z.array(uid).default([]),
   // Location fields

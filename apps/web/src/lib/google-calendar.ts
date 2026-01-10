@@ -54,6 +54,8 @@ export async function fetchGoogleEvents(accessToken: string, timeMin: string, ti
             assignedTo: [],
             isRecurringInstance: false,
             isModified: false,
+            reminders: [],
+            isTask: false,
         }
 
         return {
