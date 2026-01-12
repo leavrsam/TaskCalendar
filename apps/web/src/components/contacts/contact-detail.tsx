@@ -89,7 +89,7 @@ export function ContactDetail({ contact, onClose }: ContactDetailProps) {
             onClick={onClose}
         >
             <div
-                className="flex h-[90vh] w-full max-w-2xl flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl"
+                className="flex h-[90vh] w-full max-w-2xl flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
@@ -109,18 +109,11 @@ export function ContactDetail({ contact, onClose }: ContactDetailProps) {
                     </div>
                     <div className="flex items-center gap-2">
                         <button
-                            onClick={() => setIsVisitModalOpen(true)}
-                            className="flex items-center gap-2 rounded-lg bg-white dark:bg-slate-900 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50"
-                        >
-                            <CalendarPlus className="h-4 w-4 text-slate-500" />
-                            Log Visit
-                        </button>
-                        <button
                             onClick={() => setIsTaskModalOpen(true)}
                             className="flex items-center gap-2 rounded-lg bg-brand-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-500"
                         >
                             <Plus className="h-4 w-4" />
-                            Add Task
+                            Add Event
                         </button>
                         <button
                             type="button"
@@ -266,7 +259,7 @@ export function ContactDetail({ contact, onClose }: ContactDetailProps) {
                                             <TaskCard task={item.data} />
                                         </div>
                                     ) : item.type === 'visit' ? (
-                                        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+                                        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 p-4">
                                             <div className="flex items-center gap-2 text-xs text-slate-500">
                                                 <Clock className="h-4 w-4" />
                                                 <span>Visit</span>
@@ -290,7 +283,7 @@ export function ContactDetail({ contact, onClose }: ContactDetailProps) {
                                             )}
                                         </div>
                                     ) : (
-                                        <div className="group rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+                                        <div className="group rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 p-4">
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-2 text-xs text-slate-500">
                                                     <MessageSquare className="h-4 w-4" />

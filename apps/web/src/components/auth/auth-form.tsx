@@ -42,7 +42,7 @@ export function AuthForm({ onSubmit, onGoogleSignIn, loading, mode }: AuthFormPr
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm"
+      className="space-y-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 p-6 shadow-sm"
     >
       <div>
         <label className="text-sm font-medium text-slate-900 dark:text-slate-50">Email</label>
@@ -121,7 +121,7 @@ export function AuthForm({ onSubmit, onGoogleSignIn, loading, mode }: AuthFormPr
               <div className="w-full border-t border-slate-200 dark:border-slate-700"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="bg-white dark:bg-slate-900 px-2 text-slate-500 dark:text-slate-400">Or continue with email</span>
+              <span className="bg-white dark:bg-neutral-900 px-2 text-slate-500 dark:text-slate-400">Or continue with email</span>
             </div>
           </div>
         </>

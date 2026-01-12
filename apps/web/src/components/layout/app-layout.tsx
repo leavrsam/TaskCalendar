@@ -31,10 +31,10 @@ export function AppLayout() {
   const mobileSecondaryNav = mainNavigation.filter(n => !mobilePrimaryNav.includes(n))
 
   return (
-    <div className="flex h-screen bg-white dark:bg-slate-900 overflow-hidden">
+    <div className="flex h-screen bg-transparent overflow-hidden">
       {/* Desktop Sidebar */}
       <aside className={clsx(
-        "hidden w-64 flex-shrink-0 bg-white dark:bg-slate-900 transition-all duration-300 ease-in-out flex flex-col",
+        "hidden w-64 flex-shrink-0 bg-white dark:bg-neutral-900 transition-all duration-300 ease-in-out flex flex-col",
         isSidebarOpen ? "lg:flex" : "lg:hidden"
       )}>
         {/* Fixed Header */}
@@ -113,7 +113,7 @@ export function AppLayout() {
 
       <div className="flex flex-1 flex-col h-full overflow-hidden w-full max-w-full">
         {/* Mobile Header */}
-        <header className="flex-shrink-0 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 lg:hidden dark:border-slate-800 dark:bg-slate-900">
+        <header className="flex-shrink-0 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 lg:hidden dark:border-slate-800 dark:bg-neutral-900">
           <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">TaskCalendar</p>
           <NavLink to="/settings">
             <CollaboratorAvatar

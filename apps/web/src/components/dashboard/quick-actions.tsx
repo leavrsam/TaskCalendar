@@ -8,7 +8,7 @@ export function QuickActions() {
         <div className="grid grid-cols-3 gap-2 sm:gap-4 max-w-full">
             <button
                 onClick={() => navigate('/lessons')}
-                className="group flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 sm:p-4 shadow-sm transition-all hover:border-brand-200 hover:bg-brand-50 dark:hover:bg-brand-950/30 hover:shadow-md"
+                className="group flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 p-3 sm:p-4 shadow-sm transition-all hover:border-brand-200 hover:bg-brand-50 dark:hover:bg-brand-950/30 hover:shadow-md"
             >
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 transition-colors group-hover:bg-brand-200 dark:group-hover:bg-brand-900/50">
                     <Plus className="h-5 w-5" />
@@ -18,7 +18,7 @@ export function QuickActions() {
 
             <button
                 onClick={() => navigate('/contacts')}
-                className="group flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 sm:p-4 shadow-sm transition-all hover:border-brand-200 hover:bg-brand-50 dark:hover:bg-brand-950/30 hover:shadow-md"
+                className="group flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 p-3 sm:p-4 shadow-sm transition-all hover:border-brand-200 hover:bg-brand-50 dark:hover:bg-brand-950/30 hover:shadow-md"
             >
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 transition-colors group-hover:bg-brand-200 dark:group-hover:bg-brand-900/50">
                     <UserPlus className="h-5 w-5" />
@@ -28,7 +28,7 @@ export function QuickActions() {
 
             <button
                 onClick={() => navigate('/schedule')}
-                className="group flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 sm:p-4 shadow-sm transition-all hover:border-brand-200 hover:bg-brand-50 dark:hover:bg-brand-950/30 hover:shadow-md"
+                className="group flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 p-3 sm:p-4 shadow-sm transition-all hover:border-brand-200 hover:bg-brand-50 dark:hover:bg-brand-950/30 hover:shadow-md"
             >
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 transition-colors group-hover:bg-brand-200 dark:group-hover:bg-brand-900/50">
                     <CheckSquare className="h-5 w-5" />

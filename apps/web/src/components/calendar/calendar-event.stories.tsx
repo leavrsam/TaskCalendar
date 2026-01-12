@@ -13,7 +13,6 @@ const baseEvent: TaskEvent = {
     ownerUid: 'demo-owner',
     title: 'Lesson with Maria',
     status: 'todo',
-    priority: 'high',
     dueAt: new Date().toISOString(),
     assignedTo: ['demo-owner'],
     sharedWith: [],

@@ -32,7 +32,7 @@ export function ProfileRoute() {
 
   return (
     <div className="space-y-6">
-      <header className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+      <header className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 p-5 shadow-sm">
         <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Profile</p>
         <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">Your account</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -40,7 +40,7 @@ export function ProfileRoute() {
         </p>
       </header>
       <section className="space-y-6">
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Basic info</h2>
           <div className="mt-4 space-y-4">
             <div className="flex items-center gap-4">
@@ -93,7 +93,7 @@ export function ProfileRoute() {
             </button>
           </div>
         </div>
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Password</h2>
           <p className="text-sm text-slate-600 dark:text-slate-400">
             Changing your password will sign you out of your other devices.

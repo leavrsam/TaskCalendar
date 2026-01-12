@@ -57,7 +57,7 @@ export function ShareWorkspaceCard() {
   }
 
   return (
-    <div className="flex h-fit flex-col gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+    <div className="flex h-fit flex-col gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 p-5 shadow-sm">
       <div>
         <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Sharing</p>
         <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Workspace access</h2>
@@ -94,7 +94,7 @@ export function ShareWorkspaceCard() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="name@example.com"
-            className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-50"
+            className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-50"
           />
         </div>
         <div>
@@ -102,7 +102,7 @@ export function ShareWorkspaceCard() {
           <select
             value={role}
             onChange={(e) => setRole(e.target.value as WorkspaceInvite['role'])}
-            className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-50"
+            className="mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-50"
           >
             <option value="editor">Editor (can update records)</option>
             <option value="viewer">Viewer (read-only)</option>
@@ -173,7 +173,7 @@ function InviteList({ title, emptyText, invites, onRevoke, showAvatars }: Invite
         {invites.map((invite) => (
           <div
             key={invite.id}
-            className="flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-sm"
+            className="flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 px-3 py-2 text-sm"
           >
             <div>
               <div className="flex items-center gap-2">

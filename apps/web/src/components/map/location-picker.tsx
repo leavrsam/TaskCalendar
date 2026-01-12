@@ -84,7 +84,7 @@ export function LocationPicker({ value, address, onChange }: LocationPickerProps
                     onClick={() => setIsOpen(false)}
                 >
                     <div
-                        className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden"
+                        className="relative w-full max-w-2xl bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl overflow-hidden"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header */}

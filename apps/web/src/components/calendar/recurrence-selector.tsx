@@ -63,12 +63,12 @@ export function RecurrenceSelector({ scheduledStart, recurrence, onChange }: Rec
             <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
                 Repeats
             </label>
-            <div className="mt-2 flex items-center gap-2">
+            <div className="mt-2">
                 <button
                     type="button"
                     onClick={() => setIsOpen(true)}
                     className={clsx(
-                        "flex-1 flex items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors",
+                        "w-full flex items-center justify-between rounded-lg border px-3 py-2.5 text-sm transition-colors",
                         recurrence
                             ? "border-brand-200 bg-brand-50 text-brand-700 dark:border-brand-800 dark:bg-brand-900/20 dark:text-brand-300"
                             : "border-slate-200 bg-white text-slate-900 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-50 dark:hover:border-slate-700"
@@ -86,7 +86,7 @@ export function RecurrenceSelector({ scheduledStart, recurrence, onChange }: Rec
                 onClose={() => setIsOpen(false)}
                 className="max-w-sm p-0 overflow-hidden"
             >
-                <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <div className="bg-slate-50 dark:bg-neutral-900/50 p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                     <h3 className="font-semibold text-slate-900 dark:text-slate-50">Custom Recurrence</h3>
                     <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-500">
                         <X className="h-4 w-4" />
@@ -178,7 +178,7 @@ export function RecurrenceSelector({ scheduledStart, recurrence, onChange }: Rec
                     </div>
                 </div>
 
-                <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
+                <div className="p-4 bg-slate-50 dark:bg-neutral-900/50 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
                     <button
                         type="button"
                         onClick={() => setIsOpen(false)}

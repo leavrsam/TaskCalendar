@@ -13,6 +13,19 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Default brand colors (blue) - overridden by ThemeProvider */
+  --brand-50: 240 247 255;
+  --brand-100: 217 233 255;
+  --brand-200: 176 211 255;
+  --brand-300: 127 181 255;
+  --brand-400: 74 144 255;
+  --brand-500: 31 106 255;
+  --brand-600: 15 78 219;
+  --brand-700: 13 61 168;
+  --brand-800: 15 47 124;
+  --brand-900: 15 39 95;
+  --brand-950: 10 21 58;
 }
 
 :root.dark {
@@ -22,7 +35,7 @@
 
 @layer utilities {
   .glass {
-    @apply backdrop-blur-xl bg-white/70 dark:bg-slate-900/60 border border-white/50 dark:border-white/10 shadow-xl;
+    @apply backdrop-blur-xl bg-white/70 dark:bg-neutral-900/60 border border-white/50 dark:border-white/10 shadow-xl;
   }
 
   /* Hide scrollbar for Chrome, Safari and Opera */
@@ -55,26 +68,26 @@
   }
 
   .glass-dock {
-    @apply backdrop-blur-md bg-white/60 dark:bg-slate-900/60 border border-white/40 dark:border-white/10 shadow-2xl shadow-brand-500/10 dark:shadow-black/50;
+    @apply backdrop-blur-md bg-white/60 dark:bg-neutral-900/60 border border-white/40 dark:border-white/10 shadow-2xl shadow-brand-500/10 dark:shadow-black/50;
   }
 
   /* Liquid Gradient Backgrounds */
   .bg-liquid-light {
     background-image:
-      radial-gradient(at 0% 0%, rgba(216, 180, 254, 0.3) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, rgba(167, 139, 250, 0.3) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, rgba(196, 181, 253, 0.3) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, rgba(167, 243, 208, 0.3) 0px, transparent 50%);
+      radial-gradient(at 0% 0%, rgb(var(--brand-300) / 0.3) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgb(var(--brand-400) / 0.3) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgb(var(--brand-300) / 0.3) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, rgb(var(--brand-200) / 0.3) 0px, transparent 50%);
     background-size: 150% 150%;
     animation: gradient-flow 15s ease infinite alternate;
   }
 
   .bg-liquid-dark {
     background-image:
-      radial-gradient(at 0% 0%, rgba(38, 38, 38, 0.6) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, rgba(45, 45, 45, 0.4) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, rgba(38, 38, 38, 0.3) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, rgba(23, 23, 23, 0.5) 0px, transparent 50%);
+      radial-gradient(at 0% 0%, rgb(var(--brand-950) / 0.5) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgb(var(--brand-900) / 0.3) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgb(var(--brand-950) / 0.3) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, rgb(var(--brand-900) / 0.4) 0px, transparent 50%);
     background-size: 150% 150%;
     animation: gradient-flow 15s ease infinite alternate;
   }

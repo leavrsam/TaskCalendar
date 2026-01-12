@@ -69,7 +69,7 @@ export function GoalCard({ goal, onProgressChange, onEdit, onDelete }: GoalCardP
   }
 
   return (
-    <div className="group space-y-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm transition-all hover:shadow-md">
+    <div className="group space-y-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 p-4 shadow-sm transition-all hover:shadow-md">
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
           <div className="flex items-center gap-2">
@@ -152,7 +152,7 @@ export function GoalCard({ goal, onProgressChange, onEdit, onDelete }: GoalCardP
             type="button"
             onClick={() => onProgressChange(Math.max(0, goal.progress - 1))}
             disabled={goal.progress === 0}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 px-3 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
             title="Undo progress"
           >
             <Undo2 className="h-4 w-4" />

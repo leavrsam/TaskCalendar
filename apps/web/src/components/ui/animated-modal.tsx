@@ -67,7 +67,7 @@ export function AnimatedModal({
                                 duration: 0.3
                             }}
                             className={clsx(
-                                'pointer-events-auto w-full max-w-md overflow-hidden rounded-2xl bg-white dark:bg-slate-900 shadow-2xl ring-1 ring-slate-900/5',
+                                'pointer-events-auto w-full max-w-md overflow-hidden rounded-2xl bg-white dark:bg-neutral-900 shadow-2xl ring-1 ring-slate-900/5',
                                 className
                             )}
                             onClick={(e: React.MouseEvent) => e.stopPropagation()}

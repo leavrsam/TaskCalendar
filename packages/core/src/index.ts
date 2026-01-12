@@ -144,10 +144,14 @@ export const taskSchema = z.object({
   ownerUid: uid,
   contactId: contactId.optional(), // Legacy single contact (for backward compatibility)
   contactIds: z.array(contactId).default([]), // Multiple contacts
+  linkedGoals: z.array(z.object({
+    contactId: z.string(),
+    goalId: z.string(),
+    subGoalId: z.string().nullish(),
+  })).default([]),
   title: z.string(),
   reminders: z.array(z.number()).default([]), // Minutes before event
   status: z.enum(['todo', 'inProgress', 'done']),
-  priority: z.enum(['low', 'medium', 'high']).default('medium'),
   dueAt: z.string().nullable(),
   assignedTo: z.array(z.string()),
   notes: z.string().optional(),

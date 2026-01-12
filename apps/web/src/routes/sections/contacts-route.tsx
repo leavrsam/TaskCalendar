@@ -149,7 +149,7 @@ export function ContactsRoute() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-col gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm md:flex-row md:items-start md:justify-between">
+      <header className="flex flex-col gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 p-5 shadow-sm md:flex-row md:items-start md:justify-between">
         <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">People & Relationships</h1>
         <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
           {/* New View Toggles */}
@@ -186,7 +186,7 @@ export function ContactsRoute() {
           {supportsContactPicker && (
             <button
               onClick={handleImportClick}
-              className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-5 py-3 text-sm font-semibold text-slate-900 dark:text-slate-50 hover:bg-slate-50 dark:hover:bg-slate-800 min-h-[48px]"
+              className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 px-5 py-3 text-sm font-semibold text-slate-900 dark:text-slate-50 hover:bg-slate-50 dark:hover:bg-slate-800 min-h-[48px]"
             >
               <Upload className="h-5 w-5" />
               Import
@@ -340,7 +340,7 @@ export function ContactsRoute() {
       {/* Import Preview Modal */}
       {importPreview.length > 0 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-          <div className="w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl">
+          <div className="w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">

@@ -8,6 +8,7 @@ import {
   query,
   updateDoc,
   where,
+  writeBatch,
 } from 'firebase/firestore'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
@@ -240,7 +241,6 @@ export const useTaskEvents = (anchorDate?: Date) => {
 type CreateTaskInput = {
   title: string
   status?: Task['status']
-  priority?: Task['priority']
   dueAt?: string | null
   contactId?: string
   contactIds?: string[]
@@ -260,6 +260,7 @@ type CreateTaskInput = {
   isRecurringInstance?: boolean
   isModified?: boolean
   reminders?: number[]
+  linkedGoals?: { contactId: string; goalId: string; subGoalId?: string }[]
 }
 
 export const useCreateTask = () => {
@@ -276,7 +277,6 @@ export const useCreateTask = () => {
           ...(payload.contactId ? { contactId: payload.contactId } : {}),
           title: payload.title,
           status: payload.status ?? 'todo',
-          priority: payload.priority ?? 'medium',
           dueAt: payload.dueAt ?? payload.scheduledEnd ?? null,
           scheduledStart: payload.scheduledStart ?? null,
           scheduledEnd: payload.scheduledEnd ?? null,
@@ -296,6 +296,7 @@ export const useCreateTask = () => {
           isRecurringInstance: payload.isRecurringInstance ?? false,
           isModified: payload.isModified ?? false,
           reminders: payload.reminders ?? [],
+          linkedGoals: payload.linkedGoals ?? [],
           createdAt: now,
           updatedAt: now,
         }),
@@ -315,7 +316,6 @@ export const useCreateTask = () => {
         ownerUid: user?.uid ?? '',
         title: payload.title,
         status: payload.status ?? 'todo',
-        priority: payload.priority ?? 'medium',
         dueAt: payload.dueAt ?? payload.scheduledEnd ?? null,
         scheduledStart: payload.scheduledStart ?? null,
         scheduledEnd: payload.scheduledEnd ?? null,
@@ -335,6 +335,7 @@ export const useCreateTask = () => {
         isRecurringInstance: payload.isRecurringInstance ?? false,
         isModified: payload.isModified ?? false,
         reminders: payload.reminders ?? [],
+        linkedGoals: payload.linkedGoals ?? [],
         createdAt: now,
         updatedAt: now,
       } as Task
@@ -367,7 +368,6 @@ type UpdateTaskInput = {
       Task,
       | 'title'
       | 'status'
-      | 'priority'
       | 'dueAt'
       | 'scheduledStart'
       | 'scheduledEnd'
@@ -384,6 +384,7 @@ type UpdateTaskInput = {
       | 'contactId'
       | 'contactIds'
       | 'reminders'
+      | 'linkedGoals'
     >
   >
 }
@@ -508,13 +509,32 @@ export const useUpdateRecurringSeriesAll = () => {
     mutationFn: async ({ id, data, recurringEventId }: { id: string; data: UpdateTaskInput['data']; recurringEventId?: string | null }) => {
       if (!user) throw new Error('You must be signed in')
 
+      const db = getFirebaseFirestore()
+      const batch = writeBatch(db)
+
       // Update the parent event
       const parentId = recurringEventId || id
 
-      await updateTask.mutateAsync({
-        id: parentId,
-        data,
+      // 1. Find all exception instances for this series
+      const exceptionsQuery = query(
+        tasksCollection(user.uid),
+        where('recurringEventId', '==', parentId)
+      )
+      const exceptionsSnapshot = await getDocs(exceptionsQuery)
+
+      // 2. Delete all exceptions so they don't override the new series data
+      exceptionsSnapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref)
       })
+
+      // 3. Update the parent task with the new data
+      const parentRef = taskDoc(user.uid, parentId)
+      batch.update(parentRef, {
+        ...data,
+        updatedAt: nowIso(),
+      })
+
+      await batch.commit()
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: key(user?.uid) })
@@ -532,66 +552,105 @@ export const useUpdateRecurringSeriesFuture = () => {
     mutationFn: async ({ data, originalTask, date }: { id: string; data: UpdateTaskInput['data']; originalTask: Task; date: Date }) => {
       if (!user) throw new Error('You must be signed in')
 
-      const parentId = originalTask.recurrence ? originalTask.id : originalTask.recurringEventId
+      const db = getFirebaseFirestore()
+      const batch = writeBatch(db)
+
+      const parentId = originalTask.recurringEventId || originalTask.id
 
       if (!parentId) throw new Error('Cannot split non-recurring task')
 
-      // Get the recurrence rule - prefer from originalTask, fall back to data.recurrence
-      const baseRecurrence = originalTask.recurrence || data.recurrence
-      if (!baseRecurrence) {
-        // If no recurrence available, we can't create a new series
-        // Just update this instance instead
-        console.warn('No recurrence rule available for split, updating instance only')
-        await updateTask.mutateAsync({
-          id: originalTask.id.includes('-') ? originalTask.id.split('-')[0] : originalTask.id,
-          data,
-        })
-        return
-      }
+      console.log('[updateRecurringSeriesFuture] Starting split', { parentId, date, baseRecurrence })
 
-      // 1. End the current series at the previous occurrence
-      const prevEndDate = new Date(date)
-      prevEndDate.setDate(prevEndDate.getDate() - 1)
-      prevEndDate.setHours(23, 59, 59, 999)
+      // 1. Find relevant exceptions (modifications) that fall AFTER the split date
+      // We need to delete them because they belong to the "old" series logic but would
+      // now technically fall under the "new" series time range, potentially causing duplicates or confusion.
+      const exceptionsQuery = query(
+        tasksCollection(user.uid),
+        where('recurringEventId', '==', parentId)
+      )
+      const exceptionsSnapshot = await getDocs(exceptionsQuery)
+      console.log('[updateRecurringSeriesFuture] Found exceptions', exceptionsSnapshot.size)
 
-      // Update the parent to end the series
-      await updateTask.mutateAsync({
-        id: parentId,
-        data: {
-          recurrence: {
-            ...baseRecurrence,
-            endDate: prevEndDate.toISOString(),
+      // Filter and delete future exceptions
+      exceptionsSnapshot.docs.forEach((doc) => {
+        const exceptionData = doc.data()
+        if (exceptionData.originalStart) {
+          const exceptionDate = new Date(exceptionData.originalStart)
+          // If exception is on or after the split date, delete it
+          if (exceptionDate >= date) {
+            console.log('[updateRecurringSeriesFuture] Deleting future exception', doc.id, exceptionData.originalStart)
+            batch.delete(doc.ref)
           }
         }
       })
 
-      // 2. Create new series starting from this date
+      // Get the recurrence rule.
+      // CRITICAL FIX: Prefer data.recurrence (new rule) over originalTask.recurrence (old rule)
+      // This allows users to change the recurrence pattern when splitting.
+      const newRecurrence = data.recurrence || originalTask.recurrence
+
+      if (!newRecurrence) {
+        console.warn('No recurrence rule available for split')
+        return
+      }
+
+      // 2. End the CURRENT series at the previous occurrence
+      const prevEndDate = new Date(date)
+      prevEndDate.setDate(prevEndDate.getDate() - 1)
+      prevEndDate.setHours(23, 59, 59, 999)
+
+      console.log('[updateRecurringSeriesFuture] Ending old series at', prevEndDate)
+
+      // We only update the recurrence end date for the old parent
+      // We DO NOT update other fields (title, etc) because that would change the PAST events too,
+      // which we generally don't want when splitting "future" events.
+      // However, if the user *expects* "this" event (the split point) to have new data,
+      // that is handled by the NEW series starting at `date`.
+      const parentRef = taskDoc(user.uid, parentId)
+      batch.update(parentRef, {
+        'recurrence.endDate': prevEndDate.toISOString(),
+        updatedAt: nowIso(),
+      })
+
+      await batch.commit()
+      console.log('[updateRecurringSeriesFuture] Batch committed')
+
+      // 3. Create NEW series starting from this date
+      // We calculate the duration to maintain the same event length
       const duration = new Date(originalTask.scheduledEnd!).getTime() - new Date(originalTask.scheduledStart!).getTime()
       const newStart = new Date(date)
       const newEnd = new Date(newStart.getTime() + duration)
 
+      // Create the new parent task
       await createTask.mutateAsync({
         title: data.title ?? originalTask.title,
         status: data.status ?? originalTask.status,
-        priority: data.priority ?? originalTask.priority,
         notes: data.notes ?? originalTask.notes,
         isAllDay: data.isAllDay ?? originalTask.isAllDay,
         isBackup: data.isBackup ?? originalTask.isBackup,
+        isTask: data.isTask ?? originalTask.isTask,
         color: data.color ?? originalTask.color,
-        contactId: originalTask.contactId ?? undefined,
+        contactId: originalTask.contactId, // Legacy
+        contactIds: data.contactIds ?? originalTask.contactIds ?? [],
+        linkedGoals: data.linkedGoals ?? originalTask.linkedGoals ?? [],
+        reminders: data.reminders ?? originalTask.reminders ?? [],
+        address: data.address ?? originalTask.address,
+        location: data.location ?? originalTask.location,
+        sharedWith: data.sharedWith ?? originalTask.sharedWith,
+
         scheduledStart: newStart.toISOString(),
         scheduledEnd: newEnd.toISOString(),
         dueAt: newEnd.toISOString(),
         recurrence: {
-          frequency: baseRecurrence.frequency,
-          interval: baseRecurrence.interval ?? 1,
-          byDay: baseRecurrence.byDay ?? undefined,
-          byMonth: baseRecurrence.byMonth ?? null,
-          byMonthDay: baseRecurrence.byMonthDay ?? null,
-          endDate: baseRecurrence.endDate || null,
+          frequency: newRecurrence.frequency,
+          interval: newRecurrence.interval ?? 1,
+          byDay: newRecurrence.byDay ?? undefined,
+          byMonth: newRecurrence.byMonth ?? null,
+          byMonthDay: newRecurrence.byMonthDay ?? null,
+          endDate: newRecurrence.endDate || null,
           count: null,
         },
-        recurringEventId: null, // New parent
+        recurringEventId: null, // New parent, no master ID
         isRecurringInstance: false,
         isModified: false,
       })

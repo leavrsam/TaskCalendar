@@ -75,7 +75,7 @@ export function VisitForm({ initialData, contacts, onSubmit, onClose, title }: V
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-xl">
+            <div className="w-full max-w-md rounded-2xl bg-white dark:bg-neutral-900 p-6 shadow-xl">
                 <div className="mb-6 flex items-center justify-between">
                     <h2 className="text-xl font-semibold text-slate-900">{title}</h2>
                     <button

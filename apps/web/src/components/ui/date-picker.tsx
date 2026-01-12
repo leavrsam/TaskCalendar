@@ -63,7 +63,7 @@ export function DatePicker({ value, onChange, className }: DatePickerProps) {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 5, scale: 0.95 }}
                         transition={{ duration: 0.1 }}
-                        className="absolute z-50 mt-1 w-[280px] overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-xl dark:border-slate-700 dark:bg-slate-900"
+                        className="absolute z-50 mt-1 w-[280px] overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-xl dark:border-slate-700 dark:bg-neutral-900"
                     >
                         {/* Header */}
                         <div className="flex items-center justify-between mb-4">

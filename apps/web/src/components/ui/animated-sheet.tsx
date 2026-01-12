@@ -62,7 +62,7 @@ export function AnimatedSheet({
                         exit={{ opacity: 0 }}
                         onClick={onClose}
                         className={clsx(
-                            "fixed inset-0 z-[1300] bg-slate-900/20 backdrop-blur-sm dark:bg-slate-900/50",
+                            "fixed inset-0 z-[1300] bg-slate-900/20 backdrop-blur-sm dark:bg-neutral-900/50",
                             overlayClassName
                         )}
                     />
@@ -74,7 +74,7 @@ export function AnimatedSheet({
                         animate="visible"
                         exit="exit"
                         className={clsx(
-                            "fixed z-[1300] bg-white shadow-2xl dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800",
+                            "fixed z-[1300] bg-white shadow-2xl dark:bg-neutral-900 border-l border-slate-200 dark:border-slate-800",
                             side === 'right' && "inset-y-0 right-0 h-full w-full max-w-sm sm:max-w-md",
                             side === 'left' && "inset-y-0 left-0 h-full w-full max-w-sm sm:max-w-md",
                             side === 'bottom' && "inset-x-0 bottom-0 w-full rounded-t-xl border-t",

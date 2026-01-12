@@ -51,7 +51,7 @@ export function ContactCard({ contact, onEdit, onDelete, onToggleFavorite }: Con
   }
 
   return (
-    <div className={`group relative flex flex-col gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm transition-all hover:shadow-md ${ringClass}`}>
+    <div className={`group relative flex flex-col gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 p-4 shadow-sm transition-all hover:shadow-md ${ringClass}`}>
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2">
           {onToggleFavorite && (

@@ -271,9 +271,7 @@ export function GlobalMap({
                                         <ul className="mt-1 space-y-1">
                                             {contact.activeTasks.map(task => (
                                                 <li key={task.id} className="flex items-start gap-1.5 text-xs text-slate-700">
-                                                    <span className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${task.priority === 'high' ? 'bg-red-500' :
-                                                        task.priority === 'medium' ? 'bg-amber-500' : 'bg-emerald-500'
-                                                        }`} />
+                                                    <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
                                                     <div>
                                                         <p>{task.title}</p>
                                                         {task.dueAt && (
@@ -319,12 +317,6 @@ export function GlobalMap({
                                             'bg-emerald-100 text-emerald-700'
                                         }`}>
                                         {event.status === 'inProgress' ? 'In Progress' : event.status}
-                                    </span>
-                                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium uppercase ${event.priority === 'high' ? 'bg-red-100 text-red-700' :
-                                        event.priority === 'medium' ? 'bg-amber-100 text-amber-700' :
-                                            'bg-emerald-100 text-emerald-700'
-                                        }`}>
-                                        {event.priority} priority
                                     </span>
                                 </div>
                                 {event.scheduledStart && (

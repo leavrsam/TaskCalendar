@@ -29,7 +29,7 @@ export function VisitsRoute() {
       </div>
 
       <div className="grid gap-6">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-neutral-900 shadow-sm">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
@@ -63,7 +63,7 @@ export function VisitsRoute() {
             visits.map((visit) => (
               <div
                 key={visit.id}
-                className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 transition-all hover:border-brand-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-brand-900"
+                className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 transition-all hover:border-brand-200 hover:shadow-md dark:border-slate-800 dark:bg-neutral-900 dark:hover:border-brand-900"
               >
                 <div className="flex items-start justify-between">
                   <div className="space-y-3">

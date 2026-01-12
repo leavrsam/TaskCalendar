@@ -12,19 +12,13 @@ type TaskCardProps = {
   onSchedule?: () => void
 }
 
-const priorityTone: Record<Task['priority'], string> = {
-  high: 'text-rose-600 bg-rose-50',
-  medium: 'text-amber-600 bg-amber-50',
-  low: 'text-emerald-600 bg-emerald-50',
-}
-
 export function TaskCard({ task, onStatusChange, onSchedule }: TaskCardProps) {
   const contactsQuery = useContactsQuery()
   const contacts = contactsQuery.data ?? []
   const contact = task.contactId ? contacts.find((c) => c.id === task.contactId) : null
 
   return (
-    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
+    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 p-4 shadow-sm">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">{task.title}</p>
@@ -40,14 +34,6 @@ export function TaskCard({ task, onStatusChange, onSchedule }: TaskCardProps) {
             </p>
           )}
         </div>
-        <span
-          className={clsx(
-            'rounded-full px-2 py-0.5 text-xs font-semibold capitalize',
-            priorityTone[task.priority],
-          )}
-        >
-          {task.priority}
-        </span>
       </div>
 
       {task.notes && (

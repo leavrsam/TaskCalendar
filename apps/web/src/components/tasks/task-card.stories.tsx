@@ -9,7 +9,6 @@ const baseTask: Task = {
   ownerUid: 'demo-owner',
   title: 'Confirm lesson with Maria',
   status: 'todo',
-  priority: 'high',
   dueAt: new Date().toISOString(),
   assignedTo: ['demo-owner'],
   notes: 'Coordinate with fellowship.',

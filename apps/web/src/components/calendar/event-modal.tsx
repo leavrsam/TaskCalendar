@@ -11,7 +11,7 @@ import {
     useUpdateRecurringSeriesFuture,
     type TaskEvent
 } from '@/features/tasks/api'
-import { useContactsQuery } from '@/features/contacts/api'
+import { useContactsQuery, useUpdateContact } from '@/features/contacts/api'
 import { RecurrenceSelector } from '@/components/calendar/recurrence-selector'
 import { EditRecurringEventModal, type EditScope } from '@/components/calendar/edit-recurring-event-modal'
 import { AnimatedModal } from '@/components/ui/animated-modal'
@@ -22,6 +22,7 @@ import { TimeSelect } from '@/components/ui/time-select'
 
 import { LocationPicker } from '@/components/map/location-picker'
 import { GoalProgressPopup } from '@/components/contacts/goal-progress-popup'
+import { GoalPickerPopup } from '@/components/calendar/goal-picker-popup'
 import clsx from 'clsx'
 import { ChevronDown, Trash2, Target } from 'lucide-react'
 import { createGoogleEvent } from '@/lib/google-calendar'
@@ -57,6 +58,7 @@ export function EventModal({
     const updateRecurringInstance = useUpdateRecurringInstance()
     const updateRecurringSeriesAll = useUpdateRecurringSeriesAll()
     const updateRecurringSeriesFuture = useUpdateRecurringSeriesFuture()
+    const updateContact = useUpdateContact()
 
     // Helper
     const toTimeValue = (d: Date) => {
@@ -75,7 +77,6 @@ export function EventModal({
     // State
     const [title, setTitle] = useState('')
     const [status, setStatus] = useState<Task['status']>('todo')
-    const [priority, setPriority] = useState<Task['priority']>('medium')
     const [notes, setNotes] = useState('')
     const [color, setColor] = useState<string>('#039be5')
     const [contactIds, setContactIds] = useState<string[]>([])
@@ -86,6 +87,7 @@ export function EventModal({
     const [address, setAddress] = useState('')
     const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
     const [reminders, setReminders] = useState<number[]>([]) // Minutes
+    const [linkedGoals, setLinkedGoals] = useState<{ contactId: string, goalId: string, subGoalId?: string }[]>([])
     const [showContactDropdown, setShowContactDropdown] = useState(false)
 
     // Extra state for Edit Mode
@@ -114,7 +116,6 @@ export function EventModal({
             const t = event.resource
             setTitle(t.title)
             setStatus(t.status)
-            setPriority(t.priority)
             setNotes(t.notes || '')
             setColor(t.color || '#039be5')
             setContactIds(t.contactIds || (t.contactId ? [t.contactId] : []))
@@ -125,6 +126,7 @@ export function EventModal({
             setAddress(t.address || '')
             setLocation(t.location || null)
             setReminders(t.reminders || [])
+            setLinkedGoals(t.linkedGoals || [])
 
             if (t.scheduledStart) {
                 const s = new Date(t.scheduledStart)
@@ -140,7 +142,6 @@ export function EventModal({
             // Create Mode (from slot)
             setTitle('')
             setStatus('todo')
-            setPriority('medium')
             setNotes('')
             setColor('#039be5')
             setContactIds(defaultContactId ? [defaultContactId] : [])
@@ -151,11 +152,27 @@ export function EventModal({
             setAddress('')
             setLocation(defaultLocation ?? null)
             setReminders([])
+            setLinkedGoals([])
 
             setStartDate(slot.start)
             setEndDate(slot.end)
             setStartTimeValue(toTimeValue(slot.start))
             setEndTimeValue(toTimeValue(slot.end))
+        } else {
+            // Create Mode (no slot, e.g. from contact detail)
+            setTitle('')
+            setStatus('todo')
+            setNotes('')
+            setColor('#039be5')
+            setContactIds(defaultContactId ? [defaultContactId] : [])
+            setRecurrence(null)
+            setIsAllDay(false)
+            setIsBackup(false)
+            setIsTask(false)
+            setAddress('')
+            setLocation(defaultLocation ?? null)
+            setReminders([])
+            setLinkedGoals([])
         }
     }, [event, slot, defaultContactId, defaultLocation, isOpen])
 
@@ -208,7 +225,7 @@ export function EventModal({
         setEndDate(newEnd)
     }
 
-    const handleSave = async () => {
+    const handleSave = async (overrideData?: any) => {
         setSaving(true)
         setError(null)
         try {
@@ -226,9 +243,8 @@ export function EventModal({
                 title: title || '(No Title)',
                 status,
                 notes,
-                priority,
                 color,
-                contactIds: contactIds, // Send array, let API handle it (or Firestore accepts empty array)
+                contactIds: contactIds,
                 recurrence,
                 scheduledStart: finalStart.toISOString(),
                 scheduledEnd: finalEnd.toISOString(),
@@ -238,6 +254,64 @@ export function EventModal({
                 address: address || '',
                 location,
                 reminders,
+                reminders,
+                linkedGoals: linkedGoals.map(lg => ({
+                    contactId: lg.contactId,
+                    goalId: lg.goalId,
+                    subGoalId: lg.subGoalId || null
+                })),
+                ...overrideData
+            }
+
+            // Auto-complete linked goals if status is done
+            if (data.status === 'done' && linkedGoals.length > 0) {
+                // Group by contact to batch updates
+                const goalsByContact = linkedGoals.reduce((acc, lg) => {
+                    if (!acc[lg.contactId]) acc[lg.contactId] = []
+                    acc[lg.contactId].push(lg)
+                    return acc
+                }, {} as Record<string, typeof linkedGoals>)
+
+                await Promise.all(Object.entries(goalsByContact).map(async ([contactId, links]) => {
+                    const contact = contacts.find(c => c.id === contactId)
+                    if (!contact) return
+
+                    let updatedGoals = [...contact.goals]
+                    let changed = false
+
+                    links.forEach(link => {
+                        const goalIndex = updatedGoals.findIndex(g => g.id === link.goalId)
+                        if (goalIndex === -1) return
+
+                        const goal = { ...updatedGoals[goalIndex] }
+
+                        if (link.subGoalId) {
+                            // Complete SubGoal
+                            const sgIndex = goal.subGoals.findIndex(s => s.id === link.subGoalId)
+                            if (sgIndex !== -1 && !goal.subGoals[sgIndex].isCompleted) {
+                                const newSubGoals = [...goal.subGoals]
+                                newSubGoals[sgIndex] = { ...newSubGoals[sgIndex], isCompleted: true }
+                                goal.subGoals = newSubGoals
+                                updatedGoals[goalIndex] = goal
+                                changed = true
+                            }
+                        } else {
+                            // Complete Goal
+                            if (!goal.isCompleted) {
+                                goal.isCompleted = true
+                                updatedGoals[goalIndex] = goal
+                                changed = true
+                            }
+                        }
+                    })
+
+                    if (changed) {
+                        await updateContact.mutateAsync({
+                            id: contactId,
+                            data: { goals: updatedGoals }
+                        })
+                    }
+                }))
             }
 
             if (isEditMode && event) {
@@ -245,10 +319,10 @@ export function EventModal({
                 const task = event.resource
                 const isRecurring = !!(task.recurrence || task.recurringEventId)
 
-                if (isRecurring) {
+                if (isRecurring && !overrideData) { // If overrideData is present (like from scope confirm), skip scope prompt
                     setScopeAction('edit')
                     setShowScopeModal(true)
-                    setSaving(false) // Defer saving until scope confirm
+                    setSaving(false)
                     return
                 }
 
@@ -287,6 +361,37 @@ export function EventModal({
         }
     }
 
+    const toggleGoalCompletion = async (contactId: string, goalId: string, subGoalId?: string, currentCompleted?: boolean) => {
+        const contact = contacts.find(c => c.id === contactId)
+        if (!contact) return
+
+        try {
+            const updatedGoals = contact.goals.map(g => {
+                if (g.id !== goalId) return g
+
+                if (subGoalId) {
+                    // Toggle subgoal
+                    return {
+                        ...g,
+                        subGoals: g.subGoals.map(sg =>
+                            sg.id === subGoalId ? { ...sg, isCompleted: !currentCompleted } : sg
+                        )
+                    }
+                } else {
+                    // Toggle goal
+                    return { ...g, isCompleted: !currentCompleted }
+                }
+            })
+
+            await updateContact.mutateAsync({
+                id: contactId,
+                data: { goals: updatedGoals }
+            })
+        } catch (err) {
+            console.error('Failed to toggle goal completion', err)
+        }
+    }
+
     const handleDeleteClick = () => {
         if (!event) return
         const task = event.resource
@@ -304,79 +409,97 @@ export function EventModal({
         }
     }
 
-    const handleScopeConfirm = (scope: EditScope) => {
-        setShowScopeModal(false)
+    const handleScopeConfirm = async (scope: EditScope) => {
+        // Don't close immediately, wait for success
+        // setShowScopeModal(false) 
         if (!event) return
+
+        setSaving(true) // Ensure saving state is set
 
         const task = event.resource
 
-        if (scopeAction === 'delete') {
-            if (scope === 'this') {
-                const isExpandedInstance = task.id.includes('-') && task.recurringEventId
-                const targetId = isExpandedInstance ? task.recurringEventId! : task.id
-                deleteTask.mutate(targetId)
-            } else if (scope === 'following') {
-                const parentId = task.recurringEventId || task.id
-                deleteTask.mutate(parentId)
-            } else if (scope === 'all') {
-                const parentId = task.recurringEventId || task.id
-                deleteTask.mutate(parentId)
+        try {
+            if (scopeAction === 'delete') {
+                if (scope === 'this') {
+                    const isExpandedInstance = task.id.includes('-') && task.recurringEventId
+                    const targetId = isExpandedInstance ? task.recurringEventId! : task.id
+                    await deleteTask.mutateAsync(targetId)
+                } else if (scope === 'following') {
+                    const parentId = task.recurringEventId || task.id
+                    await deleteTask.mutateAsync(parentId)
+                } else if (scope === 'all') {
+                    const parentId = task.recurringEventId || task.id
+                    await deleteTask.mutateAsync(parentId)
+                }
+                setShowScopeModal(false)
+                onClose()
+                return
             }
+
+            // Edit Scope
+            // Prepare Data again (duplicate from handleSave, maybe refactor)
+            let finalStart = startDate
+            let finalEnd = endDate
+            if (isAllDay) {
+                finalStart = new Date(startDate)
+                finalStart.setHours(0, 0, 0, 0)
+                finalEnd = new Date(endDate)
+                finalEnd.setHours(23, 59, 59, 999)
+            }
+
+            const data = {
+                title: title || '(No Title)',
+                status,
+                notes,
+                scheduledStart: finalStart.toISOString(),
+                scheduledEnd: finalEnd.toISOString(),
+                isAllDay,
+                isBackup,
+                isTask,
+                color,
+                contactIds,
+                address: address || undefined,
+                location,
+                recurrence,
+                reminders,
+                linkedGoals: linkedGoals.map(lg => ({
+                    contactId: lg.contactId,
+                    goalId: lg.goalId,
+                    subGoalId: lg.subGoalId || null
+                })),
+            }
+
+            if (scope === 'this') {
+                await updateRecurringInstance.mutateAsync({
+                    id: task.id,
+                    data,
+                    originalTask: event.resource
+                })
+            } else if (scope === 'following') {
+                console.log('Calling updateRecurringSeriesFuture', { task, data })
+                await updateRecurringSeriesFuture.mutateAsync({
+                    id: task.id,
+                    data,
+                    originalTask: event.resource,
+                    date: new Date(startDate)
+                })
+            } else if (scope === 'all') {
+                await updateRecurringSeriesAll.mutateAsync({
+                    id: task.id,
+                    data,
+                    recurringEventId: task.recurringEventId
+                })
+            }
+
+            setShowScopeModal(false)
             onClose()
-            return
+        } catch (err) {
+            console.error('Failed to update recurring series', err)
+            setError(err instanceof Error ? err.message : 'Error saving recurring event')
+            // Don't close modal on error
+        } finally {
+            setSaving(false)
         }
-
-        // Edit Scope
-        // Prepare Data again (duplicate from handleSave, maybe refactor)
-        let finalStart = startDate
-        let finalEnd = endDate
-        if (isAllDay) {
-            finalStart = new Date(startDate)
-            finalStart.setHours(0, 0, 0, 0)
-            finalEnd = new Date(endDate)
-            finalEnd.setHours(23, 59, 59, 999)
-        }
-
-        const data = {
-            title: title || '(No Title)',
-            status,
-            priority,
-            notes,
-            scheduledStart: finalStart.toISOString(),
-            scheduledEnd: finalEnd.toISOString(),
-            isAllDay,
-            isBackup,
-            isTask,
-            color,
-            address: address || undefined,
-            location,
-            recurrence,
-            reminders,
-        }
-
-        if (scope === 'this') {
-            updateRecurringInstance.mutate({
-                id: task.id,
-                data,
-                originalTask: event.resource
-            })
-        } else if (scope === 'following') {
-            updateRecurringSeriesFuture.mutate({
-                id: task.id,
-                data,
-                originalTask: event.resource,
-                date: new Date(startDate)
-            })
-        } else if (scope === 'all') {
-            updateRecurringSeriesAll.mutate({
-                id: task.id,
-                data,
-                recurringEventId: task.recurringEventId
-            })
-        }
-
-        setSaving(false)
-        onClose()
     }
 
 
@@ -386,7 +509,7 @@ export function EventModal({
             isOpen={isOpen}
             onClose={onClose}
             layoutId={slot ? `slot-${slot.start.toISOString()}` : event ? `event-${event.id}` : undefined}
-            className="w-full max-w-md rounded-t-2xl md:rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl flex flex-col max-h-[85vh] p-0"
+            className="w-full max-w-md rounded-t-2xl md:rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 shadow-2xl flex flex-col max-h-[85vh] p-0"
         >
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 {/* Title Input */}
@@ -561,35 +684,20 @@ export function EventModal({
                         </div>
                     )}
 
-                    {/* Priority Pills */}
-                    <div className="flex gap-2 overflow-x-auto pb-2 -mx-2 px-2 no-scrollbar">
-                        {(['low', 'medium', 'high'] as const).map(p => (
-                            <button
-                                key={p}
-                                type="button"
-                                onClick={() => setPriority(p)}
-                                className={clsx(
-                                    "px-3 py-1 rounded-full text-xs font-medium border transition-colors whitespace-nowrap",
-                                    priority === p
-                                        ? "bg-brand-50 border-brand-200 text-brand-700 dark:bg-brand-900/30 dark:border-brand-800 dark:text-brand-300"
-                                        : "border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-400"
-                                )}
-                            >
-                                {p.charAt(0).toUpperCase() + p.slice(1)} Priority
-                            </button>
-                        ))}
-                    </div>
 
-                    <div className="grid gap-3">
-                        <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                                <RecurrenceSelector
-                                    scheduledStart={startDate.toISOString()}
-                                    recurrence={recurrence}
-                                    onChange={setRecurrence}
-                                />
-                            </div>
-                            <div className="w-32">
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <RecurrenceSelector
+                                scheduledStart={startDate.toISOString()}
+                                recurrence={recurrence}
+                                onChange={setRecurrence}
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+                                Reminder
+                            </label>
+                            <div className="mt-2">
                                 <CustomSelect
                                     value={reminders.length > 0 ? reminders[0].toString() : 'none'}
                                     onChange={(val: string) => {
@@ -606,10 +714,13 @@ export function EventModal({
                                         { label: '2 hours before', value: '120' },
                                     ]}
                                     placeholder="Reminder"
+                                    className="w-full"
                                 />
                             </div>
                         </div>
+                    </div>
 
+                    <div className="grid gap-3">
                         {/* Contact Multi-Select */}
                         <div className="space-y-2">
                             <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
@@ -690,6 +801,64 @@ export function EventModal({
                                 </div>
                             )}
                         </div>
+                        {/* Linked Goals Display */}
+                        <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                            <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+                                Linked Goals
+                            </label>
+                            <div className="space-y-2">
+                                {linkedGoals.map((lg, i) => {
+                                    const contact = contacts.find(c => c.id === lg.contactId)
+                                    const goal = contact?.goals.find(g => g.id === lg.goalId)
+                                    const subGoal = lg.subGoalId ? goal?.subGoals.find(sg => sg.id === lg.subGoalId) : undefined
+
+                                    if (!contact || !goal) return null
+
+                                    // Determine completion status
+                                    const isCompleted = subGoal ? subGoal.isCompleted : goal.isCompleted
+
+                                    return (
+                                        <div key={`${lg.contactId}-${lg.goalId}-${lg.subGoalId}`} className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-800/50">
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    toggleGoalCompletion(lg.contactId, lg.goalId, lg.subGoalId, isCompleted)
+                                                }}
+                                                className={clsx(
+                                                    "flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors",
+                                                    isCompleted
+                                                        ? "border-brand-500 bg-brand-500 text-white"
+                                                        : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800"
+                                                )}
+                                            >
+                                                {isCompleted && <Target className="h-3 w-3" />}
+                                            </button>
+
+                                            <div className="flex-1 min-w-0 flex flex-col">
+                                                <span className="text-xs font-semibold text-brand-600 dark:text-brand-400 truncate">
+                                                    {contact.name}
+                                                </span>
+                                                <span className={clsx(
+                                                    "text-sm font-medium truncate",
+                                                    isCompleted ? "text-slate-500 line-through" : "text-slate-900 dark:text-slate-200"
+                                                )}>
+                                                    {subGoal ? `${goal.title} > ${subGoal.title}` : goal.title}
+                                                </span>
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => setLinkedGoals(linkedGoals.filter((_, idx) => idx !== i))}
+                                                className="p-1 text-slate-400 hover:text-rose-500 transition-colors"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </div>
                     </div>
 
                     {/* Location */}
@@ -729,7 +898,7 @@ export function EventModal({
                 </div>
             </div>
 
-            <div className="p-6 flex items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-900 z-10">
+            <div className="p-6 flex items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-800 shrink-0 bg-white dark:bg-neutral-900 z-10">
                 {isEditMode ? (
                     <button
                         type="button"
@@ -753,7 +922,7 @@ export function EventModal({
                     type="button"
                     className="rounded-xl bg-brand-600 px-6 py-3 text-base font-semibold text-white shadow-lg shadow-brand-500/30 disabled:opacity-60 hover:bg-brand-700 active:scale-95 transition-all min-h-[48px]"
                     disabled={saving}
-                    onClick={handleSave}
+                    onClick={() => handleSave()}
                 >
                     {saving ? 'Saving...' : 'Save'}
                 </button>
@@ -775,8 +944,29 @@ export function EventModal({
                 showGoalsPopup && goalsContactId && (() => {
                     const goalContact = contacts.find(c => c.id === goalsContactId)
                     return goalContact ? (
-                        <GoalProgressPopup
+                        <GoalPickerPopup
                             contact={goalContact}
+                            selectedLinks={linkedGoals.filter(lg => lg.contactId === goalsContactId)}
+                            onToggleLink={(goalId, subGoalId) => {
+                                const exists = linkedGoals.some(lg =>
+                                    lg.contactId === goalsContactId &&
+                                    lg.goalId === goalId &&
+                                    lg.subGoalId === subGoalId
+                                )
+
+                                if (exists) {
+                                    setLinkedGoals(linkedGoals.filter(lg =>
+                                        !(lg.contactId === goalsContactId &&
+                                            lg.goalId === goalId &&
+                                            lg.subGoalId === subGoalId)
+                                    ))
+                                } else {
+                                    setLinkedGoals([
+                                        ...linkedGoals,
+                                        { contactId: goalsContactId!, goalId, subGoalId }
+                                    ])
+                                }
+                            }}
                             onClose={() => {
                                 setShowGoalsPopup(false)
                                 setGoalsContactId(null)

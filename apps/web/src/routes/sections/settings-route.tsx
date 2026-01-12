@@ -80,7 +80,7 @@ export function SettingsRoute() {
 
   return (
     <div className="space-y-6">
-      <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-neutral-900">
         <div className="flex items-center gap-4">
           <CollaboratorAvatar
             collaborator={{
@@ -154,7 +154,7 @@ function AppearanceSettings() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-neutral-900">
         <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Theme Mode</h2>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
           Choose between light and dark mode
@@ -185,7 +185,7 @@ function AppearanceSettings() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-neutral-900">
         <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Accent Color</h2>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
           Customize your primary brand color
@@ -256,7 +256,6 @@ function IntegrationsSettings({ onShowStatus }: { onShowStatus: (title: string, 
           ownerUid: 'imported',
           title: event.summary,
           status: 'todo',
-          priority: 'medium',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           scheduledStart: startDate.toISOString(),
@@ -296,7 +295,7 @@ function IntegrationsSettings({ onShowStatus }: { onShowStatus: (title: string, 
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-neutral-900">
         <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Calendar Integrations</h2>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
           Connect external calendars to view your schedule in one place.
@@ -442,7 +441,7 @@ function NotificationsSettings() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-neutral-900">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Browser Notifications</h2>
@@ -477,7 +476,7 @@ function NotificationsSettings() {
         )}
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 opacity-75">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-neutral-900 opacity-75">
         <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Preferences</h2>
         <div className="mt-4 space-y-4">
           <div className="flex items-center justify-between">

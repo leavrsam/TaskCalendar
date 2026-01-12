@@ -45,7 +45,7 @@ export function GoalsRoute() {
 
   return (
     <div className="space-y-6">
-      <header className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+      <header className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 p-5 shadow-sm">
 
         <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">Personal Goals</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -58,7 +58,7 @@ export function GoalsRoute() {
             <p className="text-sm text-slate-500">Loading goals...</p>
           )}
           {!goalsQuery.isLoading && goals.length === 0 && (
-            <p className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
+            <p className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-neutral-900/50 px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
               No goals yet. Create one to start building momentum.
             </p>
           )}
@@ -73,7 +73,7 @@ export function GoalsRoute() {
             />
           ))}
         </div>
-        <div className="space-y-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+        <div className="space-y-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Add a goal</h2>
           <div className="space-y-3 text-sm">
             <div>

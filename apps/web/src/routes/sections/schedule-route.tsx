@@ -310,7 +310,7 @@ export function ScheduleRoute() {
       <DndProvider backend={HTML5Backend}>
         <div className="flex h-screen flex-col overflow-x-hidden">
           {/* Header */}
-          <header className={`flex items-center justify-between gap-2 bg-white dark:bg-slate-900 p-2 pr-3 flex-shrink-0 transition-all h-14 sm:h-16 relative z-20 ${!isSidebarOpen ? 'pl-2' : 'pl-3'}`}>
+          <header className={`flex items-center justify-between gap-2 bg-white dark:bg-neutral-900 p-2 pr-3 flex-shrink-0 transition-all h-14 sm:h-16 relative z-20 ${!isSidebarOpen ? 'pl-2' : 'pl-3'}`}>
             {/* Left: Menu, Nav, Date */}
             <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               {/* Menu button - Only visible if sidebar is closed */}
@@ -428,6 +428,9 @@ export function ScheduleRoute() {
               </div>
             </div>
           </header>
+
+          {/* Corner fill to eliminate gap caused by rounded-tl-3xl */}
+          <div className="absolute left-0 top-14 sm:top-16 h-8 w-8 bg-white dark:bg-neutral-900 z-0" />
 
           {/* Full-screen Calendar Card */}
           <div
@@ -738,36 +741,67 @@ function AgendaBoard({
             .rbc-allday-cell {
               height: auto !important;
               max-height: unset !important;
+              border-left: none !important;
+            }
+            .rbc-allday-cell + .rbc-allday-cell {
+              border-left: none !important;
+            }
+            .rbc-day-bg {
+              border-left: none !important;
+            }
+            .rbc-day-bg + .rbc-day-bg {
+              border-left: none !important;
             }
             .rbc-time-header-content {
               border-left: none !important;
             }
-            /* Connect header grid lines */
+            /* Remove default header borders - we use header-cell borders instead */
             .rbc-header + .rbc-header {
-              border-left: 1px solid rgba(226, 232, 240, 0.8) !important;
-            }
-            .dark .rbc-header + .rbc-header {
-              border-left: 1px solid rgba(51, 65, 85, 0.4) !important;
-            }
-            .rbc-time-header-content {
-              border-left: 1px solid rgba(226, 232, 240, 0.4) !important;
-            }
-            .dark .rbc-time-header-content {
-              border-left: 1px solid rgba(51, 65, 85, 0.4) !important;
+              border-left: none !important;
             }
             .rbc-day-slot {
               background: transparent !important;
-              border-left: 1px solid rgba(226, 232, 240, 0.4) !important;
+              border-left: none !important;
+              position: relative !important;
             }
-            .dark .rbc-day-slot {
-              border-left: 1px solid rgba(51, 65, 85, 0.4) !important;
+            /* Single continuous vertical line from top of calendar to bottom */
+            .rbc-day-slot::before {
+              content: '';
+              position: absolute;
+              left: 0;
+              top: -200px; /* Extend up through header */
+              bottom: 0;
+              width: 1px;
+              background: rgba(226, 232, 240, 0.4);
+              z-index: 1;
+            }
+            .rbc-day-slot:first-child::before {
+              display: none;
+            }
+            .dark .rbc-day-slot::before {
+              background: rgba(51, 65, 85, 0.4);
             }
             .rbc-time-content {
               border-top: none !important;
               border: none !important;
+              overflow: visible !important;
             }
             .rbc-time-gutter .rbc-timeslot-group {
               border-bottom: none !important;
+            }
+            /* Remove all header cell borders - pseudo-elements handle it */
+            .rbc-time-header-cell {
+              border-left: none !important;
+            }
+            .rbc-time-header-cell:first-child {
+              border-left: none !important;
+            }
+            /* Remove gap between header and content sections */
+            .rbc-time-header {
+              margin-right: 0 !important;
+            }
+            .rbc-time-header-gutter {
+              border-right: none !important;
             }
   `, [timeSlotHeight, step])
 
@@ -1018,13 +1052,8 @@ const getNextStatus = (status: Task['status']): Task['status'] => {
 }
 
 const getCalendarEventStyles = (event: TaskEvent) => {
-  // Use custom color if available, otherwise use a default color
-  // Determine color based on priority if not manually set, or default
-  const baseColor = event.resource.color ?? (
-    event.resource.priority === 'high' ? 'rgba(244, 63, 94, 0.7)' : // Rose
-      event.resource.priority === 'medium' ? 'rgba(59, 130, 246, 0.7)' : // Blue
-        'rgba(99, 102, 241, 0.7)' // Indigo
-  )
+  // Use custom color if available, otherwise use a default brand color
+  const baseColor = event.resource.color ?? 'rgba(99, 102, 241, 0.7)' // Indigo default
 
   // Convert hex to rgba if needed, or just use the color
   // Simple heuristic: if it starts with #, make it translucent. 

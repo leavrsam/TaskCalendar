@@ -37,7 +37,6 @@ export async function fetchGoogleEvents(accessToken: string, timeMin: string, ti
             ownerUid: 'google',
             title: item.summary || '(No Title)',
             status: 'todo', // GCal doesn't have status same way, maybe use transparent/confirmed?
-            priority: 'medium',
             createdAt: item.created,
             updatedAt: item.updated,
             scheduledStart: start.toISOString(),

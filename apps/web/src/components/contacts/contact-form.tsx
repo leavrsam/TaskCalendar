@@ -120,7 +120,7 @@ export function ContactForm({ initialData, onSubmit, onClose, title }: ContactFo
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+            <div className="w-full max-w-md rounded-2xl bg-white dark:bg-neutral-900 p-6 shadow-xl max-h-[90vh] overflow-y-auto">
                 <div className="mb-6 flex items-center justify-between">
                     <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">{title}</h2>
                     <button

@@ -42,7 +42,7 @@ export function DataManagementCard() {
 
     return (
         <div className="space-y-6">
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-neutral-900 p-5 shadow-sm">
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Export Data</h2>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
                     Download a copy of all your contacts, visits, tasks, and goals.
@@ -69,7 +69,7 @@ export function DataManagementCard() {
                             alert('Account deletion is not yet implemented.')
                         }
                     }}
-                    className="mt-4 flex items-center gap-2 rounded-full bg-white dark:bg-slate-900 dark:border dark:border-red-900/50 px-4 py-2 text-sm font-semibold text-red-600 dark:text-red-400 shadow-sm hover:bg-red-50 dark:hover:bg-red-900/20 ring-1 ring-inset ring-red-200 dark:ring-0"
+                    className="mt-4 flex items-center gap-2 rounded-full bg-white dark:bg-neutral-900 dark:border dark:border-red-900/50 px-4 py-2 text-sm font-semibold text-red-600 dark:text-red-400 shadow-sm hover:bg-red-50 dark:hover:bg-red-900/20 ring-1 ring-inset ring-red-200 dark:ring-0"
                 >
                     <Trash2 className="h-4 w-4" />
                     Delete Account
@@ -112,7 +112,7 @@ function ClearDataButton() {
             <button
                 onClick={handleOpen}
                 disabled={isPending}
-                className="mt-4 flex items-center gap-2 rounded-full bg-white dark:bg-slate-900 dark:border dark:border-orange-900/50 px-4 py-2 text-sm font-semibold text-orange-600 dark:text-orange-400 shadow-sm hover:bg-orange-50 dark:hover:bg-orange-900/20 ring-1 ring-inset ring-orange-200 dark:ring-0 disabled:opacity-50"
+                className="mt-4 flex items-center gap-2 rounded-full bg-white dark:bg-neutral-900 dark:border dark:border-orange-900/50 px-4 py-2 text-sm font-semibold text-orange-600 dark:text-orange-400 shadow-sm hover:bg-orange-50 dark:hover:bg-orange-900/20 ring-1 ring-inset ring-orange-200 dark:ring-0 disabled:opacity-50"
             >
                 <Trash2 className="h-4 w-4" />
                 {isPending ? 'Deleting...' : 'Delete All Events'}

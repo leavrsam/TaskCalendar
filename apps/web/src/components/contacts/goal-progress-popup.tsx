@@ -121,7 +121,7 @@ export function GoalProgressPopup({ contact, onClose }: GoalProgressPopupProps) 
             onClick={onClose}
         >
             <div
-                className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden max-h-[80vh] flex flex-col"
+                className="relative w-full max-w-lg bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl overflow-hidden max-h-[80vh] flex flex-col"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
